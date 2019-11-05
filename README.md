@@ -3,7 +3,7 @@ Open source python package for hydraulic testing interpretation
 
 This package is in a very early state project. 
 
-The general idea is to create a novel environment for hydraulic test interpretation using novel tools available in python and be inspired by some of the functionalities available in hytool.
+The general idea is to create an environment for hydraulic test interpretation using novel tools available in python and be inspired by some of the functionalities available in hytool.
 
 The package should contain three key components:
 - a data handling and managing part for time series based on pandas
