@@ -24,78 +24,88 @@ Released under the MIT license:
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import openhytest as ht
 
 
 # *************************************************************
 # ---------------Preprocessing Functions:----------------------
 # *************************************************************
 
-def ldiff(x,y):
+def ldiff(data):
     """
     ldiff creates the logarithmic derivative with centered difference scheme.
     -----
-    x:  pandas series
-        In hydrotests x expects a single time serie.
-    
-    y:  pandas series
-        In hydrotests y expects single drawdowns.
-    
+    data:  pandas series expects at least two traces in the dataframe.
+        The first column needs to be the time.
+         i.e. data.t
+        The second and following data traces needs to be sampled at the given
+        time in the first column. 
+            i.e. data.s, data.s2
+
     Returns
     -------
-    xd, yd
-        logarithmic derivative in pandas time series format
+    derivative 
+        logarithmic derivative in pandas time series format with the same
+        names given by the input data
+       
     
     Examples
     --------
-       >>> xd, yd = ht.ldiff(x,y)
+        >>> derivative = ht.ldiff(data)   
     """
-    
-    #Calculate the difference
+    df = data.head(0)
+    df = list(df)
+       
+    #Calculate the difference dx
+    x = data[df[0]].to_numpy()
     dx = np.diff(x)
-    dy = np.diff(y)
-
     #calculate xd
     xd = np.sqrt(x[0:-1]*x[1:])
     
-    #calculate yd
-    yd = xd*(dy/dx)
+    #Calculate the difference dy
+    for i in range(1,len(df)):
+        dy = np.diff(data[df[i]]) 
+        #calculate yd
+        yd = xd*(dy/dx)
+        if i == 1:
+            der = np.array(np.transpose([xd,yd]))
+        else:
+            der = np.c_[der, np.transpose(yd)] 
+            
+    return pd.DataFrame(der, columns = df)
 
-    return pd.Series(xd), pd.Series(yd)
 
-
-def ldiff_plot(x,y):
+def ldiff_plot(data):
     """
     ldiff_plot creates the plot with logarithmic derivative with centered 
     difference scheme.
     ---------
-    x:  pandas series
-        In hydrotests x expects a single time serie.
-    
-    y:  pandas series
-        In hydrotests y expects single drawdowns.
-    
+    data : expects at least two vectors with x and y1, y2, y3,...
+        
     Returns
     -------
-    plot
+    plot inclusive legend 
     
     Examples
     --------
-       >>> ht.ldiff_plot(x,y)
+       >>> ht.ldiff_plot(data)
     """
     
-    xd,yd = ldiff(x,y)
+    derivative = ht.ldiff(data)
+    df = data.head(0)
+    df =  list(df)
     
-    fig2 = plt.figure()
-    ax2 = fig2.add_subplot(111)
-    ax2.set_xlabel('Time')
-    ax2.set_ylabel('Drawdown and log derivative')
+    ax = data.plot(x = df[0], y=df[1:], loglog=True, marker='o', linestyle = '', colormap='jet')
+    derivative.plot(x = df[0], y=df[1:], marker='x', loglog=True, linestyle = '', colormap='jet', ax=ax, grid=True)
+    ax.set(xlabel='Time', ylabel='Drawdown and log derivative')
     
-    ax2.loglog(x, y, c='b', marker = 'o', linestyle = '', label = 'drawdown')
-    ax2.scatter(xd, yd, c='r', marker = 'x', label = 'derivative')
-    ax2.grid(True)
+    ax.legend()
+    
+    return ax
 
-    ax2.legend()
     
-    plt.show()
+    
+    
+    
 
 
