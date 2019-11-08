@@ -10,7 +10,7 @@
 Preprocessing tool
 ========
 The openhytest preprocessing is a Python package for time series selection, 
-reprocesssing, resampling, filtering and visualization. 
+reprocessing, resampling, filtering and visualization. 
 License
 -------
 Released under the MIT license:
@@ -382,6 +382,7 @@ def diagnostic(data, method = 'spline'):
     
     method :    optional argument allowing to select different methods of 
         computation of the derivative
+        
     'spline' for spline resampling
     in that case d is the number of points for the spline
     
@@ -415,8 +416,6 @@ def diagnostic(data, method = 'spline'):
         print('ERROR: diagnostic(data,method)')
         print(' The method selected for log-derivative calculation is unknown')
 
-    ###function hyclean ###
-
 
 def hyclean(data):
     '''
@@ -424,10 +423,11 @@ def hyclean(data):
     ------
     data:  pandas DF expects at least two traces in the dataframe.
         The first column needs to be the time.
-         i.e. data.t
+        i.e. data.t
         The second and following data trace needs to be sampled at the given
         time in the first column.
-            i.e. data.s, data.s2
+        i.e. data.s, data.s2
+    
     Returns
     -------
     data
@@ -442,7 +442,6 @@ def hyclean(data):
     data = data.replace([np.inf, -np.inf], np.nan)
     for i in range(1, len(df)):
         data = data[data[df[i]] >= 0] 
-    #data = data.dropna()
 
     return data
 
