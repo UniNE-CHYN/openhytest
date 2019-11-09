@@ -445,3 +445,35 @@ def hyclean(data):
 
     return data
 
+def hyselect(data,xstart,xend):
+    '''
+    hyselect Select a part of a dataset strictly between xstart and xend
+    --------
+    data:  pandas DF expects at least two traces in the dataframe.
+        The first column needs to be the time.
+        i.e. data.t
+        The second and following data trace needs to be sampled at the given
+        time in the first column.
+        i.e. data.s, data.s2
+        
+        xstart,xend = period that must be selected
+    
+    Returns
+    -------
+    data_select
+        pandas series gives back the cleaned dataset
+        
+    Examples
+    --------
+        >>>  data_select = ht.hyselect(data,xstart, xend)
+    '''
+    df = data.head(0)
+    df = list(df)
+    
+    mask = (data[df[0]] > xstart) & (data[df[0]] < xend)
+    data_selelct = data.loc[mask]
+    
+    return data_select
+
+
+
