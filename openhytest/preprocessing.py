@@ -23,6 +23,7 @@ import pandas as pd
 import numpy as np
 import openhytest as ht
 from scipy.interpolate import UnivariateSpline
+from scipy import signal
 
 # *************************************************************
 # ---------------Preprocessing Functions:----------------------
@@ -460,8 +461,8 @@ def hyselect(data,xstart,xend):
     
     Returns
     -------
-    data_select
-        pandas series gives back the cleaned dataset
+    data
+        pandas series gives back the selected dataset
         
     Examples
     --------
@@ -471,9 +472,86 @@ def hyselect(data,xstart,xend):
     df = list(df)
     
     mask = (data[df[0]] > xstart) & (data[df[0]] < xend)
-    data_selelct = data.loc[mask]
+    data = data.loc[mask]
     
-    return data_select
+    return data
 
 
+def hyfilter(data, typefilter='moving', p=10, win_types='None'):
+    '''
+    hyfilter Filter a signal in order to reduce the noise. 
+    --------  
+    Keep in mind that the time step need to be equally spaced for the butterworth filter.
+    It can be used for moving average filter, but it is not recommended.
+    
+    data:  pandas DF expects at least two traces in the dataframe.
+        The first column needs to be the time.
+        i.e. data.t
+        The second and following data trace needs to be sampled at the given
+        time in the first column.
+        i.e. data.s, data.s2
+        
+    typefilter: allows to select the type of filter
+    
+    'butter2' for the Butterworth filter with filter order 2 or 
+    'butter4' for the Butterworth filter with filter order 4.
+    The Butterworth filters high frequency components in the signal.
+    It is very sensitive of outliers.Therefore the Butterworth filter is 
+    more appropriate for noisy signals without outliers, the moving average is
+    recommended to filter very irregular signals.
+    
+    'moving' for the moving average (Default option). 
+    The moving average is less sensitive of outliers but at the same time
+    less smooth using a centered windows. 
+    
+    p: parameter that depends on the type of filter that has been chosen.
 
+      for the moving average  
+           p = size of the moving window in number of points
+               by default it is equal to 10
+
+      for the Butterworth filter  
+            p = period of the cutoff frequency in number of measurements
+                by default it is equal to 10
+                
+    win_types: is only defined for 'moving' filter. It defines the type of 
+            weighting window: boxcar, triang, blackman, hamming 
+            (see pandas DF rolling command for more options and information)
+    
+    Returns
+    -------
+    data
+        pandas series is gives back with new data traces named 'name'+'_filt' with
+        the name used from the name interval.
+        
+    Examples
+    --------
+        >>>  data = ht.hyfilter(data)
+        >>>  data = ht.hyfilter(data,'moving', 20)
+        >>>  data = ht.hyfilter(data,'moving', 20, 'triang')
+        >>>  data = ht.hyfilter(data,'butter', 3)
+    '''   
+    df = data.head(0)
+    df = list(df)    
+    
+    if typefilter == 'moving':
+        for i in range(1, len(df)):
+            data[df[i]+'_filt'] = data.iloc[:,i].rolling(window=p, center=True, win_type=win_types).mean()
+    elif typefilter == 'butter2':
+        ts = data[df[0]][0]-data[df[0]][1]
+        fs = 1/ts
+        fc = 0.5*fs/p
+        b, a = signal.butter(2, fc, 'low')
+        for i in range(1, len(df)):
+            data[df[i]+'_filt'] = signal.filtfilt(b,a,data[df[i]]);
+    elif typefilter == 'butter4':
+        ts = data[df[0]][0]-data[df[0]][1]
+        fs = 1/ts
+        fc = 0.5*fs/p
+        b, a = signal.butter(4, fc, 'low')
+        for i in range(1, len(df)):
+            data[df[i]+'_filt'] = signal.filtfilt(b,a,data[df[i]]);            
+    else:
+        print('ERROR: The function hyfilter does not know the filter type.')  
+    
+    return data
