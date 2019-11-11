@@ -508,7 +508,7 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
 
       for the moving average  
            p = size of the moving window in number of points
-               by default it is equal to 10
+               by default it is equal to 5. It has to be an odd number. 
 
       for the Butterworth filter  
             p = period of the cutoff frequency in number of measurements
@@ -522,7 +522,7 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
     -------
     data
         pandas series is gives back with new data traces named 'name'+'_filt' with
-        the name used from the name interval.
+        the name given.
         
     Examples
     --------
@@ -535,6 +535,10 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
     df = list(df)    
     
     if typefilter == 'moving':
+        if p % 2 == 0:
+            print('ERROR: Make sure, that the size of the moving filter has an odd number.')  
+        elif p == 10:
+            p = 5
         for i in range(1, len(df)):
             data[df[i]+'_filt'] = data.iloc[:,i].rolling(window=p, center=True, win_type=win_types).mean()
     elif typefilter == 'butter2':
