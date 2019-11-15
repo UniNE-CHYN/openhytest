@@ -1,5 +1,5 @@
 #    Copyright (C) 2019 by
-#    Philippe Renard <philippe.renard@unine.ch>$
+#    Philippe Renard <philippe.renard@unine.ch>
 #    Nathan Dutler <nathan.dutler@unine.ch>
 #    Bernard Brixel <bernard.brixel@ethz.ch>
 #    All rights reserved.
@@ -122,7 +122,7 @@ def ldiffs(data, npoints = 20):
            
     Examples
     --------
-        >>> derivative = ht.ldiffs(data, [d])
+        >>> derivative = ht.ldiffs(data, 10)
     '''
     global der
     df = data.head(0)
@@ -164,7 +164,7 @@ def ldiffs_plot(data, npoints=20):
     
     Examples
     --------
-       >>> ht.ldiffs_plot(data,[d]])
+       >>> ht.ldiffs_plot(data, 10)
     """
     derivative = ht.ldiffs(data, npoints)
     df = data.head(0)
@@ -199,7 +199,7 @@ def ldiffb(data, d=2):
            
     Examples
     --------
-        >>> derivative = ht.ldiffb(data, [d])  
+        >>> derivative = ht.ldiffb(data)  
     '''
     global der
     df = data.head(0)
@@ -245,7 +245,7 @@ def ldiffb_plot(data, d=2):
     
     Examples
     --------
-       >>> ht.ldiffb_plot(data,[d]])
+       >>> ht.ldiffb_plot(data)
     """
     derivative = ht.ldiffb(data, d)
     df = data.head(0)
@@ -277,7 +277,7 @@ def ldiffh(data):
            
     Examples
     --------
-        >>> derivative = ht.ldiffh(data, [d])  
+        >>> derivative = ht.ldiffh(data)  
     '''
     global der
     df = data.head(0)
@@ -446,7 +446,7 @@ def hyclean(data):
 
     return data
 
-def hyselect(data,xstart,xend):
+def hyselect(data, xstart, xend):
     '''
     hyselect Select a part of a dataset strictly between xstart and xend
     --------
@@ -522,14 +522,14 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
     -------
     data
         pandas series is gives back with new data traces named 'name'+'_filt' with
-        the name given.
+        the 'name' given.
         
     Examples
     --------
         >>>  data = ht.hyfilter(data)
-        >>>  data = ht.hyfilter(data,'moving', 20)
-        >>>  data = ht.hyfilter(data,'moving', 20, 'triang')
-        >>>  data = ht.hyfilter(data,'butter', 3)
+        >>>  data = ht.hyfilter(data,'moving', 15)
+        >>>  data = ht.hyfilter(data,'moving', 7, 'triang')
+        >>>  data = ht.hyfilter(data,'butter2', 10)
     '''   
     df = data.head(0)
     df = list(df)    
@@ -547,15 +547,15 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
         fc = 0.5*fs/p
         b, a = signal.butter(2, fc, 'low')
         for i in range(1, len(df)):
-            data[df[i]+'_filt'] = signal.filtfilt(b,a,data[df[i]]);
+            data[df[i]+'_filt'] = signal.filtfilt(b, a, data[df[i]]);
     elif typefilter == 'butter4':
         ts = data[df[0]][0]-data[df[0]][1]
         fs = 1/ts
         fc = 0.5*fs/p
         b, a = signal.butter(4, fc, 'low')
         for i in range(1, len(df)):
-            data[df[i]+'_filt'] = signal.filtfilt(b,a,data[df[i]]);            
+            data[df[i]+'_filt'] = signal.filtfilt(b, a, data[df[i]]);            
     else:
         print('ERROR: The function hyfilter does not know the filter type.')  
-    
+   
     return data
