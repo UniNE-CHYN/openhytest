@@ -559,3 +559,4 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
         print('ERROR: The function hyfilter does not know the filter type.')  
    
     return data
+
