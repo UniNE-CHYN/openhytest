@@ -1,5 +1,5 @@
 #    Copyright (C) 2019 by
-#    Philippe Renard <philippe.renard@unine.ch>$
+#    Philippe Renard <philippe.renard@unine.ch>
 #    Nathan Dutler <nathan.dutler@unine.ch>
 #    Bernard Brixel <bernard.brixel@ethz.ch>
 #    All rights reserved.
@@ -23,6 +23,7 @@ import pandas as pd
 import numpy as np
 import openhytest as ht
 from scipy.interpolate import UnivariateSpline
+from scipy import signal
 
 # *************************************************************
 # ---------------Preprocessing Functions:----------------------
@@ -121,7 +122,7 @@ def ldiffs(data, npoints = 20):
            
     Examples
     --------
-        >>> derivative = ht.ldiffs(data, [d])
+        >>> derivative = ht.ldiffs(data, 10)
     '''
     global der
     df = data.head(0)
@@ -133,7 +134,7 @@ def ldiffs(data, npoints = 20):
     
     for i in range(1, len(df)):
         #changing k & s affects the interplolation
-        spl = UnivariateSpline(x,np.array(data[df[i]].to_numpy()), k=5, s=0.0099)
+        spl = UnivariateSpline(x,np.array(data[df[i]].to_numpy()), k=5, s=0.00099)
         yi = spl(xi)
 
         xd = xi[1:len(xi)-1]
@@ -163,7 +164,7 @@ def ldiffs_plot(data, npoints=20):
     
     Examples
     --------
-       >>> ht.ldiffs_plot(data,[d]])
+       >>> ht.ldiffs_plot(data, 10)
     """
     derivative = ht.ldiffs(data, npoints)
     df = data.head(0)
@@ -198,7 +199,7 @@ def ldiffb(data, d=2):
            
     Examples
     --------
-        >>> derivative = ht.ldiffb(data, [d])  
+        >>> derivative = ht.ldiffb(data)  
     '''
     global der
     df = data.head(0)
@@ -244,7 +245,7 @@ def ldiffb_plot(data, d=2):
     
     Examples
     --------
-       >>> ht.ldiffb_plot(data,[d]])
+       >>> ht.ldiffb_plot(data)
     """
     derivative = ht.ldiffb(data, d)
     df = data.head(0)
@@ -276,7 +277,7 @@ def ldiffh(data):
            
     Examples
     --------
-        >>> derivative = ht.ldiffh(data, [d])  
+        >>> derivative = ht.ldiffh(data)  
     '''
     global der
     df = data.head(0)
@@ -443,5 +444,119 @@ def hyclean(data):
     for i in range(1, len(df)):
         data = data[data[df[i]] >= 0] 
 
+    return data
+
+def hyselect(data, xstart, xend):
+    '''
+    hyselect Select a part of a dataset strictly between xstart and xend
+    --------
+    data:  pandas DF expects at least two traces in the dataframe.
+        The first column needs to be the time.
+        i.e. data.t
+        The second and following data trace needs to be sampled at the given
+        time in the first column.
+        i.e. data.s, data.s2
+        
+        xstart,xend = period that must be selected
+    
+    Returns
+    -------
+    data
+        pandas series gives back the selected dataset
+        
+    Examples
+    --------
+        >>>  data_select = ht.hyselect(data,xstart, xend)
+    '''
+    df = data.head(0)
+    df = list(df)
+    
+    mask = (data[df[0]] > xstart) & (data[df[0]] < xend)
+    data = data.loc[mask]
+    
+    return data
+
+
+def hyfilter(data, typefilter='moving', p=10, win_types='None'):
+    '''
+    hyfilter Filter a signal in order to reduce the noise. 
+    --------  
+    Keep in mind that the time step need to be equally spaced for the butterworth filter.
+    It can be used for moving average filter, but it is not recommended.
+    
+    data:  pandas DF expects at least two traces in the dataframe.
+        The first column needs to be the time.
+        i.e. data.t
+        The second and following data trace needs to be sampled at the given
+        time in the first column.
+        i.e. data.s, data.s2
+        
+    typefilter: allows to select the type of filter
+    
+    'butter2' for the Butterworth filter with filter order 2 or 
+    'butter4' for the Butterworth filter with filter order 4.
+    The Butterworth filters high frequency components in the signal.
+    It is very sensitive of outliers.Therefore the Butterworth filter is 
+    more appropriate for noisy signals without outliers, the moving average is
+    recommended to filter very irregular signals.
+    
+    'moving' for the moving average (Default option). 
+    The moving average is less sensitive of outliers but at the same time
+    less smooth using a centered windows. 
+    
+    p: parameter that depends on the type of filter that has been chosen.
+
+      for the moving average  
+           p = size of the moving window in number of points
+               by default it is equal to 5. It has to be an odd number. 
+
+      for the Butterworth filter  
+            p = period of the cutoff frequency in number of measurements
+                by default it is equal to 10
+                
+    win_types: is only defined for 'moving' filter. It defines the type of 
+            weighting window: boxcar, triang, blackman, hamming 
+            (see pandas DF rolling command for more options and information)
+    
+    Returns
+    -------
+    data
+        pandas series is gives back with new data traces named 'name'+'_filt' with
+        the 'name' given.
+        
+    Examples
+    --------
+        >>>  data = ht.hyfilter(data)
+        >>>  data = ht.hyfilter(data,'moving', 15)
+        >>>  data = ht.hyfilter(data,'moving', 7, 'triang')
+        >>>  data = ht.hyfilter(data,'butter2', 10)
+    '''   
+    df = data.head(0)
+    df = list(df)    
+    
+    if typefilter == 'moving':
+        if p % 2 == 0:
+            print('ERROR: Make sure, that the size of the moving filter has an odd number.')  
+        elif p == 10:
+            p = 5
+        for i in range(1, len(df)):
+            data[df[i]+'_filt'] = data.iloc[:,i].rolling(window=p, center=True, win_type=win_types).mean()
+    elif typefilter == 'butter2':
+        ts = data[df[0]][0]-data[df[0]][1]
+        fs = 1/ts
+        fc = 0.5*fs/p
+        b, a = signal.butter(2, fc, 'low')
+        for i in range(1, len(df)):
+            data[df[i]+'_filt'] = signal.filtfilt(b, a, data[df[i]]);
+    elif typefilter == 'butter4':
+        ts = data[df[0]][0]-data[df[0]][1]
+        fs = 1/ts
+        fc = 0.5*fs/p
+        b, a = signal.butter(4, fc, 'low')
+        for i in range(1, len(df)):
+            data[df[i]+'_filt'] = signal.filtfilt(b, a, data[df[i]]);            
+    else:
+        print('ERROR: The function hyfilter does not know the filter type.')  
+   
     return data
 

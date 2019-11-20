@@ -134,7 +134,7 @@ def ldiffs(data, npoints = 20):
     
     for i in range(1, len(df)):
         #changing k & s affects the interplolation
-        spl = UnivariateSpline(x,np.array(data[df[i]].to_numpy()), k=5, s=0.0099)
+        spl = UnivariateSpline(x,np.array(data[df[i]].to_numpy()), k=5, s=0.00099)
         yi = spl(xi)
 
         xd = xi[1:len(xi)-1]
