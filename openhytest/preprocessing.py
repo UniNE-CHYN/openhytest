@@ -1,7 +1,7 @@
 #    Copyright (C) 2019 by
 #    Philippe Renard <philippe.renard@unine.ch>
 #    Nathan Dutler <nathan.dutler@unine.ch>
-#    Bernard Brixel <bernard.brixel@ethz.ch>
+#    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 #    All rights reserved.
 #    MIT license.
 
@@ -17,17 +17,27 @@ Released under the MIT license:
    Copyright (C) 2019 openhytest Developers
    Philippe Renard <philippe.renard@unine.ch>
    Nathan Dutler <nathan.dutlern@unine.ch>
-   Bernard Brixel <bernard.brixel@ethz.ch>
+   Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 """
 import pandas as pd
 import numpy as np
 import openhytest as ht
+import scipy.interpolate as interp1d
+
 from scipy.interpolate import UnivariateSpline
 from scipy import signal
 
 # *************************************************************
 # ---------------Preprocessing Functions:----------------------
 # *************************************************************
+
+def indices(a, func):
+    """
+    Return index
+
+    """
+    return [i for (i, val) in enumerate(a) if func(val)]
+
 
 def ldiff(data):
     """
@@ -559,4 +569,123 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
         print('ERROR: The function hyfilter does not know the filter type.')  
    
     return data
+
+
+def hysampling(x, y, nval, idlog='linear', option='sample'):
+    """
+    Sample a signal at regular intervals
+
+    Syntax:
+        xs,ys = hysampling(x,y,nval,idlog,option)
+        x,y   = vectors containing the input signal
+        nval  = number of values of the output signal
+        xs,ys = sampled signal
+
+        idlog: allows to select the type of spacing of the samples
+            idlog  = 'linear' = Default value = linear scale
+            idlog  = 'log'    = logarithmic scale
+
+        option: allows to define if the points must be interpolated
+            option = 'sample' = Default value
+                              = only points from the data set are taken
+            option = 'interp' = creates points by interpolation
+
+    Example:
+        ts,hs = hysampling(t,s,10)
+        ts,hs = hysampling(t,s,30,'log')
+        ts,hs = hysampling(t,s,10,'linear','interp')
+        ts,qs = hysampling(tf,qf,30,'log','interp')
+
+    """
+
+    # initialize 2 mutable objects
+    # to contain the sampled x,y data points
+    xs = np.empty(nval)
+    ys = np.empty(nval)
+
+    if nval > len(x):
+        print('')
+        print('SYNTAX ERROR: nval is larger than the number of data points')
+        print('')
+
+    # logarithmic sampling
+    if idlog == 'log':
+        index_s = indices(x, lambda x: x > 0)
+        xs = x[index_s]
+        xs = np.logspace(np.log10(x[1]), np.log10(x[len(xs)-1]), nval)
+
+    # linear sampling
+    elif idlog == 'linear':
+        index_s = indices(x, lambda x: x > 0)
+        xs = x[index_s]
+        xs = np.linspace(x[1],x[len(xs)-1], nval)
+
+    else :
+        print('')
+        print('SYNTAX ERROR: hysampling: the 4th parameter (idlog) is incorrect.')
+        print('')
+
+    if option == 'sample':
+        for i in range(1, nval):
+
+            # find sampling location
+            dist = np.sqrt(np.power(x - xs[i], 2))
+            mn = np.min(dist)
+
+            # get index
+            j = np.asarray(np.where(dist == mn))
+            j.resize(1)  # avoids having multiple elements if more than one min value exists
+
+            # assign index to sample array
+            xs[i] = x[j]
+            ys[i] = y[j]
+
+            # remove duplicates
+            xs_nodup, index_xs = np.unique(xs, return_index=True)
+            ys_nodup = ys[index_xs]
+
+        return xs_nodup, ys_nodup
+
+    # sample interpolated 'y' data points
+    elif option == 'interp':
+        f_interp = interp1d(x, y, 'linear', fill_value='extrapolate')
+        ys = f_interp(xs)
+        ys = np.asarray(xs, dtype='float')
+
+        return xs, ys
+
+    else:
+        print('')
+        print('SYNTAX ERROR: hysampling the 5th parameter (option) is incorrect.')
+        print('')
+      
+
+def flowDim(t, s):
+    """
+    computes the time evolution of flow dimensions
+
+    Syntax:
+        x_dim, y_dim = flowDim(t,s)
+        t = elapsed time
+        s = drawdown or pressure buildup
+    """
+
+    t = np.asarray(t, dtype='float')
+    s = np.asarray(s, dtype='float')
+
+    # remove NaNs
+    index_s = indices(s, lambda s: np.isfinite(s))
+    xi = t[index_s]
+    yi = s[index_s]
+
+    # keep times>0 and corresponding observations
+    xii = xi[np.argwhere((xi >= 0) & (yi >= 0)).flatten()]
+    yii = yi[np.argwhere((yi >= 0) & (xi >= 0)).flatten()]
+
+    x_dim = xii[1:]
+    # compute flow dimension
+    y_dim = np.multiply(2,(1 - np.divide(([np.log10(x) - np.log10(yii[i - 1]) for i, x in enumerate(yii) if i > 0]),[
+        np.log10(x) - np.log10(xii[i - 1]) for i, x in enumerate(xii) if i > 0])))
+
+    return x_dim, y_dim
 
