@@ -572,7 +572,7 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
 
 
 def hysampling(x, y, nval, idlog='linear', option='sample'):
-    """
+    '''
     Sample a signal at regular intervals
 
     Syntax:
@@ -595,8 +595,7 @@ def hysampling(x, y, nval, idlog='linear', option='sample'):
         ts,hs = hysampling(t,s,30,'log')
         ts,hs = hysampling(t,s,10,'linear','interp')
         ts,qs = hysampling(tf,qf,30,'log','interp')
-
-    """
+    '''
 
     # initialize 2 mutable objects
     # to contain the sampled x,y data points
@@ -658,17 +657,17 @@ def hysampling(x, y, nval, idlog='linear', option='sample'):
         print('')
         print('SYNTAX ERROR: hysampling the 5th parameter (option) is incorrect.')
         print('')
-      
+        return 0
 
 def flowDim(t, s):
-    """
+    '''
     computes the time evolution of flow dimensions
 
     Syntax:
         x_dim, y_dim = flowDim(t,s)
         t = elapsed time
         s = drawdown or pressure buildup
-    """
+    '''
 
     t = np.asarray(t, dtype='float')
     s = np.asarray(s, dtype='float')
