@@ -31,13 +31,6 @@ from scipy import signal
 # ---------------Preprocessing Functions:----------------------
 # *************************************************************
 
-def indices(a, func):
-    """
-    Return index
-
-    """
-    return [i for (i, val) in enumerate(a) if func(val)]
-
 
 def ldiff(data):
     """
@@ -111,7 +104,7 @@ def ldiff_plot(data):
 
 
 def ldiffs(data, npoints = 20):
-    '''
+    """
     ldiffs creates the logarithmic derivative with spline functions.
     ------
     data:  pandas DF expects at least two traces in the dataframe.
@@ -133,7 +126,7 @@ def ldiffs(data, npoints = 20):
     Examples
     --------
         >>> derivative = ht.ldiffs(data, 10)
-    '''
+    """
     global der
     df = data.head(0)
     df = list(df)
@@ -188,7 +181,7 @@ def ldiffs_plot(data, npoints=20):
     
     
 def ldiffb(data, d=2):
-    '''
+    """
     ldiffb creates the logarithmic derivative with Bourdet's formula.
     ------
     data:  pandas DF expects at least two traces in the dataframe.
@@ -210,7 +203,7 @@ def ldiffb(data, d=2):
     Examples
     --------
         >>> derivative = ht.ldiffb(data)  
-    '''
+    """
     global der
     df = data.head(0)
     df = list(df)    
@@ -269,7 +262,7 @@ def ldiffb_plot(data, d=2):
     
     
 def ldiffh(data):
-    '''
+    """
     ldiffh creates the logarithmic derivative with Horner formula.
     ------
     data:  pandas DF expects at least two traces in the dataframe.
@@ -288,7 +281,7 @@ def ldiffh(data):
     Examples
     --------
         >>> derivative = ht.ldiffh(data)  
-    '''
+    """
     global der
     df = data.head(0)
     df = list(df)
@@ -379,7 +372,7 @@ def ldiffh_plot(data):
     ax.legend()   
     
 def diagnostic(data, method = 'spline'):
-    '''
+    """
     diagnostic creates a diagnostic plot of the data
     ----------
     (i.e. a log-log plot of the drawdown as a function of time together with its logarithmic derivative)
@@ -414,7 +407,7 @@ def diagnostic(data, method = 'spline'):
         diagnostic(data) 
         diagnostic(data,'horner')
 
-        '''
+        """
     if method == 'spline':
         ldiffs_plot(data)
     elif method == 'direct':
@@ -429,7 +422,7 @@ def diagnostic(data, method = 'spline'):
 
 
 def hyclean(data):
-    '''
+    """
     hyclean Take only the values that are not nan, finite and strictly positive time.
     ------
     data:  pandas DF expects at least two traces in the dataframe.
@@ -447,7 +440,7 @@ def hyclean(data):
     Examples
     --------
         >>>  data = ht.hyclean(data)
-    '''
+    """
     df = data.head(0)
     df = list(df)
     data = data.replace([np.inf, -np.inf], np.nan)
@@ -457,7 +450,7 @@ def hyclean(data):
     return data
 
 def hyselect(data, xstart, xend):
-    '''
+    """
     hyselect Select a part of a dataset strictly between xstart and xend
     --------
     data:  pandas DF expects at least two traces in the dataframe.
@@ -477,7 +470,7 @@ def hyselect(data, xstart, xend):
     Examples
     --------
         >>>  data_select = ht.hyselect(data,xstart, xend)
-    '''
+    """
     df = data.head(0)
     df = list(df)
     
@@ -488,7 +481,7 @@ def hyselect(data, xstart, xend):
 
 
 def hyfilter(data, typefilter='moving', p=10, win_types='None'):
-    '''
+    """
     hyfilter Filter a signal in order to reduce the noise. 
     --------  
     Keep in mind that the time step need to be equally spaced for the butterworth filter.
@@ -540,7 +533,7 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
         >>>  data = ht.hyfilter(data,'moving', 15)
         >>>  data = ht.hyfilter(data,'moving', 7, 'triang')
         >>>  data = ht.hyfilter(data,'butter2', 10)
-    '''   
+    """  
     df = data.head(0)
     df = list(df)    
     
@@ -571,8 +564,15 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
     return data
 
 
+def indices(a, func):
+    """
+    Return index
+
+    """
+    return [i for (i, val) in enumerate(a) if func(val)]
+
 def hysampling(x, y, nval, idlog='linear', option='sample'):
-    '''
+    """
     Sample a signal at regular intervals
 
     Syntax:
@@ -595,7 +595,7 @@ def hysampling(x, y, nval, idlog='linear', option='sample'):
         ts,hs = hysampling(t,s,30,'log')
         ts,hs = hysampling(t,s,10,'linear','interp')
         ts,qs = hysampling(tf,qf,30,'log','interp')
-    '''
+    """
 
     # initialize 2 mutable objects
     # to contain the sampled x,y data points
@@ -660,14 +660,14 @@ def hysampling(x, y, nval, idlog='linear', option='sample'):
         return 0
 
 def flowDim(t, s):
-    '''
+    """
     computes the time evolution of flow dimensions
 
     Syntax:
         x_dim, y_dim = flowDim(t,s)
         t = elapsed time
         s = drawdown or pressure buildup
-    '''
+    """
 
     t = np.asarray(t, dtype='float')
     s = np.asarray(s, dtype='float')
