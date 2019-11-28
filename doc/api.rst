@@ -3,5 +3,5 @@ API documentation
 
 This is API documentation
 
-.. automodule:: preprocessing
+.. automodule:: openhytest.preprocessing
 	:members:

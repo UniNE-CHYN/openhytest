@@ -25,6 +25,9 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
           <a href="installation.html" title="Installation"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">OpenHyTest alpha 0.1 documentation</a> &#187;</li> 
@@ -32,6 +35,14 @@
     </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">API documentation</a><ul>
+<li><a class="reference internal" href="#preprocessing-tool">Preprocessing tool</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="installation.html"
                         title="previous chapter">Installation</a></p>
@@ -65,6 +76,486 @@
   <div class="section" id="api-documentation">
 <h1>API documentation<a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h1>
 <p>This is API documentation</p>
+<span class="target" id="module-openhytest.preprocessing"></span><div class="section" id="preprocessing-tool">
+<h2>Preprocessing tool<a class="headerlink" href="#preprocessing-tool" title="Permalink to this headline">¶</a></h2>
+<p>The openhytest preprocessing is a Python package for time series selection, 
+reprocessing, resampling, filtering and visualization. 
+License
+——-
+Released under the MIT license:</p>
+<blockquote>
+<div>Copyright (C) 2019 openhytest Developers
+Philippe Renard &lt;<a class="reference external" href="mailto:philippe&#46;renard&#37;&#52;&#48;unine&#46;ch">philippe<span>&#46;</span>renard<span>&#64;</span>unine<span>&#46;</span>ch</a>&gt;
+Nathan Dutler &lt;<a class="reference external" href="mailto:nathan&#46;dutlern&#37;&#52;&#48;unine&#46;ch">nathan<span>&#46;</span>dutlern<span>&#64;</span>unine<span>&#46;</span>ch</a>&gt;
+Bernard Brixel &lt;<a class="reference external" href="mailto:bernard&#46;brixel&#37;&#52;&#48;erdw&#46;ethz&#46;ch">bernard<span>&#46;</span>brixel<span>&#64;</span>erdw<span>&#46;</span>ethz<span>&#46;</span>ch</a>&gt;</div></blockquote>
+<dl class="function">
+<dt id="openhytest.preprocessing.diagnostic">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">diagnostic</code><span class="sig-paren">(</span><em>data</em>, <em>method='spline'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.diagnostic" title="Permalink to this definition">¶</a></dt>
+<dd><p>(i.e. a log-log plot of the drawdown as a function of time together with its logarithmic derivative)</p>
+<dl class="docutils">
+<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">pandas series expects at least two traces in the dataframe.</span></dt>
+<dd><dl class="first docutils">
+<dt>The first column needs to be the time.</dt>
+<dd>i.e. data.t</dd>
+</dl>
+<p>The second and following data trace needs to be sampled at the given
+time in the first column.</p>
+<blockquote class="last">
+<div>i.e. data.s, data.s2</div></blockquote>
+</dd>
+<dt>method <span class="classifier-delimiter">:</span> <span class="classifier">optional argument allowing to select different methods of </span></dt>
+<dd>computation of the derivative</dd>
+</dl>
+<p>‘spline’ for spline resampling
+in that case d is the number of points for the spline</p>
+<p>‘direct’ for direct derivation
+in that case the value provided in the variable d is not used</p>
+<p>‘bourdet’ for the Bourdet et al. formula
+in that case d is the lag distance used to compute the derivative</p>
+<p>‘horner’  for the logarithmic derivative with Horne formula</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>plot inclusive legend</strong></dt>
+<dd></dd>
+<dt><strong>Example:</strong></dt>
+<dd></dd>
+<dt><strong>——-</strong></dt>
+<dd><p class="first last">diagnostic(data) 
+diagnostic(data,’horner’)</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.flowDim">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">flowDim</code><span class="sig-paren">(</span><em>t</em>, <em>s</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.flowDim" title="Permalink to this definition">¶</a></dt>
+<dd><p>computes the time evolution of flow dimensions</p>
+<dl class="docutils">
+<dt>Syntax:</dt>
+<dd>x_dim, y_dim = flowDim(t,s)
+t = elapsed time
+s = drawdown or pressure buildup</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.hyclean">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">hyclean</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.hyclean" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>data:  pandas DF expects at least two traces in the dataframe.</dt>
+<dd>The first column needs to be the time.
+i.e. data.t
+The second and following data trace needs to be sampled at the given
+time in the first column.
+i.e. data.s, data.s2</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>data</strong></dt>
+<dd><p class="first last">pandas series gives back the cleaned dataset</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyclean</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.hyfilter">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">hyfilter</code><span class="sig-paren">(</span><em>data</em>, <em>typefilter='moving'</em>, <em>p=10</em>, <em>win_types='None'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.hyfilter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keep in mind that the time step need to be equally spaced for the butterworth filter.
+It can be used for moving average filter, but it is not recommended.</p>
+<dl class="docutils">
+<dt>data:  pandas DF expects at least two traces in the dataframe.</dt>
+<dd>The first column needs to be the time.
+i.e. data.t
+The second and following data trace needs to be sampled at the given
+time in the first column.
+i.e. data.s, data.s2</dd>
+</dl>
+<p>typefilter: allows to select the type of filter</p>
+<p>‘butter2’ for the Butterworth filter with filter order 2 or 
+‘butter4’ for the Butterworth filter with filter order 4.
+The Butterworth filters high frequency components in the signal.
+It is very sensitive of outliers.Therefore the Butterworth filter is 
+more appropriate for noisy signals without outliers, the moving average is
+recommended to filter very irregular signals.</p>
+<p>‘moving’ for the moving average (Default option). 
+The moving average is less sensitive of outliers but at the same time
+less smooth using a centered windows.</p>
+<p>p: parameter that depends on the type of filter that has been chosen.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>for the moving average  </dt>
+<dd><dl class="first last docutils">
+<dt>p = size of the moving window in number of points</dt>
+<dd>by default it is equal to 5. It has to be an odd number.</dd>
+</dl>
+</dd>
+<dt>for the Butterworth filter  </dt>
+<dd><dl class="first last docutils">
+<dt>p = period of the cutoff frequency in number of measurements</dt>
+<dd>by default it is equal to 10</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="docutils">
+<dt>win_types: is only defined for ‘moving’ filter. It defines the type of </dt>
+<dd>weighting window: boxcar, triang, blackman, hamming 
+(see pandas DF rolling command for more options and information)</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>data</strong></dt>
+<dd><p class="first last">pandas series is gives back with new data traces named ‘name’+’_filt’ with
+the ‘name’ given.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyfilter</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyfilter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="s1">&#39;moving&#39;</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyfilter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="s1">&#39;moving&#39;</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;triang&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyfilter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="s1">&#39;butter2&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.hysampling">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">hysampling</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>nval</em>, <em>idlog='linear'</em>, <em>option='sample'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.hysampling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample a signal at regular intervals</p>
+<dl class="docutils">
+<dt>Syntax:</dt>
+<dd><p class="first">xs,ys = hysampling(x,y,nval,idlog,option)
+x,y   = vectors containing the input signal
+nval  = number of values of the output signal
+xs,ys = sampled signal</p>
+<dl class="last docutils">
+<dt>idlog: allows to select the type of spacing of the samples</dt>
+<dd>idlog  = ‘linear’ = Default value = linear scale
+idlog  = ‘log’    = logarithmic scale</dd>
+<dt>option: allows to define if the points must be interpolated</dt>
+<dd><dl class="first docutils">
+<dt>option = ‘sample’ = Default value</dt>
+<dd>= only points from the data set are taken</dd>
+</dl>
+<p class="last">option = ‘interp’ = creates points by interpolation</p>
+</dd>
+</dl>
+</dd>
+<dt>Example:</dt>
+<dd>ts,hs = hysampling(t,s,10)
+ts,hs = hysampling(t,s,30,’log’)
+ts,hs = hysampling(t,s,10,’linear’,’interp’)
+ts,qs = hysampling(tf,qf,30,’log’,’interp’)</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.hyselect">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">hyselect</code><span class="sig-paren">(</span><em>data</em>, <em>xstart</em>, <em>xend</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.hyselect" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>data:  pandas DF expects at least two traces in the dataframe.</dt>
+<dd><p class="first">The first column needs to be the time.
+i.e. data.t
+The second and following data trace needs to be sampled at the given
+time in the first column.
+i.e. data.s, data.s2</p>
+<p class="last">xstart,xend = period that must be selected</p>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>data</strong></dt>
+<dd><p class="first last">pandas series gives back the selected dataset</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">data_select</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyselect</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">xstart</span><span class="p">,</span> <span class="n">xend</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.indices">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">indices</code><span class="sig-paren">(</span><em>a</em>, <em>func</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return index</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.ldiff">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">ldiff</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiff" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>data:  pandas DF expects at least two traces in the dataframe.</dt>
+<dd><dl class="first docutils">
+<dt>The first column needs to be the time.</dt>
+<dd>i.e. data.t</dd>
+</dl>
+<p>The second and following data trace needs to be sampled at the given
+time in the first column.</p>
+<blockquote class="last">
+<div>i.e. data.s, data.s2</div></blockquote>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>derivative</strong></dt>
+<dd><p class="first last">logarithmic derivative in pandas dataframe format with the same
+names given by the input data.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">derivative</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">ldiff</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>   
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.ldiff_plot">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">ldiff_plot</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiff_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>ldiff_plot creates the plot with logarithmic derivative with centered 
+difference scheme.
+———
+data : expects at least two vectors with x and y1, y2, y3,…</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>plot inclusive legend</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ht</span><span class="o">.</span><span class="n">ldiff_plot</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.ldiffb">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">ldiffb</code><span class="sig-paren">(</span><em>data</em>, <em>d=2</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffb" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>data:  pandas DF expects at least two traces in the dataframe.</dt>
+<dd><dl class="first docutils">
+<dt>The first column needs to be the time.</dt>
+<dd>i.e. data.t</dd>
+</dl>
+<p>The second and following data trace needs to be sampled at the given
+time in the first column.</p>
+<blockquote class="last">
+<div>i.e. data.s, data.s2</div></blockquote>
+</dd>
+<dt>d = optional argument allowing to adjust the distance between </dt>
+<dd>successive points to calculate the derivative.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>derivative</strong></dt>
+<dd><p class="first last">logarithmic derivative in pandas dataframe format with the same
+names given by the input data.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">derivative</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">ldiffb</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.ldiffb_plot">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">ldiffb_plot</code><span class="sig-paren">(</span><em>data</em>, <em>d=2</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffb_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>data : expects at least two vectors with x and y1, y2, y3,…</p>
+<dl class="docutils">
+<dt>d = optional argument allowing to adjust the distance between </dt>
+<dd>successive points to calculate the derivative.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>plot inclusive legend</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ht</span><span class="o">.</span><span class="n">ldiffb_plot</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.ldiffh">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">ldiffh</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffh" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>data:  pandas DF expects at least two traces in the dataframe.</dt>
+<dd><dl class="first docutils">
+<dt>The first column needs to be the time.</dt>
+<dd>i.e. data.t</dd>
+</dl>
+<p>The second and following data trace needs to be sampled at the given
+time in the first column.</p>
+<blockquote class="last">
+<div>i.e. data.s, data.s2</div></blockquote>
+</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>derivative</strong></dt>
+<dd><p class="first last">logarithmic derivative in pandas dataframe format with the same
+names given by the input data.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">derivative</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">ldiffh</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.ldiffh_plot">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">ldiffh_plot</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffh_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>data : expects at least two vectors with x and y1, y2, y3,…</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>plot inclusive legend</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ht</span><span class="o">.</span><span class="n">ldiffh_plot</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.ldiffs">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">ldiffs</code><span class="sig-paren">(</span><em>data</em>, <em>npoints=20</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffs" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>data:  pandas DF expects at least two traces in the dataframe.</dt>
+<dd><dl class="first docutils">
+<dt>The first column needs to be the time.</dt>
+<dd>i.e. data.t</dd>
+</dl>
+<p>The second and following data trace needs to be sampled at the given
+time in the first column.</p>
+<blockquote class="last">
+<div>i.e. data.s, data.s2</div></blockquote>
+</dd>
+<dt>npoints = optional argument allowing to adjust the number of points </dt>
+<dd>used in the Spline</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>derivative</strong></dt>
+<dd><p class="first last">logarithmic derivative in pandas dataframe format with the same
+names given by the input data.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">derivative</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">ldiffs</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="openhytest.preprocessing.ldiffs_plot">
+<code class="descclassname">openhytest.preprocessing.</code><code class="descname">ldiffs_plot</code><span class="sig-paren">(</span><em>data</em>, <em>npoints=20</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffs_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>data : expects at least two vectors with x and y1, y2, y3,…</p>
+<dl class="docutils">
+<dt>npoints = optional argument allowing to adjust the number of points </dt>
+<dd>used in the Spline</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>plot inclusive legend</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ht</span><span class="o">.</span><span class="n">ldiffs_plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -79,6 +570,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li class="right" >
           <a href="installation.html" title="Installation"
              >previous</a> |</li>

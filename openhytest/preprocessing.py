@@ -8,7 +8,7 @@
 
 """
 Preprocessing tool
-========
+==================
 The openhytest preprocessing is a Python package for time series selection, 
 reprocessing, resampling, filtering and visualization. 
 License
@@ -28,6 +28,7 @@ from scipy.interpolate import UnivariateSpline
 from scipy import signal
 
 # *************************************************************
+# Public functions
 # ---------------Preprocessing Functions:----------------------
 # *************************************************************
 
