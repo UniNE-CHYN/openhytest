@@ -8,7 +8,7 @@
 
 """
 Preprocessing tool
-========
+==================
 The openhytest preprocessing is a Python package for time series selection, 
 reprocessing, resampling, filtering and visualization. 
 License
@@ -28,6 +28,7 @@ from scipy.interpolate import UnivariateSpline
 from scipy import signal
 
 # *************************************************************
+# ------------------Public functions---------------------------
 # ---------------Preprocessing Functions:----------------------
 # *************************************************************
 
@@ -409,7 +410,7 @@ def diagnostic(data, method = 'spline'):
 
         """
     if method == 'spline':
-        ldiffs_plot(data)
+        ldiffs_plot(data, npoints=30)
     elif method == 'direct':
         ldiff_plot(data)
     elif method == 'bourdet':
@@ -434,7 +435,7 @@ def hyclean(data):
     
     Returns
     -------
-    data
+    data:
         pandas series gives back the cleaned dataset
         
     Examples
@@ -464,7 +465,7 @@ def hyselect(data, xstart, xend):
     
     Returns
     -------
-    data
+    data:
         pandas series gives back the selected dataset
         
     Examples
