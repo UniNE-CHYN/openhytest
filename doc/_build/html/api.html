@@ -39,6 +39,10 @@
   <ul>
 <li><a class="reference internal" href="#">API documentation</a><ul>
 <li><a class="reference internal" href="#preprocessing-tool">Preprocessing tool</a></li>
+<li><a class="reference internal" href="#analytical-model-classes">Analytical model classes</a><ul>
+<li><a class="reference internal" href="#license">License</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -161,7 +165,7 @@ i.e. data.s, data.s2</dd>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>data</strong></dt>
+<dt><strong>data:</strong></dt>
 <dd><p class="first last">pandas series gives back the cleaned dataset</p>
 </dd>
 </dl>
@@ -292,7 +296,7 @@ i.e. data.s, data.s2</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>data</strong></dt>
+<dt><strong>data:</strong></dt>
 <dd><p class="first last">pandas series gives back the selected dataset</p>
 </dd>
 </dl>
@@ -555,6 +559,145 @@ names given by the input data.</p>
 </div>
 </dd></dl>
 
+</div>
+<span class="target" id="module-openhytest.modelclasses"></span><div class="section" id="analytical-model-classes">
+<h2>Analytical model classes<a class="headerlink" href="#analytical-model-classes" title="Permalink to this headline">¶</a></h2>
+<p>The different analytical model classes are implemented to fit the observations given as dataframe in time (t) and drawdown (s).</p>
+<div class="section" id="license">
+<h3>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>Released under the MIT license:</dt>
+<dd>Copyright (C) 2019 openhytest Developers
+Philippe Renard &lt;<a class="reference external" href="mailto:philippe&#46;renard&#37;&#52;&#48;unine&#46;ch">philippe<span>&#46;</span>renard<span>&#64;</span>unine<span>&#46;</span>ch</a>&gt;
+Nathan Dutler &lt;<a class="reference external" href="mailto:nathan&#46;dutlern&#37;&#52;&#48;unine&#46;ch">nathan<span>&#46;</span>dutlern<span>&#64;</span>unine<span>&#46;</span>ch</a>&gt;
+Bernard Brixel &lt;<a class="reference external" href="mailto:bernard&#46;brixel&#37;&#52;&#48;erdw&#46;ethz&#46;ch">bernard<span>&#46;</span>brixel<span>&#64;</span>erdw<span>&#46;</span>ethz<span>&#46;</span>ch</a>&gt;</dd>
+</dl>
+<dl class="function">
+<dt id="openhytest.modelclasses.thiem">
+<code class="descclassname">openhytest.modelclasses.</code><code class="descname">thiem</code><span class="sig-paren">(</span><em>q</em>, <em>s1</em>, <em>s2</em>, <em>r1</em>, <em>r2</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.thiem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the transmissivity with Thiem (1906) solution</p>
+<p>The Thiem method requires to know the pumping rate and the drawdown in
+two observation wells located at different distances from the pumping
+well.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>q</strong> – pumping rate, m3/s</li>
+<li><strong>s1</strong> – drawdown in piezometer 1, m</li>
+<li><strong>s2</strong> – drawdown in piezometer 2, m</li>
+<li><strong>r1</strong> – distance piezometer 1 to pumping well, m</li>
+<li><strong>r2</strong> – distance piezometer 2 to pumping well, m</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return T:</th><td class="field-body"><p class="first">transmissivity, m2/s</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Example:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">=</span><span class="mf">0.00912</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r1</span><span class="o">=</span><span class="mf">0.8</span>  
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r2</span><span class="o">=</span><span class="mi">30</span>     
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span><span class="o">=</span><span class="mf">2.236</span>  
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span><span class="o">=</span><span class="mf">1.088</span> 
+<span class="gp">&gt;&gt;&gt; </span><span class="n">T</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">thiem</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="n">s1</span><span class="p">,</span><span class="n">s2</span><span class="p">,</span><span class="n">r1</span><span class="p">,</span><span class="n">r2</span><span class="p">)</span> 
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="openhytest.modelclasses.theis">
+<em class="property">class </em><code class="descclassname">openhytest.modelclasses.</code><code class="descname">theis</code><span class="sig-paren">(</span><em>Q=None</em>, <em>r=None</em>, <em>Rd=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.theis" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Theis (1935) solution assumes that the aquifer is confined,
+homogeneous, isotropic, and infinite. The well as radius that is
+negligible. It is pumped at a constant rate Q and is 100 percent
+efficient.</p>
+<p>Under these assumptions, Theis solution can be expressed as:</p>
+<blockquote>
+<div>s(r,t) = Q/(4 pi T) E1( r2S / 4Tt)</div></blockquote>
+<p>where Q is the pumping rate, T the transmissivity, r the radial 
+distance between the pumping well and the observation well, 
+S the storativity coefficient and t the time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Function dimensionless:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Example:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="mf">1.3888e-2</span> <span class="c1">#pumping rate in m3/s</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="mi">250</span> <span class="c1">#radial distance in m</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">theis</span><span class="p">(</span><span class="n">Q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">plot_typecurve</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p0</span> <span class="o">=</span> <span class="n">theis_model</span><span class="o">.</span><span class="n">guess_params</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span>  <span class="o">=</span> <span class="n">theis_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">trial</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code>(p,&nbsp;t)</td>
+<td>Call self as a function.</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="78%" />
+<col width="22%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>RadiusOfInfluence</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>S</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>T</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>dimensionless</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>dimensionless_laplace</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>dimensionless_laplace_derivative</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>dimensionless_logderivative</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>fit</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>guess_params</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>plot_typecurve</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td><strong>trial</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 </div>
 </div>
 

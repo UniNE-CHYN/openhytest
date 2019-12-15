@@ -8,15 +8,18 @@
 
 """
 Analytical model classes
-========================
+**************************
+
 The different analytical model classes are implemented to fit the observations given as dataframe in time (t) and drawdown (s).
+
 License
--------
+---------
 Released under the MIT license:
    Copyright (C) 2019 openhytest Developers
    Philippe Renard <philippe.renard@unine.ch>
    Nathan Dutler <nathan.dutlern@unine.ch>
    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
+   
 """
 
 import numpy as np
@@ -29,6 +32,37 @@ import mpmath as mp
 
 # Utilities
 
+def thiem(q,s1,s2,r1,r2):
+    """
+    thiem
+    -------   
+    Calculate the transmissivity with Thiem (1906) solution
+    
+    The Thiem method requires to know the pumping rate and the drawdown in
+    two observation wells located at different distances from the pumping
+    well.
+    
+    :param q: pumping rate, m3/s
+    :param s1: drawdown in piezometer 1, m
+    :param s2: drawdown in piezometer 2, m
+    :param r1: distance piezometer 1 to pumping well, m
+    :param r2: distance piezometer 2 to pumping well, m
+
+    :return T: transmissivity, m2/s
+
+    :Example:
+    >>> q=0.00912
+    >>> r1=0.8  
+    >>> r2=30     
+    >>> s1=2.236  
+    >>> s2=1.088 
+    >>> T=ht.thiem(q,s1,s2,r1,r2) 
+    """
+    return q /(2*np.pi*(s1-s2)) * np.log(r2/r1);
+
+def goodman_discharge(l, T, r0):
+    return 2*np.pi*T*l/(np.log(2*l/r0))
+
 def get_logline(df):   
     logt = np.log10( df.t ).values
     Gt = np.array( [logt, np.ones(logt.shape)] )
@@ -38,7 +72,7 @@ def get_logline(df):
   
 # Parent generic class
 
-class AnalyticalModels():
+class AnalyticalPumpModels():
     def __init__(self,Q=None,r=None,Rd=None):
         self.Q = Q
         self.r = r
@@ -127,7 +161,7 @@ class AnalyticalModels():
             
 # Derived daughter classes
 
-class theis(AnalyticalModels):
+class theis(AnalyticalPumpModels):
     
     def dimensionless(self, td):
         return 0.5*E1(1,0.25/td)
@@ -168,7 +202,7 @@ class theis(AnalyticalModels):
         plt.legend(['Theis','Derivative'])
         plt.show()
         
-class theis_noflow(AnalyticalModels):
+class theis_noflow(AnalyticalPumpModels):
     
     def dimensionless(self, td, Rd):
         ths = theis()
@@ -219,7 +253,7 @@ class theis_noflow(AnalyticalModels):
         
 #class theis_superposition(AnalyticalModels):
         
-class theis_constanthead(AnalyticalModels):
+class theis_constanthead(AnalyticalPumpModels):
 
     def dimensionless(self, td, Rd):
         ths = theis()
@@ -267,11 +301,91 @@ class theis_constanthead(AnalyticalModels):
         plt.grid('True')
         plt.legend()
         plt.show()
+        
+# Parent generic class
 
-class special(AnalyticalModels):
+class AnalyticalSlugModels():
+    def __init__(self,Q=None,r=None):
+        self.Q = Q
+        self.r = r
     
-    def goodman_discharge(self, l, T, r0):
-        return 2*np.pi*T*l/(np.log(2*l/r0))
+    def _dimensionless_time(self,p,t):
+        return None
+    
+    def _dimensional_drawdown(self,p,sd):
+        return None
+ 
+    def _laplace_drawdown(self, td, option='Stehfest'): #default stehfest
+        return map( lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method = option, dps = 10, degree = 12), td)
+    
+    def _laplace_drawdown_derivative(self,td, option='Stehfest'): #default stehfest
+        return map( lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method = option, dps = 10, degree = 12), td) 
+
+    def __call__(self,t):
+        print("Warning - undefined")
+        return None
+ 
+# Derived daughter classes
+
+class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
+
+    def dimensionless(self, td, Rd):
+        return None
+    
+    def dimensionless_logderivative(self, td, Rd):
+        return None  
+    
+    def dimensionless_laplace(self, pd):
+        return None
+
+    def dimensionless_laplace_derivative(self, pd):
+        return None
+    
+    def __call__(self, p, t):
+        td = self._dimensionless_time(p, t)
+        sd = self._dimensionless(td, Rd) 
+        s = self._dimensional_drawdown(p, sd)
+        return s
+    
+    def guess_params(self, df):
+        return None
+    
+    def RadiusOfInfluence(self,p,t):
+        return None
+    
+    def plot_typecurve(self, e=np.array([0, np.log10(5), np.log10(50), 5, 12, 40])):
+        td = np.logspace(-3, 3)
+        for i in range(0, len(e)):
+            ax = plt.gca()
+            sd = self.dimensionless(td, 10**2(i))
+            df = pd.DataFrame(der, columns=['dtd','ds'])
+            df = ht.ldiff(df.dtd, df.ds) 
+            color = next(ax._get_lines.prop_cycler)['color']
+            plt.semilogx(td, sd, '-', color=color, label = e[i])
+            plt.semilogx(df.dtd, df.ds, '-.', color=color)   
+            ax2 = plt.gca()
+            plt.loglog(td, sd, '-', color=color, label = e[i])
+            plt.loglog(df.dtd, df.ds, '-.', color=color) 
+        ax = plt.gca()
+        plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
+        plt.ylabel('$s_D$')
+        #plt.xlim((1e-2, 1e5))
+        #plt.ylim((1e-2, 20))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+        ax2 = plt.gca()
+        plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
+        plt.ylabel('$s_D$')
+        #plt.xlim((1e-2, 1e5))
+        #plt.ylim((1e-2, 20))
+        plt.grid('True')
+        plt.legend()
+        plt.show()    
+        
+        
+
+class special(AnalyticalPumpModels): # ?? used ?? Theis 
     
     def calc_sl_du(self, Rd):
         sldu = []
