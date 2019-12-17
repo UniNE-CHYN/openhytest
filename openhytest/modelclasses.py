@@ -1,6 +1,6 @@
 #    Copyright (C) 2019 by
-#    Philippe Renard <philippe.renard@unine.ch>
 #    Nathan Dutler <nathan.dutler@unine.ch>
+#    Philippe Renard <philippe.renard@unine.ch>
 #    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 #    All rights reserved.
 #    MIT license.
@@ -16,8 +16,8 @@ License
 ---------
 Released under the MIT license:
    Copyright (C) 2019 openhytest Developers
-   Philippe Renard <philippe.renard@unine.ch>
    Nathan Dutler <nathan.dutlern@unine.ch>
+   Philippe Renard <philippe.renard@unine.ch>
    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
    
 """
@@ -88,11 +88,11 @@ class AnalyticalInterferenceModels():
         return (sd * p[0] * 2) / 2.302585092994046
 
     def _laplace_drawdown(self, td, option='Stehfest'):  # default stehfest
-        return map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), td)
+        return map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=16), td)
 
     def _laplace_drawdown_derivative(self, td, option='Stehfest'):  # default stehfest
         return map(
-            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=12), td)
+            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=16), td)
 
     def __call__(self, t):
         print("Warning - undefined")
@@ -342,30 +342,99 @@ class theis_constanthead(AnalyticalInterferenceModels):
 # Parent generic class
 
 class AnalyticalSlugModels():
-    def __init__(self, Q=None, r=None, rw=None, rc=None, cD=None):
+    def __init__(self, Q=None, r=None, rw=None, rc=None):
         self.Q = Q
         self.r = r
         self.rw = rw
         self.rc = rc
         self.rD = r/rc
-        self.cD = cD
 
-    def _dimensionless_time(self, t):
-        return self.cD * t
+    def _dimensionless_time(self, p, t):
+        return 0.445268 * t /  p[1] * self.rD ** 2
 
     def _dimensional_drawdown(self, p, sd):
-        return None
+        return 0.868589 * p[0] * np.float64(sd)
 
     def _laplace_drawdown(self, td, option='Stehfest'):  # default stehfest
-        return map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=16), td)
+        return list(map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=16), td))
 
     def _laplace_drawdown_derivative(self, td, option='Stehfest'):  # default stehfest
-        return map(
-            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=16), td)
+        return list(map(
+            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=16), td))
 
     def __call__(self, t):
         print("Warning - undefined")
         return None
+    
+    def T(self, p):
+        return 0.1832339 * self.Q / p[0]
+
+    def S(self, p):
+        return 2.2458394 * self.T(p) * p[1] / self.r ** 2
+    
+    def Cd(self, p):
+        return self.rc ** 2 / 2 / self.rw ** 2 / self.S(p)
+
+    def trial(self, p, df):
+        figt = plt.figure()
+        ax1 = figt.add_subplot(211)
+        ax2 = figt.add_subplot(212)
+        ax1.loglog(df.t, list(self.__call__(p, df.t)), df.t, df.s, 'o')
+        ax1.set_ylabel('s')
+        ax1.grid()
+        ax1.minorticks_on()
+        ax1.grid(which='major', linestyle='--', linewidth='0.5', color='black')
+        ax1.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
+        ax2.semilogx(df.t, list(self.__call__(p, df.t)), df.t, df.s, 'o')
+        ax2.set_ylabel('s')
+        ax2.set_xlabel('t')
+        ax2.grid()
+        ax2.minorticks_on()
+        ax2.grid(which='major', linestyle='--', linewidth='0.5', color='black')
+        ax2.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
+        plt.show()
+        print('T = ', self.T(p), 'm2/s')
+        print('S = ', self.S(p), '-')
+        print('Cd = ', self.Cd(p), '-')
+
+    def fit(self, p, df, option='lm', output='all'):
+        t = df.t
+        s = df.s
+
+        # costfunction
+        def fun(p, t, s):
+            return np.array(s) - self.__call__(p, t)
+
+        if option == 'lm':
+            # Levenberg-Marquard -- Default
+            res_p = least_squares(fun, p, args=(t, s), method='lm', xtol=1e-10, verbose=1)
+        elif option == 'trf':
+            # Trust Region Reflective algorithm
+            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method='trf', verbose=1)
+        else:
+            raise Exception('Specify your option')
+
+        if output == 'all':  # -- Default
+            # define regular points to plot the calculated drawdown
+            tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
+                             dtype=np.float64)
+            sc = self.__call__(res_p.x, tc)
+            mr = np.mean(res_p.fun)
+            sr = 2 * np.nanstd(res_p.fun)
+            rms = np.sqrt(np.mean(res_p.fun ** 2))
+            return res_p.x, tc, sc, mr, sr, rms
+        elif output == 'p':
+            return res_p.x
+        elif output == 'Detailled':
+            tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
+                             dtype=np.float64)
+            sc = self.__call__(res_p.x, tc)
+            mr = np.mean(res_p.fun)
+            sr = 2 * np.nanstd(res_p.fun)
+            rms = np.sqrt(np.mean(res_p.fun ** 2))
+            return res_p, tc, sc, mr, sr, rms
+        else:
+            raise Exception('The output needs to specified: p or all')
 
 
 # Derived daughter classes
@@ -379,7 +448,7 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
     :param r:   distance between the observation well and pumping well
     :param rw:  radius if the well
     :param rc:  radius of the casing
- 
+    
     
     """
     def dimensionless(self, td, cD):
@@ -389,28 +458,28 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         return None
 
     def dimensionless_laplace(self, pd):
-        sp = np.sqrt(pd)
-        return mp.besselk(0,self.rD*sp)/(pd*(sp*mp.besselk(1,sp)+self.cD*pd*mp.besselk(0,sp)));
+        sp = mp.sqrt(pd)
+        return mp.besselk(0, self.rD * sp) / (pd * (sp * mp.besselk(1, sp) + self.cd * pd * mp.besselk(0, sp)))
 
     def dimensionless_laplace_derivative(self, pd):
-        sp = np.sqrt(pd)
-        cds= self.cD*sp
+        sp = mp.sqrt(pd)
+        cds= self.cd*sp
         k0 = mp.besselk(0,sp)
         k1 = mp.besselk(1,sp)
         kr0 = mp.besselk(0,sp*self.rD)
         kr1 = mp.besselk(1,sp*self.rD)
-        return 0.5*((2*self.cD-1)*kr0*k0+kr1*k1+cds*kr1*k0-cds*kr0*k1)/((sp*k1+self.cD*pd*k0)**2)
+        return 0.5*((2*self.cd-1)*kr0*k0+kr1*k1+cds*kr1*k0-cds*kr0*k1)/(mp.power(sp*k1+self.cd*pd*k0, 2))
 
     def __call__(self, p, t):
-        td = self._dimensionless_time(t)
+        self.cd = self.Cd(p)
+        td = self._dimensionless_time(p, t)
         sd = self._laplace_drawdown(td)
         s = self._dimensional_drawdown(p, sd)
         return s
 
     def guess_params(self, df):
         n = 3*len(df) / 4
-        der = ht.ldiffs(df.t,df.s)
-        return np.array([get_logline(df[df.index > n]), df.t[-1]*np.exp(-df.s[-1]/der.s[-1])])
+        return get_logline(df[df.index > n])
 
     def RadiusOfInfluence(self, p, t):
         return None
@@ -420,7 +489,7 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         td = np.logspace(-1, 3)
         ax = plt.gca()
         for i in range(0, len(cD)):
-            self.cD = cD[i]
+            self.cd = cD[i]
             sd = list(self._laplace_drawdown(td*cD[i]))
             dd = list(self._laplace_drawdown_derivative(td*cD[i]))
             color = next(ax._get_lines.prop_cycler)['color']
@@ -432,8 +501,7 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         plt.ylim((1e-1, 1e1))
         plt.grid('True')
         plt.legend()
-        plt.show()
-
+        plt.show()   
 class special(AnalyticalInterferenceModels):  # ?? used ?? Theis
 
     def calc_sl_du(self, Rd):

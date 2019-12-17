@@ -1,6 +1,6 @@
 #    Copyright (C) 2019 by
-#    Philippe Renard <philippe.renard@unine.ch>
 #    Nathan Dutler <nathan.dutler@unine.ch>
+#    Philippe Renard <philippe.renard@unine.ch>
 #    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 #    All rights reserved.
 #    MIT license.
@@ -15,8 +15,8 @@ License
 -------
 Released under the MIT license:
    Copyright (C) 2019 openhytest Developers
-   Philippe Renard <philippe.renard@unine.ch>
    Nathan Dutler <nathan.dutlern@unine.ch>
+   Philippe Renard <philippe.renard@unine.ch>
    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 """
 import pandas as pd
