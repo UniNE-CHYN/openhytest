@@ -285,7 +285,7 @@ class Theis(AnalyticalInterferenceModels):
     :param Q: pumping rate, m3/s
     :param r: radius between wells, m
     :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
-    :Further attributes in self :
+    :param self:
     :param p: solution vector
     :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
     :param tc: Calculated time
@@ -461,7 +461,7 @@ class Theis_noflow(AnalyticalInterferenceModels):
     :param r: radius between wells, m
     :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
     :param Rd:  dimensionless radial distance
-    :Further attributes in self :
+    :param self:
     :param p: solution vector
     :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
     :param tc: Calculated time
@@ -657,7 +657,7 @@ class Theis_constanthead(AnalyticalInterferenceModels):
     :param r: radius between wells, m
     :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
     :param Rd:  dimensionless radial distance
-    :Further attributes in self :
+    :param self:
     :param p: solution vector
     :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
     :param tc: Calculated time
