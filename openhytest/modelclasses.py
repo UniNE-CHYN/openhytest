@@ -776,7 +776,7 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         """
         Calculates the radius of influence
 
-        :return ri: radius of influence m
+        :return ri: Distance to image well m
         """
         return np.sqrt(2.2458394 * self.T() * self.p[2] / self.S())
 
@@ -845,55 +845,56 @@ class Theis_constanthead(AnalyticalInterferenceModels):
 
 # Parent generic class
 
-class AnalyticalSlugModels():
-    def __init__(self, Q=None, r=None, rw=None, rc=None, cD=None):
-        self.Q = Q
-        self.r = r
-        self.rw = rw
-        self.rc = rc
-        self.rD = r/rc
-        self.cD = cD
+class AnalyticalSlugModels(AnalyticalInterferenceModels):
+    def __init__(self):
+        pass
 
-    def _dimensionless_time(self, p, t):
-        return 0.445268 * t /  p[1] * self.rD ** 2
+    def _dimensionless_time(self, t):
+        return 0.445268 * t /  self.p[1] * self.rD ** 2
 
-    def _dimensional_drawdown(self, p, sd):
-        return 0.868589 * p[0] * np.float64(sd)
+    def _dimensional_drawdown(self, sd):
+        return 0.868589 * self.p[0] * np.float64(sd)
 
     def _laplace_drawdown(self, td, option='Stehfest'):  # default stehfest
-        return list(map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=16), td))
+        return list(map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), td))
 
     def _laplace_drawdown_derivative(self, td, option='Stehfest'):  # default stehfest
         return list(map(
-            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=16), td))
+            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=12), td))
 
     def __call__(self, t):
         print("Warning - undefined")
         return None
 
-    def T(self, p):
-        return 0.1832339 * self.Q / p[0]
+    def T(self):
+        return 0.1832339 * self.Q / self.p[0]
 
-    def S(self, p):
-        return 2.2458394 * self.T(p) * p[1] / self.r ** 2
+    def S(self):
+        return 2.2458394 * self.T() * self.p[1] / self.r ** 2
 
-    def Cd(self, p):
+    def S2(self):
+        if self.cD is not None:
+            return self.rc ** 2 / 2 / self.rw ** 2 / self.cD
+        else:
+            return None
+
+    def Cd(self):
         if self.cD is not None:
             return self.cD
         else:
-            return self.rc ** 2 / 2 / self.rw ** 2 / self.S(p)
+            return self.rc ** 2 / 2 / self.rw ** 2 / self.S()
 
-    def trial(self, p, df):
+    def trial(self):
         figt = plt.figure()
         ax1 = figt.add_subplot(211)
         ax2 = figt.add_subplot(212)
-        ax1.loglog(df.t, list(self.__call__(p, df.t)), df.t, df.s, 'o')
+        ax1.loglog(self.df.t, list(self.__call__(self.df.t)), self.df.t, self.df.s, 'o')
         ax1.set_ylabel('s')
         ax1.grid()
         ax1.minorticks_on()
         ax1.grid(which='major', linestyle='--', linewidth='0.5', color='black')
         ax1.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
-        ax2.semilogx(df.t, list(self.__call__(p, df.t)), df.t, df.s, 'o')
+        ax2.semilogx(self.df.t, list(self.__call__(self.df.t)), self.df.t, self.df.s, 'o')
         ax2.set_ylabel('s')
         ax2.set_xlabel('t')
         ax2.grid()
@@ -901,48 +902,9 @@ class AnalyticalSlugModels():
         ax2.grid(which='major', linestyle='--', linewidth='0.5', color='black')
         ax2.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
         plt.show()
-        print('T = ', self.T(p), 'm2/s')
-        print('S = ', self.S(p), '-')
-        print('Cd = ', self.Cd(p), '-')
-
-    def fit(self, p, df, option='lm', output='all'):
-        t = df.t
-        s = df.s
-
-        # costfunction
-        def fun(p, t, s):
-            return np.array(s) - self.__call__(p, t)
-
-        if option == 'lm':
-            # Levenberg-Marquard -- Default
-            res_p = least_squares(fun, p, args=(t, s), method='lm', xtol=1e-10, verbose=1)
-        elif option == 'trf':
-            # Trust Region Reflective algorithm
-            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method='trf', verbose=1)
-        else:
-            raise Exception('Specify your option')
-
-        if output == 'all':  # -- Default
-            # define regular points to plot the calculated drawdown
-            tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
-                             dtype=np.float64)
-            sc = self.__call__(res_p.x, tc)
-            mr = np.mean(res_p.fun)
-            sr = 2 * np.nanstd(res_p.fun)
-            rms = np.sqrt(np.mean(res_p.fun ** 2))
-            return res_p.x, tc, sc, mr, sr, rms
-        elif output == 'p':
-            return res_p.x
-        elif output == 'Detailled':
-            tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
-                             dtype=np.float64)
-            sc = self.__call__(res_p.x, tc)
-            mr = np.mean(res_p.fun)
-            sr = 2 * np.nanstd(res_p.fun)
-            rms = np.sqrt(np.mean(res_p.fun ** 2))
-            return res_p, tc, sc, mr, sr, rms
-        else:
-            raise Exception('The output needs to specified: p or all')
+        print('T = ', self.T(), 'm2/s')
+        print('S = ', self.S(), '-')
+        print('Cd = ', self.Cd(), '-')
 
 # Derived daughter classes
 
@@ -955,6 +917,31 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
     :param rw:  radius if the well
     :param rc:  radius of the casing
     """
+    def __init__(self, Q=None, r=None, rw=None, rc=None, cD=None, df=None, p=None):
+        self.Q = Q
+        self.r = r
+        self.rw = rw
+        self.rc = rc
+        self.rD = r/rc
+        self.cD = cD
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.Storativity2 = None
+        self.RadInfluence = None
+        self.detailled_p = None
 
     def dimensionless_laplace(self, pd):
         sp = mp.sqrt(pd)
@@ -969,18 +956,22 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         kr1 = mp.besselk(1,sp*self.rD)
         return 0.5*((2*self.cd-1)*kr0*k0+kr1*k1+cds*kr1*k0-cds*kr0*k1)/(mp.power(sp*k1+self.cd*pd*k0, 2))
 
-    def __call__(self, p, t):
-        self.cd = self.Cd(p)
-        td = self._dimensionless_time(p, t)
+    def __call__(self, t):
+        self.cd = self.Cd()
+        td = self._dimensionless_time(t)
         sd = self._laplace_drawdown(td)
-        s = self._dimensional_drawdown(p, sd)
+        s = self._dimensional_drawdown(sd)
         return s
 
-    def guess_params(self, df):
-        n = 3*len(df) / 4
-        return get_logline(df[df.index > n])
+    def guess_params(self):
+        n = 3*len(self.df) / 4
+        self.p = get_logline(self, self.df[self.df.index > n])
+        return self.p
 
     def plot_typecurve(self, cD=10**np.array([1, 2, 3, 4, 5]), rD = 1):
+        """
+        Type curves of the Cooper-Bredehoeft-Papadopulos (1967) model
+        """
         self.rD = rD
         td = np.logspace(-1, 3)
         plt.figure(1)
@@ -1016,6 +1007,52 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         plt.grid('True')
         plt.legend()
         plt.show()
+
+    def rpt(self, option_fit='lm', ttle='Cooper-Bredehoeft-Papadopulos (1967)', author='Author', filetype='pdf', reptext='Report_cbp'):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
+
+        :param option_fit: 'lm' or 'trf'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+        self.fit(option=option_fit)
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.Storativity2 = self.S2()
+
+        self.model_label = 'Cooper-Bredehoeft-Papadopulos (1967)'
+        der = ht.ldiffs(self.df, npoints=30)
+        self.der = der
+
+        self.ttle = ttle
+        fig = log_plot(self)
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Well radius : {:0.4g} m '.format(self.rw), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.7, 'Casing radius: {:0.4g} m '.format(self.rc), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.65, 'Distance to pumping well : {:0.4g} m '.format(self.r), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1, 0.6, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Aquifer Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14, transform=plt.gcf().transFigure)
+        if self.cD is not None:
+            fig.text(1.05, 0.45, 'Well surroundings storativity S2 : {:3.2e} '.format(self.Storativity2), fontsize=14, transform=plt.gcf().transFigure)
+        self.cD = self.Cd()
+        fig.text(1.05, 0.4, 'Wellbore storage : {:0.4g} '.format(self.cD) , fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1, 0.35, 'Fitting parameters :' , fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'slope a : {:0.2g} m'.format(self.p[0]) , fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'intercept t0 : {:0.2g} m'.format(self.p[1]) , fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr) , fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr) , fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms) , fontsize=14, transform=plt.gcf().transFigure)
+        plt.savefig(reptext+'.'+filetype, bbox_inches = 'tight')
 
 
 class special(AnalyticalInterferenceModels):  # ?? used ?? Theis
