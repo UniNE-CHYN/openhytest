@@ -31,6 +31,7 @@ import mpmath as mp
 import openhytest as ht
 import pandas as pda
 
+
 # Utilities
 
 def thiem(q, s1, s2, r1, r2):
@@ -89,6 +90,28 @@ def goodman_discharge(l, T, r0):
     return 2 * np.pi * T * l / (np.log(2 * l / r0))
 
 
+def moy_std(q, s0, l, rw):
+    """
+    The Moye (1967) formula is used to estimate the transmissivity during a
+    pseudo-steady state injection test. It is based on the Dupuit formula
+    for confined homogeneous aquifer and steady flow. In addition it
+    assumes that the radius of influence of the test is equal to half of
+    the length of the test section.
+
+    The method is known to overestimate the transmissivity. Errors of more
+   than one order of magnitude are possible.
+    :param q: flow rate, m^3/s
+    :param s0: drawdown, m
+    :param l: length of the section, m
+    :param rw: radius of the well, m
+    :return T: transmissivity, m^2/s
+
+    :References: Moye, D.G. (1967) Diamond drilling for foundation
+    exploration. Civil En. Trans., Inst. Eng. Australia. Apr. 1967, pp.  95-100
+    """
+    return q * (1 + np.log(l * rw / 2)) / (2 * np.pi * s0)
+
+
 def get_logline(self, df):
     logt = np.log10(df.t).values
     Gt = np.array([logt, np.ones(logt.shape)])
@@ -97,6 +120,7 @@ def get_logline(self, df):
     self.p = p
     return self.p
 
+
 def log_plot(self):
     fig = plt.figure()
     fig.set_size_inches(self.xsize, self.ysize)
@@ -104,13 +128,14 @@ def log_plot(self):
     ax1.set_xlabel('Time in seconds')
     ax1.set_ylabel('Drawdown in meters')
     ax1.set_title(self.ttle)
-    ax1.loglog(self.df.t, self.df.s, c='r',marker = '+', linestyle = '', label = 'Drawdown')
-    ax1.loglog(self.der.t, self.der.s, c='b',marker = 'x', linestyle = '', label = 'Derivative')
-    ax1.loglog(self.tc, self.sc, c='g',  label = self.model_label)
-    ax1.loglog(self.derc.t, self.derc.s, c='y',  label = 'Model derivative')
+    ax1.loglog(self.df.t, self.df.s, c='r', marker='+', linestyle='', label='Drawdown')
+    ax1.loglog(self.der.t, self.der.s, c='b', marker='x', linestyle='', label='Derivative')
+    ax1.loglog(self.tc, self.sc, c='g', label=self.model_label)
+    ax1.loglog(self.derc.t, self.derc.s, c='y', label='Model derivative')
     ax1.grid(True)
     ax1.legend()
     return fig
+
 
 # Parent generic class
 class AnalyticalInterferenceModels():
@@ -143,11 +168,11 @@ class AnalyticalInterferenceModels():
         :return sd:     dimensionless drawdown
         """
         s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), td)
-        #from multiprocessing import Pool
-        #with Pool(4) as p:
-        #s = p.map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), mp.mpf(td))
-        #pool.close()
-        #pool.join()
+        # from multiprocessing import Pool
+        # with Pool(4) as p:
+        # s = p.map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), mp.mpf(td))
+        # pool.close()
+        # pool.join()
         return list(s)
 
     def _laplace_drawdown_derivative(self, td, option='Stehfest'):  # default stehfest
@@ -254,7 +279,7 @@ class AnalyticalInterferenceModels():
 
         # define regular points to plot the calculated drawdown
         self.tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
-                        dtype=np.float64)
+                              dtype=np.float64)
         self.sc = self.__call__(self.tc)
         self.derc = ht.ldiffs(pda.DataFrame(data={"t": self.tc, "s": self.sc}))
         self.mr = np.mean(res_p.fun)
@@ -265,6 +290,7 @@ class AnalyticalInterferenceModels():
         return res_p.x
 
         # Derived daughter classes
+
 
 class Theis(AnalyticalInterferenceModels):
     """
@@ -312,6 +338,7 @@ class Theis(AnalyticalInterferenceModels):
     >>> theis_model.fit()
     >>> theis_model.trial()
     """
+
     def dimensionless(self, td):
         """
         Calculates the dimensionless drawdown for a given dimensionless reduced time td/rd^2
@@ -425,7 +452,7 @@ class Theis(AnalyticalInterferenceModels):
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()
-        self.RadInfluence= self.RadiusOfInfluence()
+        self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model'
         der = ht.ldiffs(self.df, npoints=30)
         self.der = der
@@ -437,17 +464,24 @@ class Theis(AnalyticalInterferenceModels):
         fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
 
         fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
         fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.5, 'Radius of Investigation Ri : {:0.4g} m'.format(self.RadInfluence) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1, 0.4, 'Fitting parameters :' , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.35, 'mean residual : {:0.2g} m'.format(self.mr) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.3, '2 standard deviation : {:0.2g} m'.format(self.sr) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.25, 'Root-mean-square : {:0.2g} m'.format(self.rms) , fontsize=14, transform=plt.gcf().transFigure)
-        plt.savefig(reptext+'.'+filetype, bbox_inches = 'tight')
+        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Radius of Investigation Ri : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
 
 class Theis_noflow(AnalyticalInterferenceModels):
@@ -476,7 +510,7 @@ class Theis_noflow(AnalyticalInterferenceModels):
     :param ysize:  size of the plot in y (default is 6 inch)
     :param Transmissivity: Transmissivity m^2/s
     :param Storativity: Storativtiy -
-    :paramRadInfluence: Distance to the image well m
+    :param RadInfluence: Distance to the image well m
     :param detailled_p: detailled solution struct from the fit function
 
     :Example:
@@ -616,7 +650,7 @@ class Theis_noflow(AnalyticalInterferenceModels):
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()
-        self.RadInfluence= self.RadiusOfInfluence()
+        self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model with no-flow boundary'
         der = ht.ldiffs(self.df, npoints=30)
         self.der = der
@@ -628,20 +662,28 @@ class Theis_noflow(AnalyticalInterferenceModels):
         fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
 
         fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.75, 'Distance distance : {:0.4g} m '.format(self.r), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Distance distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
         fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.5, 'Radius to image well Rd : {:0.4g} m'.format(self.RadInfluence) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1, 0.4, 'Fitting parameters :' , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.35, 'slope a : {:0.2g} m'.format(self.p[0]) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} m'.format(self.p[1]) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.25, 'intercept ti : {:0.2g} m'.format(self.p[2]) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms) , fontsize=14, transform=plt.gcf().transFigure)
-        plt.savefig(reptext+'.'+filetype, bbox_inches = 'tight')
+        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Radius to image well Rd : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'intercept ti : {:0.2g} m'.format(self.p[2]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
+
 
 # class theis_superposition(AnalyticalModels):
 
@@ -688,6 +730,7 @@ class Theis_constanthead(AnalyticalInterferenceModels):
     nearby stream. Transactions of the American Geophysical Union, 22(3):
     734-738.
     """
+
     def __init__(self, Q=None, r=None, Rd=None, df=None, p=None):
         self.Q = Q
         self.r = r
@@ -801,7 +844,8 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         plt.legend()
         plt.show()
 
-    def rpt(self, option_fit='lm', ttle='Theis (1935) const. head', author='Author', filetype='pdf', reptext='Report_thc'):
+    def rpt(self, option_fit='lm', ttle='Theis (1935) const. head', author='Author', filetype='pdf',
+            reptext='Report_thc'):
         """
         Calculates the solution and reports graphically the results of the pumping test
 
@@ -815,7 +859,7 @@ class Theis_constanthead(AnalyticalInterferenceModels):
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()
-        self.RadInfluence= self.RadiusOfInfluence()
+        self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model with const. head boundary'
         der = ht.ldiffs(self.df, npoints=30)
         self.der = der
@@ -827,20 +871,27 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
 
         fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
         fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.5, 'Distance to image well Rd : {:0.4g} m'.format(self.RadInfluence) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1, 0.4, 'Fitting parameters :' , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.35, 'slope a : {:0.2g} m'.format(self.p[0]) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} m'.format(self.p[1]) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.25, 'intercept ti : {:0.2g} m'.format(self.p[2]) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms) , fontsize=14, transform=plt.gcf().transFigure)
-        plt.savefig(reptext+'.'+filetype, bbox_inches = 'tight')
+        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Distance to image well Rd : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'intercept ti : {:0.2g} m'.format(self.p[2]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
 
 # Parent generic class
@@ -850,13 +901,14 @@ class AnalyticalSlugModels(AnalyticalInterferenceModels):
         pass
 
     def _dimensionless_time(self, t):
-        return 0.445268 * t /  self.p[1] * self.rD ** 2
+        return 0.445268 * t / self.p[1] * self.rD ** 2
 
     def _dimensional_drawdown(self, sd):
         return 0.868589 * self.p[0] * np.float64(sd)
 
     def _laplace_drawdown(self, td, option='Stehfest'):  # default stehfest
-        return list(map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), td))
+        return list(
+            map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), td))
 
     def _laplace_drawdown_derivative(self, td, option='Stehfest'):  # default stehfest
         return list(map(
@@ -906,6 +958,7 @@ class AnalyticalSlugModels(AnalyticalInterferenceModels):
         print('S = ', self.S(), '-')
         print('Cd = ', self.Cd(), '-')
 
+
 # Derived daughter classes
 
 class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
@@ -917,12 +970,13 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
     :param rw:  radius if the well
     :param rc:  radius of the casing
     """
+
     def __init__(self, Q=None, r=None, rw=None, rc=None, cD=None, df=None, p=None):
         self.Q = Q
         self.r = r
         self.rw = rw
         self.rc = rc
-        self.rD = r/rc
+        self.rD = r / rc
         self.cD = cD
         self.p = p
         self.df = df
@@ -949,12 +1003,13 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
 
     def dimensionless_laplace_derivative(self, pd):
         sp = mp.sqrt(pd)
-        cds= self.cd*sp
-        k0 = mp.besselk(0,sp)
-        k1 = mp.besselk(1,sp)
-        kr0 = mp.besselk(0,sp*self.rD)
-        kr1 = mp.besselk(1,sp*self.rD)
-        return 0.5*((2*self.cd-1)*kr0*k0+kr1*k1+cds*kr1*k0-cds*kr0*k1)/(mp.power(sp*k1+self.cd*pd*k0, 2))
+        cds = self.cd * sp
+        k0 = mp.besselk(0, sp)
+        k1 = mp.besselk(1, sp)
+        kr0 = mp.besselk(0, sp * self.rD)
+        kr1 = mp.besselk(1, sp * self.rD)
+        return 0.5 * ((2 * self.cd - 1) * kr0 * k0 + kr1 * k1 + cds * kr1 * k0 - cds * kr0 * k1) / (
+            mp.power(sp * k1 + self.cd * pd * k0, 2))
 
     def __call__(self, t):
         self.cd = self.Cd()
@@ -964,11 +1019,11 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         return s
 
     def guess_params(self):
-        n = 3*len(self.df) / 4
+        n = 3 * len(self.df) / 4
         self.p = get_logline(self, self.df[self.df.index > n])
         return self.p
 
-    def plot_typecurve(self, cD=10**np.array([1, 2, 3, 4, 5]), rD = 1):
+    def plot_typecurve(self, cD=10 ** np.array([1, 2, 3, 4, 5]), rD=1):
         """
         Type curves of the Cooper-Bredehoeft-Papadopulos (1967) model
         """
@@ -978,8 +1033,8 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         ax = plt.gca()
         for i in range(0, len(cD)):
             self.cd = cD[i]
-            sd = list(self._laplace_drawdown(td*cD[i]))
-            dd = list(self._laplace_drawdown_derivative(td*cD[i]))
+            sd = list(self._laplace_drawdown(td * cD[i]))
+            dd = list(self._laplace_drawdown_derivative(td * cD[i]))
             color = next(ax._get_lines.prop_cycler)['color']
             plt.loglog(td, sd, '-', color=color, label=cD[i])
             plt.loglog(td, dd, '-.', color=color)
@@ -1008,7 +1063,8 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         plt.legend()
         plt.show()
 
-    def rpt(self, option_fit='lm', ttle='Cooper-Bredehoeft-Papadopulos (1967)', author='Author', filetype='pdf', reptext='Report_cbp'):
+    def rpt(self, option_fit='lm', ttle='Cooper-Bredehoeft-Papadopulos (1967)', author='Author', filetype='pdf',
+            reptext='Report_cbp'):
         """
         Calculates the solution and reports graphically the results of the pumping test
 
@@ -1035,24 +1091,31 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
 
         fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
         fig.text(1.05, 0.75, 'Well radius : {:0.4g} m '.format(self.rw), fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.7, 'Casing radius: {:0.4g} m '.format(self.rc), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.65, 'Distance to pumping well : {:0.4g} m '.format(self.r), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.65, 'Distance to pumping well : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
         fig.text(1, 0.6, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.5, 'Aquifer Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Aquifer Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
         if self.cD is not None:
-            fig.text(1.05, 0.45, 'Well surroundings storativity S2 : {:3.2e} '.format(self.Storativity2), fontsize=14, transform=plt.gcf().transFigure)
+            fig.text(1.05, 0.45, 'Well surroundings storativity S2 : {:3.2e} '.format(self.Storativity2), fontsize=14,
+                     transform=plt.gcf().transFigure)
         self.cD = self.Cd()
-        fig.text(1.05, 0.4, 'Wellbore storage : {:0.4g} '.format(self.cD) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1, 0.35, 'Fitting parameters :' , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.3, 'slope a : {:0.2g} m'.format(self.p[0]) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.25, 'intercept t0 : {:0.2g} m'.format(self.p[1]) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr) , fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms) , fontsize=14, transform=plt.gcf().transFigure)
-        plt.savefig(reptext+'.'+filetype, bbox_inches = 'tight')
+        fig.text(1.05, 0.4, 'Wellbore storage : {:0.4g} '.format(self.cD), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1, 0.35, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
 
 class special(AnalyticalInterferenceModels):  # ?? used ?? Theis
