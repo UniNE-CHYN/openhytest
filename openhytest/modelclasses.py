@@ -111,7 +111,6 @@ def moy_std(q, s0, l, rw):
     """
     return q * (1 + np.log(l * rw / 2)) / (2 * np.pi * s0)
 
-
 def get_logline(self, df):
     logt = np.log10(df.t).values
     Gt = np.array([logt, np.ones(logt.shape)])
@@ -119,7 +118,6 @@ def get_logline(self, df):
     p[1] = 10 ** (-p[1] / p[0])
     self.p = p
     return self.p
-
 
 def log_plot(self):
     fig = plt.figure()
@@ -158,6 +156,12 @@ class AnalyticalInterferenceModels():
         """
         return (sd * self.p[0] * 2) / 2.302585092994046
 
+    def _dimensional_flowrate(self, qd):
+        """
+        Calculates the dimensional flow rate
+        """
+        return qd * np.log(10) / 2 / self.p[0]
+
     def _laplace_drawdown(self, td, option='Stehfest'):  # default stehfest
         """
         Alternative calculation with Laplace inversion
@@ -168,11 +172,6 @@ class AnalyticalInterferenceModels():
         :return sd:     dimensionless drawdown
         """
         s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), td)
-        # from multiprocessing import Pool
-        # with Pool(4) as p:
-        # s = p.map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), mp.mpf(td))
-        # pool.close()
-        # pool.join()
         return list(s)
 
     def _laplace_drawdown_derivative(self, td, option='Stehfest'):  # default stehfest
@@ -187,6 +186,18 @@ class AnalyticalInterferenceModels():
         d = list(map(
             lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=12), td))
         return d
+
+    def _laplace_flowrate(self, td, option='Stehfest'):  # default stehfest
+        """
+        Alternative calculation with Laplace inversion
+
+        :param td:      dimensionless time
+        :param x:       dummy parameter for inversion
+        :param option:  Stehfest (default, dps=10, degree=16), dehoog
+        :return sd:     dimensionless drawdown
+        """
+        q = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=16), td)
+        return list(q)
 
     def __call__(self, t):
         print("Warning - undefined")
@@ -482,7 +493,6 @@ class Theis(AnalyticalInterferenceModels):
         fig.text(1.05, 0.25, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
-
 
 class Theis_noflow(AnalyticalInterferenceModels):
     """
@@ -893,6 +903,156 @@ class Theis_constanthead(AnalyticalInterferenceModels):
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
+class JacobLohman(AnalyticalInterferenceModels):
+    """
+    Constant head test:
+    Jacob & Lohman (1952) discharge solution in the well
+
+    :Initialzation:
+    :param s: drawdown, m
+    :param r: radius between wells, m
+    :param df: pandas dataframe with two vectors named df.t and df.q (m^3/s) for test time respective drawdown, df.s is calculated as 1 / df.q
+    :param self:
+    :param p: solution vector
+    :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param qc: Calculated flow rate
+    :param derc: Calculated flow rate derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize:  size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :paramRadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+
+    :Example:
+
+    """
+
+    def __init__(self, s=None, r=None, Rd=None, df=None, p=None):
+        self.s = s
+        self.r = r
+        self.Rd = Rd
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+
+    def dimensionless_laplace(self, pd):
+        """
+        Dimensionless flow rate of the Jacob-Lohamn model in Laplace domain
+
+        :param pd: Laplace parameter
+        :function: _laplace_flowrate(td, option='Stehfest')
+        """
+        return mp.besselk(1, mp.sqrt(pd)) / (mp.sqrt(pd) * mp.besselk(0, mp.sqrt(pd)))
+
+    def dimensionless_laplace_derivative(self, pd):
+        """
+        Dimensionless flow rate derivative of the Jacob-Lohamn model in Laplace domain
+        """
+        return None
+
+    def __call__(self, t):
+        td = self._dimensionless_time(t)
+        qd = self._laplace_flowrate(td)
+        q = self._dimensional_flowrate(qd)
+        return q
+
+    def guess_params(self):
+        """
+        First guess for the parameters of the Jacob & Lohman (1952) model
+
+        :return p[0]: slope of Jacob straight line for late time
+        :return p[1]: intercept with the horizontal axis for s = 0
+        """
+        self.df.s = 1 / self.df.q
+        n = len(self.df) / 3
+        self.p = get_logline(self, self.df[self.df.index > n])
+        return self.p
+
+    def perrochet(self, td):
+        """
+        Perrochet approximation for Jacob & Lohman (1952)
+
+        :return qd:
+        """
+        return 1 / np.log(1 + np.sqrt(np.pi * td))
+
+    def plot_typecurve(self):
+        """
+        Type curves of the Jacob-Lohman (1952) model
+        """
+        plt.figure(1)
+        td = np.logspace(-4, 10)
+        g = 0.57721566
+        ax = plt.gca()
+        qd = self._laplace_flowrate(td)
+        sd = list(map(lambda x: 1/x, qd))
+        d = {'td': td, 'sd': sd}
+        df = pda.DataFrame(data=d)
+        der = ht.ldiffs(df, npoints=50)
+        color = next(ax._get_lines.prop_cycler)['color']
+        plt.loglog(td, qd, '-', color=color, label='q_D')
+        plt.loglog(der.td, der.sd, '-.', color=color, label='der. 1/q_D')
+        plt.xlabel('$t_D$')
+        plt.ylabel('$q_D$')
+        plt.xlim((1e-3, 1e10))
+        plt.ylim((1e-2, 1e2))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+        plt.figure(2)
+        ax = plt.gca()
+        q1 = 0.5 + 1 / np.sqrt(np.pi * td)
+        q2 = 2 / E1(1, 0.25 / td)
+        q3 = 0.5 + 1 / np.sqrt(np.pi * td) - 0.25 * np.sqrt(td / np.pi) + td / 8
+        q4 = 2 / (np.log(4 * td) - 2 * g) - 2 * g / (np.log(4 * td) - 2 * g) ** 2
+        color = next(ax._get_lines.prop_cycler)['color']
+        plt.loglog(td, qd, '-', color=color, label='Jacob-Lohman')
+        color = next(ax._get_lines.prop_cycler)['color']
+        plt.loglog(td, q1, '-.', color=color, label='Jacob early asymptote')
+        color = next(ax._get_lines.prop_cycler)['color']
+        plt.loglog(td, q2, '-.', color=color, label='Jacob late asymptote')
+        color = next(ax._get_lines.prop_cycler)['color']
+        plt.loglog(td, q3, '--', color=color, label='Carslaw early asymptote')
+        color = next(ax._get_lines.prop_cycler)['color']
+        plt.loglog(td, q4, '--', color=color, label='Carslaw late asymptote')
+        color = next(ax._get_lines.prop_cycler)['color']
+        plt.loglog(td, self.perrochet(td), '+', color=color, label='Perrochet approx.')
+        plt.xlabel('$t_D$')
+        plt.ylabel('$q_D$')
+        plt.xlim((1e-3, 1e10))
+        plt.ylim((1e-2, 1e2))
+        plt.grid('True')
+        plt.title('Asymptotes of the Jacob and Lohman (1952) solution')
+        plt.legend()
+        plt.show()
+        residual = qd - self.perrochet(td)
+        mr = np.mean(residual)
+        print('Mean residual between Jacob-Lohman and Perrochet approx. ', mr, 'm^3/s')
+        sr = 2 * np.std(residual)
+        print('Standard deviation ', sr, 'm^3/s')
+        rms = np.sqrt(np.mean(residual ** 2))
+        print('Root-mean-square ', rms, 'm^3/s')
 
 # Parent generic class
 
