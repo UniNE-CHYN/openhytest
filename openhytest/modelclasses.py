@@ -134,7 +134,6 @@ def log_plot(self):
     ax1.legend()
     return fig
 
-
 # Parent generic class
 class AnalyticalInterferenceModels():
     def __init__(self, Q=None, r=None, Rd=None, p=None, df=None):
@@ -160,9 +159,9 @@ class AnalyticalInterferenceModels():
         """
         Calculates the dimensional flow rate
         """
-        return qd * np.log(10) / 2 / self.p[0]
+        return (np.float64(qd) * np.log(10)) / 2.0 / self.p[0]
 
-    def _laplace_drawdown(self, td, option='Stehfest'):  # default stehfest
+    def _laplace_drawdown(self, td, option='Stehfest', degrees=12):  # default stehfest
         """
         Alternative calculation with Laplace inversion
 
@@ -171,10 +170,10 @@ class AnalyticalInterferenceModels():
         :param option:  Stehfest (default, dps=10, degree=16), dehoog
         :return sd:     dimensionless drawdown
         """
-        s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), td)
+        s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=degrees), td)
         return list(s)
 
-    def _laplace_drawdown_derivative(self, td, option='Stehfest'):  # default stehfest
+    def _laplace_drawdown_derivative(self, td, option='Stehfest', degrees=12):  # default stehfest
         """
         Alternative calculation with Laplace inversion
 
@@ -184,20 +183,8 @@ class AnalyticalInterferenceModels():
         :return dd:     dimensionless drawdown derivative
         """
         d = list(map(
-            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=12), td))
+            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=degrees), td))
         return d
-
-    def _laplace_flowrate(self, td, option='Stehfest'):  # default stehfest
-        """
-        Alternative calculation with Laplace inversion
-
-        :param td:      dimensionless time
-        :param x:       dummy parameter for inversion
-        :param option:  Stehfest (default, dps=10, degree=16), dehoog
-        :return sd:     dimensionless drawdown
-        """
-        q = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=16), td)
-        return list(q)
 
     def __call__(self, t):
         print("Warning - undefined")
@@ -301,7 +288,6 @@ class AnalyticalInterferenceModels():
         return res_p.x
 
         # Derived daughter classes
-
 
 class Theis(AnalyticalInterferenceModels):
     """
@@ -933,7 +919,6 @@ class JacobLohman(AnalyticalInterferenceModels):
     :Example:
 
     """
-
     def __init__(self, s=None, r=None, Rd=None, df=None, p=None):
         self.s = s
         self.r = r
@@ -973,7 +958,7 @@ class JacobLohman(AnalyticalInterferenceModels):
 
     def __call__(self, t):
         td = self._dimensionless_time(t)
-        qd = self._laplace_flowrate(td)
+        qd = self._laplace_drawdown(td, degrees=12)
         q = self._dimensional_flowrate(qd)
         return q
 
@@ -984,10 +969,27 @@ class JacobLohman(AnalyticalInterferenceModels):
         :return p[0]: slope of Jacob straight line for late time
         :return p[1]: intercept with the horizontal axis for s = 0
         """
-        self.df.s = 1 / self.df.q
+        self.df['s'] = 1 / self.df.q
         n = len(self.df) / 3
         self.p = get_logline(self, self.df[self.df.index > n])
+        self.df['s'] = self.df.q
         return self.p
+
+    def T(self):
+        """
+        Calculates Transmissivity
+
+        :return Transmissivity:  transmissivity m^2/s
+        """
+        return 0.1832339 / self.s / self.p[0]
+
+    def RadiusOfInfluence(self):
+        """
+        Calculates the radius of influence
+
+        :return ri: Distance to image well m
+        """
+        return 2*np.sqrt(self.T() * self.df['t'].iloc[-1] / self.S())
 
     def perrochet(self, td):
         """
@@ -1005,7 +1007,7 @@ class JacobLohman(AnalyticalInterferenceModels):
         td = np.logspace(-4, 10)
         g = 0.57721566
         ax = plt.gca()
-        qd = self._laplace_flowrate(td)
+        qd = self._laplace_drawdown(td, degrees=16)
         sd = list(map(lambda x: 1/x, qd))
         d = {'td': td, 'sd': sd}
         df = pda.DataFrame(data=d)
@@ -1054,8 +1056,63 @@ class JacobLohman(AnalyticalInterferenceModels):
         rms = np.sqrt(np.mean(residual ** 2))
         print('Root-mean-square ', rms, 'm^3/s')
 
-# Parent generic class
+    def rpt(self, option_fit='lm', ttle='Jacob & Lohman (1952)', author='Author', filetype='pdf',
+            reptext='Report_jlq'):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
 
+        :param option_fit: 'lm' or 'trf'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+        self.fit(option=option_fit)
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.RadInfluence = self.RadiusOfInfluence()
+        self.model_label = 'Jacob & Lohman model'
+        
+        self.ttle = ttle
+        fig = plt.figure()
+        fig.set_size_inches(self.xsize, self.ysize)
+        ax1 = fig.add_subplot(111)
+        ax1.set_xlabel('Time in seconds')
+        ax1.set_ylabel('Flow rate m^3/s')
+        ax1.set_title(self.ttle)
+        ax1.loglog(self.df.t, self.df.s, c='r', marker='+', linestyle='', label='q')
+        ax1.loglog(self.tc, self.sc, c='g', label=self.model_label)
+        ax1.grid(True)
+        ax1.legend()
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Hydraulic head : {:3.2e} m'.format(self.s), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Radius of influence Rd : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
+
+
+# Parent generic class
 class AnalyticalSlugModels(AnalyticalInterferenceModels):
     def __init__(self):
         pass
