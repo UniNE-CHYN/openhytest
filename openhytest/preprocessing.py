@@ -445,7 +445,7 @@ def hyclean(data):
     df = data.head(0)
     df = list(df)
     data = data.replace([np.inf, -np.inf], np.nan)
-    for i in range(1, len(df)):
+    for i in range(0, len(df)):
         data = data[data[df[i]] >= 0] 
 
     return data
@@ -488,14 +488,14 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
     Keep in mind that the time step need to be equally spaced for the butterworth filter.
     It can be used for moving average filter, but it is not recommended.
     
-    data:  pandas DF expects at least two traces in the dataframe.
+    :param data:  pandas DF expects at least two traces in the dataframe.
         The first column needs to be the time.
         i.e. data.t
         The second and following data trace needs to be sampled at the given
         time in the first column.
         i.e. data.s, data.s2
         
-    typefilter: allows to select the type of filter
+    :param typefilter: allows to select the type of filter
     
     'butter2' for the Butterworth filter with filter order 2 or 
     'butter4' for the Butterworth filter with filter order 4.
@@ -508,7 +508,7 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
     The moving average is less sensitive of outliers but at the same time
     less smooth using a centered windows. 
     
-    p: parameter that depends on the type of filter that has been chosen.
+    :param p: parameter that depends on the type of filter that has been chosen.
 
       for the moving average  
            p = size of the moving window in number of points
@@ -518,15 +518,11 @@ def hyfilter(data, typefilter='moving', p=10, win_types='None'):
             p = period of the cutoff frequency in number of measurements
                 by default it is equal to 10
                 
-    win_types: is only defined for 'moving' filter. It defines the type of 
+    :param win_types: is only defined for 'moving' filter. It defines the type of
             weighting window: boxcar, triang, blackman, hamming 
             (see pandas DF rolling command for more options and information)
     
-    Returns
-    -------
-    data
-        pandas series is gives back with new data traces named 'name'+'_filt' with
-        the 'name' given.
+    :return data: pandas series is gives back with new data traces named 'name'+'_filt' with the 'name' given.
         
     Examples
     --------
@@ -660,32 +656,58 @@ def hysampling(x, y, nval, idlog='linear', option='sample'):
         print('')
         return 0
 
-def flowDim(t, s):
+def flowDim(data, dim=None):
     """
-    computes the time evolution of flow dimensions
+    Computes the time evolution of flow dimensions
 
-    Syntax:
-        x_dim, y_dim = flowDim(t,s)
-        t = elapsed time
-        s = drawdown or pressure buildup
+    :param data: pandas dataframe with two vectors, time and drawdown
+    :return dim: = flowDim(data)
     """
 
-    t = np.asarray(t, dtype='float')
-    s = np.asarray(s, dtype='float')
+    df = data.head(0)
+    df = list(df)
+    # removes all NaN and finite, strictly positive
+    data = ht.hyclean(data)
 
-    # remove NaNs
-    index_s = indices(s, lambda s: np.isfinite(s))
-    xi = t[index_s]
-    yi = s[index_s]
-
-    # keep times>0 and corresponding observations
-    xii = xi[np.argwhere((xi >= 0) & (yi >= 0)).flatten()]
-    yii = yi[np.argwhere((yi >= 0) & (xi >= 0)).flatten()]
-
-    x_dim = xii[1:]
+    dim.x = data[df[0]][1:]
     # compute flow dimension
-    y_dim = np.multiply(2,(1 - np.divide(([np.log10(x) - np.log10(yii[i - 1]) for i, x in enumerate(yii) if i > 0]),[
-        np.log10(x) - np.log10(xii[i - 1]) for i, x in enumerate(xii) if i > 0])))
+    dim.y = np.multiply(2, (1 - np.divide(([np.log10(x) - np.log10(data[df[1]][i - 1]) for i, x in enumerate(data[df[1]]) if i > 0]), [
+        np.log10(x) - np.log10(data[df[0]][i - 1]) for i, x in enumerate(data[df[0]]) if i > 0])))
 
-    return x_dim, y_dim
+    return dim
 
+def birsoy_time(data, Qmat=None, birsoy=None):
+    """
+    Calculates the equivalent time of Birsoy and Summers (1980) solution.
+
+    :param data: needs a pandas dataframe with vector t and s
+    :param Qmat: needs a pandas dataframe with vector t and q
+      size = nb of lines = nb of pumping periods
+      two colums
+            column 1 = time (since the beginning of the test at which the period ends
+            column 2 = flow rate during the period
+
+    :return birsoy: equivalent Birsoy and Summers time, t and drawdown = s/qn, s
+    """
+    df = data.head(0)
+    df = list(df)
+
+    if Qmat is None:
+        print('Error - birsoy_time function: the Qmat must contain vector t and q')
+        return None
+
+    if np.size(Qmat.t, 0) < 2:
+        print('Warning - birsoy_time function: The Qmat contains only 1 line')
+
+    pe = np.zeros(np.size(data[df[0]]))
+    for i in range(np.size(Qmat.t)-1, 0, -1):
+        j = data[df[0].le(Qmat.t[i])].index
+        pe[j] = i
+    lq = Qmat.q[pe]
+
+    dq = np.diff(Qmat.q)
+    dq = [Qmat.q[:1], dq]
+
+
+
+    return birsoy
