@@ -1335,25 +1335,3 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
 
-class special(AnalyticalInterferenceModels):  # ?? used ?? Theis
-
-    def calc_sl_du(self, Rd):
-        sldu = []
-        for i in range(0, np.size(Rd)):
-            if Rd[i] <= 1:
-                Rd[i] = 1.00001
-            sldu.append(np.log(Rd[i] ** 2) / ((Rd[i] ** 2 - 1) * Rd[i] ** (-2 * Rd[i] ** 2 / (Rd[i] ** 2 - 1))))
-        return sldu
-
-    def calc_inverse_sl_du(self, fri):
-        if fri < 2.71828182850322:
-            print('Problem in the inversion of Rd: calc_sl_du')
-            Rd = 1.000001
-        else:
-            Rd = np.exp(fri / 2)
-            if Rd < 50:
-                y = np.linspace(1.00001, 60, 2000)
-                x = self.calc_sl_du(y)
-                frd = interpolate.interp1d(x, y)
-                Rd = frd(fri)
-        return Rd
