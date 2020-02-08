@@ -215,6 +215,7 @@ class preprocessing():
         self. der = pd.DataFrame(dummy, columns=self.df)
         return self.der
 
+
     def ldiffb_plot(self):
         """
         ldiffb_plot creates the plot with logarithmic derivative with Bourdet's formula
@@ -371,10 +372,10 @@ class preprocessing():
         """
         if xstart is not None:
             self.xstart = xstart
-        
+
         if xend is not None:
-            self.xend = xend       
-    
+            self.xend = xend
+
         self.header()
 
         mask = (self.data[self.df[0]] > self.xstart) & (self.data[self.df[0]] < self.xend)
@@ -383,7 +384,7 @@ class preprocessing():
         return self.data
 
 
-    def hyfilter(data, typefilter=None, p=None, win_types=None):
+    def hyfilter(self, typefilter=None, p=None, win_types=None):
         """
         hyfilter Filter a signal in order to reduce the noise.
 
@@ -430,13 +431,13 @@ class preprocessing():
         """
         if typefilter is not None:
             self.typefilter = typefilter
-        
+
         if p is not None:
             self.p = p
-        
+
         if win_types is not None:
-            self.win_types = win_types       
-    
+            self.win_types = win_types
+
         self.header()
 
         if self.typefilter == 'moving':
@@ -570,7 +571,7 @@ def flowDim(data, dim=None):
     """
 
     self.header()
-    
+
     # removes all NaN and finite, strictly positive
     data = ht.hyclean(data)
 
@@ -581,46 +582,45 @@ def flowDim(data, dim=None):
 
     return dim
 
-def birsoy_time(data, Qmat=None, birsoy=None):
-    """
-    Calculates the equivalent time of Birsoy and Summers (1981) solution.
+    def birsoy_time(self, Qmat=None, birsoy=None):
+        """
+        Calculates the equivalent time of Birsoy and Summers (1981) solution.
 
-    :param data: needs a pandas dataframe with vector t and s
-    :param Qmat: needs a pandas dataframe with vector t and q
-      size = nb of lines = nb of pumping periods
-      two colums
-            column 2 = time (since the beginning of the test at which the period ends
-            column 3 = flow rate during the period
+        :param data: needs a pandas dataframe with vector t and s
+        :param Qmat: needs a pandas dataframe with vector t and q
+          size = nb of lines = nb of pumping periods
+          two colums
+                column 2 = time (since the beginning of the test at which the period ends
+                column 3 = flow rate during the period
 
-    :return birsoy: equivalent Birsoy and Summers time, t and drawdown = s/qn, s
-    """
-    self.header()
+        :return birsoy: equivalent Birsoy and Summers time, t and drawdown = s/qn, s
+        """
+        self.header()
 
-    if Qmat is None:
-        print('Error - birsoy_time function: the Qmat must contain vector t and q')
-        return None
+        if Qmat is not None:
+            self.Qmat = Qmat
 
-    if np.size(Qmat.t, 1) < 2:
-        print('Warning - birsoy_time function: The Qmat contains only 2 line')
+        if np.size(self.Qmat.t, 1) < 2:
+            print('Warning - birsoy_time function: The Qmat contains only 2 line')
 
-    pe = np.zeros(np.size(data[df[1]]))
-    for i in range(np.size(Qmat.t), 0, -1):
-        j = data[df[1].le(Qmat.t[i])].index
-        pe[j] = i
-    lq = Qmat.q[pe]
+        pe = np.zeros(np.size(self.data[self.df[1]]))
+        for i in range(np.size(self.Qmat.t), 0, -1):
+            j = self.data[self.df[1].le(self.Qmat.t[i])].index
+            pe[j] = i
+        lq = self.Qmat.q[pe]
 
-    dq = np.diff(Qmat.q)
-    dq = [Qmat.q[:2], dq]
+        dq = np.diff(self.Qmat.q)
+        dq = [self.Qmat.q[:2], dq]
 
-    st = [1, Qmat.q[:-1]]
-    t = np.ones(np.size(Qmat.t))
-    for j in range(1, np.size(Qmat.t, 0)-1, 1):
-        for i in range(1, pe[j]-1, 1):
-            t[j] = birsoy.t[j]* (data.t[j] - st[i]) ** (dq[i]/ Qmat.q[pe[j]])
+        st = [1, self.Qmat.q[:-1]]
+        t = np.ones(np.size(self.Qmat.t))
+        for j in range(1, np.size(self.Qmat.t, 0)-1, 1):
+            for i in range(1, pe[j]-1, 1):
+                t[j] = birsoy.t[j]* (self.data.t[j] - st[i]) ** (dq[i]/ self.Qmat.q[pe[j]])
 
-    ind = np.argsort(t)
+        ind = np.argsort(t)
 
-    birsoy.t = t.sort()
-    birsoy.s = data.s[ind] / lq[ind]
+        self.birsoy.t = t.sort()
+        self.birsoy.s = self.data.s[ind] / lq[ind]
 
-    return birsoy
+        return self.birsoy

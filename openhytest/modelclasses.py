@@ -279,7 +279,8 @@ class AnalyticalInterferenceModels():
         self.tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
                               dtype=np.float64)
         self.sc = self.__call__(self.tc)
-        self.derc = ht.ldiffs(pda.DataFrame(data={"t": self.tc, "s": self.sc}))
+        test = ht.preprocessing(data=pda.DataFrame(data={"t": self.tc, "s": self.sc}))
+        self.derc = test.ldiffs()
         self.mr = np.mean(res_p.fun)
         self.sr = 2 * np.nanstd(res_p.fun)
         self.rms = np.sqrt(np.mean(res_p.fun ** 2))
@@ -451,8 +452,9 @@ class Theis(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model'
-        der = ht.ldiffs(self.df, npoints=30)
-        self.der = der
+
+        test = ht.preprocessing(data=self.df)
+        self.der = test.ldiffs()
 
         self.ttle = ttle
         fig = log_plot(self)
@@ -648,8 +650,8 @@ class Theis_noflow(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model with no-flow boundary'
-        der = ht.ldiffs(self.df, npoints=30)
-        self.der = der
+        test = ht.preprocessing(data=self.df)
+        self.der = test.ldiffs()
 
         self.ttle = ttle
         fig = log_plot(self)
@@ -857,8 +859,8 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model with const. head boundary'
-        der = ht.ldiffs(self.df, npoints=30)
-        self.der = der
+        test = ht.preprocessing(data=self.df)
+        self.der = test.ldiffs()
 
         self.ttle = ttle
         fig = log_plot(self)
@@ -1011,7 +1013,8 @@ class JacobLohman(AnalyticalInterferenceModels):
         sd = list(map(lambda x: 1/x, qd))
         d = {'td': td, 'sd': sd}
         df = pda.DataFrame(data=d)
-        der = ht.ldiffs(df, npoints=50)
+        test = ht.preprocessing(data=df, npoints=50)
+        der = test.ldiffs()
         color = next(ax._get_lines.prop_cycler)['color']
         plt.loglog(td, qd, '-', color=color, label='q_D')
         plt.loglog(der.td, der.sd, '-.', color=color, label='der. 1/q_D')
@@ -1073,7 +1076,7 @@ class JacobLohman(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Jacob & Lohman model'
-        
+
         self.ttle = ttle
         fig = plt.figure()
         fig.set_size_inches(self.xsize, self.ysize)
@@ -1180,14 +1183,52 @@ class AnalyticalSlugModels(AnalyticalInterferenceModels):
 
 class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
     """
-    CooperBredehoeftPapadopulos (1967)
+    Slug test with the Cooper et al. (1967) solution
 
-    :param Q:   pumping rate
-    :param r:   distance between the observation well and pumping well
-    :param rw:  radius if the well
-    :param rc:  radius of the casing
+    :param Q: pumping rate
+    :param r: distance between the observation well and pumping well
+    :param rw: radius if the well
+    :param rc: radius of the casing
+    :param rD: dimensionless radius
+    :param cD: dimensionless well bore storage coefficient
+    :param p: solution vector
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param der: Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated draw down
+    :param derc: Calculated flow rate derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize: size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :param Storativity2: Storativtiy -
+    :param RadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+
+    :Description:
+    Computes the normalized drawdown (Delta h / Delta h0) as a function of
+    time with the Cooper et al. (1967) solution for a slug test in a
+    homogeneous confined aquifer. The well is fully penetrating and the
+    slug injection or withdrawal is instantaneous.
+
+    The dimensionless well bore storage coefficient is: Cd = rc^2/(2*rw^2*S)
+
+    Note that in the original publication of Cooper et al.
+    The dimensionless parameter was alpha, it is related to Cd by: alpha = 1 / (2 Cd)
+
+    :Reference:
+    Cooper, H.H.J., J.D. Bredehoeft, and I.S. Papadopulos.
+    1967. Response of a finite-diameter well to an instantaneous charge of
+    water. Water Resources Research 3, no. 1: 263-269.
+
+    :Example:
+
     """
-
     def __init__(self, Q=None, r=None, rw=None, rc=None, cD=None, df=None, p=None):
         self.Q = Q
         self.r = r
@@ -1298,8 +1339,8 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         self.Storativity2 = self.S2()
 
         self.model_label = 'Cooper-Bredehoeft-Papadopulos (1967)'
-        der = ht.ldiffs(self.df, npoints=30)
-        self.der = der
+        test = ht.preprocessing(data=self.df)
+        self.der = test.ldiffs()
 
         self.ttle = ttle
         fig = log_plot(self)
@@ -1333,5 +1374,3 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
-
-
