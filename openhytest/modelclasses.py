@@ -1114,6 +1114,143 @@ class JacobLohman(AnalyticalInterferenceModels):
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
+class GRF(AnalyticalInterferenceModels):
+    """
+    Barker (1988) general radial flow model
+
+    This class computes the dimensionless drawdown as a function of
+    dimensionless time for a constant rate intereference test
+    with the General Radial Flow model of Barker (1988). This solution is
+    a generalisation of flow equation in 1D, 2D, 3D and non integer flow
+    dimension.
+
+    :Initialzation:
+    :param Q: pumping rate, m3/s
+    :param r: radius between wells, m
+    :param rw: radius of the well, m
+    :param rD: dimensionless radius
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param self:
+    :param p: solution vector
+    :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated drawdown
+    :param derc: Calculated drawdown derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize:  size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :paramRadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+
+    :Reference:
+    Barker, J.A. 1988. A Generalized radial flow model fro hydraulic tests
+    in fractured rock. Water Resources Research 24, no. 10: 1796-1804.
+
+    :Example:
+
+    """
+    def _dimensionless_time(self, t):
+        """
+        Calculates dimensionless time
+        """
+        return (t / (2.2458* self.p[1]))
+
+    def _dimensional_drawdown(self, sd):
+        """
+        Calculates the dimensional drawdown
+        """
+        return sd * self.p[0] * 0.868588963806504
+
+    def dimensionless_laplace(self, pd):
+        """
+        Drawdown of the General Radial Flow model in Laplace domain
+
+        :param pd: Laplace parameter
+        :function: _laplace_drawdown(td, option='Stehfest')
+        """
+        n = self.p[2]
+        return self.rD**(2-n) * (self.rD**2 * pd/4)**(n/4-0.5) * mp.besselk(n/2-1, self.rD*mp.sqrt(pd)) / pd /mp.gamma(n/2)
+
+    def dimensionless_laplace_derivative(self, pd):
+        """
+        Derivative of the General Radial Flow model in Laplace domain
+
+        :param pd: Laplace parameter
+        :function: _laplace_drawdown_derivative(td, option='Stehfest')
+        """
+        return None
+
+    def __call__(self, t):
+        td = self._dimensionless_time(t)
+        sd = self._laplace_drawdown(td)
+        s = self._dimensional_drawdown(sd)
+        return s
+
+    def __init__(self, Q=None, r=1, rw=1, df=None, p=None):
+        self.Q = Q
+        self.r = r
+        self.rw = rw
+        self.rD = r / rw
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+
+    def guess_params(self):
+        """
+        First guess for the parameters of the Theis model.
+
+        :return p[0]: slope of Jacob straight line for late time
+        :return p[1]: intercept with the horizontal axis for s = 0
+        :return p[2]: flow dimension, default radial
+        """
+        p = get_logline(self, df=self.df[self.df.index > n])
+        self.p = [p[0], p[1]*(self.rw/self.r)**2, 2]
+        return self.p
+
+    def plot_typecurve(self, rD = None):
+        """
+        Draw a series of typecurves of the General Flow Model.
+        """
+        if rD is None:
+            rD = 1
+        if self.rD is None:
+            self.rD = rD
+        td = np.logspace(-1, 6) * self.rD ** 2
+        plt.figure(1)
+        ax = plt.gca()
+        for n in np.linspace(1, 3, 9):
+            self.p = np.array([0,0,n])
+            color = next(ax._get_lines.prop_cycler)['color']
+            sd = list(self._laplace_drawdown(td))
+            ax.loglog(td, sd, '-', color=color, label=n)
+        plt.xlabel('$t_D$')
+        plt.ylabel('$s_D$')
+        plt.xlim((1e-1, 1e+6))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+
+
 
 # Parent generic class
 class AnalyticalSlugModels(AnalyticalInterferenceModels):
@@ -1187,7 +1324,7 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
 
     :param Q: pumping rate
     :param r: distance between the observation well and pumping well
-    :param rw: radius if the well
+    :param rw: radius of the well
     :param rc: radius of the casing
     :param rD: dimensionless radius
     :param cD: dimensionless well bore storage coefficient
