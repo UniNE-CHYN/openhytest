@@ -1157,13 +1157,13 @@ class GRF(AnalyticalInterferenceModels):
     """
     def _dimensionless_time(self, t):
         """
-        Calculates dimensionless time
+        Calculates dimensionless time for GRF
         """
         return (t / (2.2458* self.p[1]))
 
     def _dimensional_drawdown(self, sd):
         """
-        Calculates the dimensional drawdown
+        Calculates the dimensional drawdown for GRF
         """
         return sd * self.p[0] * 0.868588963806504
 
@@ -1182,7 +1182,7 @@ class GRF(AnalyticalInterferenceModels):
         Derivative of the General Radial Flow model in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown_derivative(td, option='Stehfest')
+        :function: _laplace_drawdown_derivative(td, option='Stehfest') !!! check -> ERROR
         """
         return None
 
@@ -1250,7 +1250,23 @@ class GRF(AnalyticalInterferenceModels):
         plt.legend()
         plt.show()
 
-
+        plt.figure(2,  figsize=(10,10))
+        for i in range(0,4):
+            plt.subplot(2,2,i+1)
+            self.p = np.array([0,0,1.5+i*0.5])
+            sd = list(self._laplace_drawdown(td))
+            #dd = list(self._laplace_drawdown_derivative(td))
+            d = {'td': td, 'sd': sd}
+            df = pda.DataFrame(data=d)
+            test = ht.preprocessing(data=df, npoints=20)
+            der = test.ldiff()
+            plt.loglog(td, sd, '-', der.td, der.sd, '.-')
+            plt.title('r_D=%g, n=%g' % (self.rD ,1.5+i*.5))
+            plt.xlabel('$t_D$')
+            plt.ylabel('$s_D$')
+            plt.ylim((1e-2, 1e+2))
+            plt.grid('True')
+        plt.show()
 
 # Parent generic class
 class AnalyticalSlugModels(AnalyticalInterferenceModels):
