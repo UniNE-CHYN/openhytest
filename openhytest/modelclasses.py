@@ -134,7 +134,6 @@ def log_plot(self):
     ax1.legend()
     return fig
 
-
 # Parent generic class
 class AnalyticalInterferenceModels():
     def __init__(self, Q=None, r=None, Rd=None, p=None, df=None):
@@ -160,9 +159,9 @@ class AnalyticalInterferenceModels():
         """
         Calculates the dimensional flow rate
         """
-        return qd * np.log(10) / 2 / self.p[0]
+        return (np.float64(qd) * np.log(10)) / 2.0 / self.p[0]
 
-    def _laplace_drawdown(self, td, option='Stehfest'):  # default stehfest
+    def _laplace_drawdown(self, td, option='Stehfest', degrees=12):  # default stehfest
         """
         Alternative calculation with Laplace inversion
 
@@ -171,10 +170,10 @@ class AnalyticalInterferenceModels():
         :param option:  Stehfest (default, dps=10, degree=16), dehoog
         :return sd:     dimensionless drawdown
         """
-        s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), td)
+        s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=degrees), td)
         return list(s)
 
-    def _laplace_drawdown_derivative(self, td, option='Stehfest'):  # default stehfest
+    def _laplace_drawdown_derivative(self, td, option='Stehfest', degrees=12):  # default stehfest
         """
         Alternative calculation with Laplace inversion
 
@@ -184,20 +183,8 @@ class AnalyticalInterferenceModels():
         :return dd:     dimensionless drawdown derivative
         """
         d = list(map(
-            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=12), td))
+            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=degrees), td))
         return d
-
-    def _laplace_flowrate(self, td, option='Stehfest'):  # default stehfest
-        """
-        Alternative calculation with Laplace inversion
-
-        :param td:      dimensionless time
-        :param x:       dummy parameter for inversion
-        :param option:  Stehfest (default, dps=10, degree=16), dehoog
-        :return sd:     dimensionless drawdown
-        """
-        q = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=16), td)
-        return list(q)
 
     def __call__(self, t):
         print("Warning - undefined")
@@ -292,7 +279,8 @@ class AnalyticalInterferenceModels():
         self.tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
                               dtype=np.float64)
         self.sc = self.__call__(self.tc)
-        self.derc = ht.ldiffs(pda.DataFrame(data={"t": self.tc, "s": self.sc}))
+        test = ht.preprocessing(data=pda.DataFrame(data={"t": self.tc, "s": self.sc}))
+        self.derc = test.ldiffs()
         self.mr = np.mean(res_p.fun)
         self.sr = 2 * np.nanstd(res_p.fun)
         self.rms = np.sqrt(np.mean(res_p.fun ** 2))
@@ -301,7 +289,6 @@ class AnalyticalInterferenceModels():
         return res_p.x
 
         # Derived daughter classes
-
 
 class Theis(AnalyticalInterferenceModels):
     """
@@ -465,8 +452,9 @@ class Theis(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model'
-        der = ht.ldiffs(self.df, npoints=30)
-        self.der = der
+
+        test = ht.preprocessing(data=self.df)
+        self.der = test.ldiffs()
 
         self.ttle = ttle
         fig = log_plot(self)
@@ -662,8 +650,8 @@ class Theis_noflow(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model with no-flow boundary'
-        der = ht.ldiffs(self.df, npoints=30)
-        self.der = der
+        test = ht.preprocessing(data=self.df)
+        self.der = test.ldiffs()
 
         self.ttle = ttle
         fig = log_plot(self)
@@ -871,8 +859,8 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model with const. head boundary'
-        der = ht.ldiffs(self.df, npoints=30)
-        self.der = der
+        test = ht.preprocessing(data=self.df)
+        self.der = test.ldiffs()
 
         self.ttle = ttle
         fig = log_plot(self)
@@ -933,7 +921,6 @@ class JacobLohman(AnalyticalInterferenceModels):
     :Example:
 
     """
-
     def __init__(self, s=None, r=None, Rd=None, df=None, p=None):
         self.s = s
         self.r = r
@@ -973,7 +960,7 @@ class JacobLohman(AnalyticalInterferenceModels):
 
     def __call__(self, t):
         td = self._dimensionless_time(t)
-        qd = self._laplace_flowrate(td)
+        qd = self._laplace_drawdown(td, degrees=12)
         q = self._dimensional_flowrate(qd)
         return q
 
@@ -984,10 +971,27 @@ class JacobLohman(AnalyticalInterferenceModels):
         :return p[0]: slope of Jacob straight line for late time
         :return p[1]: intercept with the horizontal axis for s = 0
         """
-        self.df.s = 1 / self.df.q
+        self.df['s'] = 1 / self.df.q
         n = len(self.df) / 3
         self.p = get_logline(self, self.df[self.df.index > n])
+        self.df['s'] = self.df.q
         return self.p
+
+    def T(self):
+        """
+        Calculates Transmissivity
+
+        :return Transmissivity:  transmissivity m^2/s
+        """
+        return 0.1832339 / self.s / self.p[0]
+
+    def RadiusOfInfluence(self):
+        """
+        Calculates the radius of influence
+
+        :return ri: Distance to image well m
+        """
+        return 2*np.sqrt(self.T() * self.df['t'].iloc[-1] / self.S())
 
     def perrochet(self, td):
         """
@@ -1005,11 +1009,12 @@ class JacobLohman(AnalyticalInterferenceModels):
         td = np.logspace(-4, 10)
         g = 0.57721566
         ax = plt.gca()
-        qd = self._laplace_flowrate(td)
+        qd = self._laplace_drawdown(td, degrees=16)
         sd = list(map(lambda x: 1/x, qd))
         d = {'td': td, 'sd': sd}
         df = pda.DataFrame(data=d)
-        der = ht.ldiffs(df, npoints=50)
+        test = ht.preprocessing(data=df, npoints=50)
+        der = test.ldiffs()
         color = next(ax._get_lines.prop_cycler)['color']
         plt.loglog(td, qd, '-', color=color, label='q_D')
         plt.loglog(der.td, der.sd, '-.', color=color, label='der. 1/q_D')
@@ -1054,8 +1059,200 @@ class JacobLohman(AnalyticalInterferenceModels):
         rms = np.sqrt(np.mean(residual ** 2))
         print('Root-mean-square ', rms, 'm^3/s')
 
-# Parent generic class
+    def rpt(self, option_fit='lm', ttle='Jacob & Lohman (1952)', author='Author', filetype='pdf',
+            reptext='Report_jlq'):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
 
+        :param option_fit: 'lm' or 'trf'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+        self.fit(option=option_fit)
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.RadInfluence = self.RadiusOfInfluence()
+        self.model_label = 'Jacob & Lohman model'
+
+        self.ttle = ttle
+        fig = plt.figure()
+        fig.set_size_inches(self.xsize, self.ysize)
+        ax1 = fig.add_subplot(111)
+        ax1.set_xlabel('Time in seconds')
+        ax1.set_ylabel('Flow rate m^3/s')
+        ax1.set_title(self.ttle)
+        ax1.loglog(self.df.t, self.df.s, c='r', marker='+', linestyle='', label='q')
+        ax1.loglog(self.tc, self.sc, c='g', label=self.model_label)
+        ax1.grid(True)
+        ax1.legend()
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Hydraulic head : {:3.2e} m'.format(self.s), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Radius of influence Rd : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
+
+class GRF(AnalyticalInterferenceModels):
+    """
+    Barker (1988) general radial flow model
+
+    This class computes the dimensionless drawdown as a function of
+    dimensionless time for a constant rate intereference test
+    with the General Radial Flow model of Barker (1988). This solution is
+    a generalisation of flow equation in 1D, 2D, 3D and non integer flow
+    dimension.
+
+    :Initialzation:
+    :param Q: pumping rate, m3/s
+    :param r: radius between wells, m
+    :param rw: radius of the well, m
+    :param rD: dimensionless radius
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param self:
+    :param p: solution vector
+    :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated drawdown
+    :param derc: Calculated drawdown derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize:  size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :paramRadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+
+    :Reference:
+    Barker, J.A. 1988. A Generalized radial flow model fro hydraulic tests
+    in fractured rock. Water Resources Research 24, no. 10: 1796-1804.
+
+    :Example:
+
+    """
+    def _dimensionless_time(self, t):
+        """
+        Calculates dimensionless time
+        """
+        return (t / (2.2458* self.p[1]))
+
+    def _dimensional_drawdown(self, sd):
+        """
+        Calculates the dimensional drawdown
+        """
+        return sd * self.p[0] * 0.868588963806504
+
+    def dimensionless_laplace(self, pd):
+        """
+        Drawdown of the General Radial Flow model in Laplace domain
+
+        :param pd: Laplace parameter
+        :function: _laplace_drawdown(td, option='Stehfest')
+        """
+        n = self.p[2]
+        return self.rD**(2-n) * (self.rD**2 * pd/4)**(n/4-0.5) * mp.besselk(n/2-1, self.rD*mp.sqrt(pd)) / pd /mp.gamma(n/2)
+
+    def dimensionless_laplace_derivative(self, pd):
+        """
+        Derivative of the General Radial Flow model in Laplace domain
+
+        :param pd: Laplace parameter
+        :function: _laplace_drawdown_derivative(td, option='Stehfest')
+        """
+        return None
+
+    def __call__(self, t):
+        td = self._dimensionless_time(t)
+        sd = self._laplace_drawdown(td)
+        s = self._dimensional_drawdown(sd)
+        return s
+
+    def __init__(self, Q=None, r=1, rw=1, df=None, p=None):
+        self.Q = Q
+        self.r = r
+        self.rw = rw
+        self.rD = r / rw
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+
+    def guess_params(self):
+        """
+        First guess for the parameters of the Theis model.
+
+        :return p[0]: slope of Jacob straight line for late time
+        :return p[1]: intercept with the horizontal axis for s = 0
+        :return p[2]: flow dimension, default radial
+        """
+        p = get_logline(self, df=self.df[self.df.index > n])
+        self.p = [p[0], p[1]*(self.rw/self.r)**2, 2]
+        return self.p
+
+    def plot_typecurve(self, rD = None):
+        """
+        Draw a series of typecurves of the General Flow Model.
+        """
+        if rD is None:
+            rD = 1
+        if self.rD is None:
+            self.rD = rD
+        td = np.logspace(-1, 6) * self.rD ** 2
+        plt.figure(1)
+        ax = plt.gca()
+        for n in np.linspace(1, 3, 9):
+            self.p = np.array([0,0,n])
+            color = next(ax._get_lines.prop_cycler)['color']
+            sd = list(self._laplace_drawdown(td))
+            ax.loglog(td, sd, '-', color=color, label=n)
+        plt.xlabel('$t_D$')
+        plt.ylabel('$s_D$')
+        plt.xlim((1e-1, 1e+6))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+
+
+
+# Parent generic class
 class AnalyticalSlugModels(AnalyticalInterferenceModels):
     def __init__(self):
         pass
@@ -1123,14 +1320,52 @@ class AnalyticalSlugModels(AnalyticalInterferenceModels):
 
 class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
     """
-    CooperBredehoeftPapadopulos (1967)
+    Slug test with the Cooper et al. (1967) solution
 
-    :param Q:   pumping rate
-    :param r:   distance between the observation well and pumping well
-    :param rw:  radius if the well
-    :param rc:  radius of the casing
+    :param Q: pumping rate
+    :param r: distance between the observation well and pumping well
+    :param rw: radius of the well
+    :param rc: radius of the casing
+    :param rD: dimensionless radius
+    :param cD: dimensionless well bore storage coefficient
+    :param p: solution vector
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param der: Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated draw down
+    :param derc: Calculated flow rate derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize: size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :param Storativity2: Storativtiy -
+    :param RadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+
+    :Description:
+    Computes the normalized drawdown (Delta h / Delta h0) as a function of
+    time with the Cooper et al. (1967) solution for a slug test in a
+    homogeneous confined aquifer. The well is fully penetrating and the
+    slug injection or withdrawal is instantaneous.
+
+    The dimensionless well bore storage coefficient is: Cd = rc^2/(2*rw^2*S)
+
+    Note that in the original publication of Cooper et al.
+    The dimensionless parameter was alpha, it is related to Cd by: alpha = 1 / (2 Cd)
+
+    :Reference:
+    Cooper, H.H.J., J.D. Bredehoeft, and I.S. Papadopulos.
+    1967. Response of a finite-diameter well to an instantaneous charge of
+    water. Water Resources Research 3, no. 1: 263-269.
+
+    :Example:
+
     """
-
     def __init__(self, Q=None, r=None, rw=None, rc=None, cD=None, df=None, p=None):
         self.Q = Q
         self.r = r
@@ -1241,8 +1476,8 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         self.Storativity2 = self.S2()
 
         self.model_label = 'Cooper-Bredehoeft-Papadopulos (1967)'
-        der = ht.ldiffs(self.df, npoints=30)
-        self.der = der
+        test = ht.preprocessing(data=self.df)
+        self.der = test.ldiffs()
 
         self.ttle = ttle
         fig = log_plot(self)
@@ -1276,27 +1511,3 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
-
-
-class special(AnalyticalInterferenceModels):  # ?? used ?? Theis
-
-    def calc_sl_du(self, Rd):
-        sldu = []
-        for i in range(0, np.size(Rd)):
-            if Rd[i] <= 1:
-                Rd[i] = 1.00001
-            sldu.append(np.log(Rd[i] ** 2) / ((Rd[i] ** 2 - 1) * Rd[i] ** (-2 * Rd[i] ** 2 / (Rd[i] ** 2 - 1))))
-        return sldu
-
-    def calc_inverse_sl_du(self, fri):
-        if fri < 2.71828182850322:
-            print('Problem in the inversion of Rd: calc_sl_du')
-            Rd = 1.000001
-        else:
-            Rd = np.exp(fri / 2)
-            if Rd < 50:
-                y = np.linspace(1.00001, 60, 2000)
-                x = self.calc_sl_du(y)
-                frd = interpolate.interp1d(x, y)
-                Rd = frd(fri)
-        return Rd
