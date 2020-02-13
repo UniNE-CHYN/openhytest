@@ -413,7 +413,7 @@ class Theis(AnalyticalInterferenceModels):
         self.RadInfluence = None
         self.detailled_p = None
 
-    def guess_params(self):
+    def guess_para4ms(self):
         """
         First guess for the parameters of the Theis model.
 
