@@ -196,7 +196,7 @@ class AnalyticalInterferenceModels():
 
         :return Transmissivity:  transmissivity m^2/s
         """
-        return 0.1832339 * self.Q / self.p[0]
+        return np.log(10)/np.pi/4 * self.Q / self.p[0]
 
     def S(self):
         """
@@ -1159,13 +1159,13 @@ class GRF(AnalyticalInterferenceModels):
         """
         Calculates dimensionless time for GRF
         """
-        return (t / (2.2458* self.p[1]))
+        return (t / (2.2458 * self.p[1]))
 
     def _dimensional_drawdown(self, sd):
         """
         Calculates the dimensional drawdown for GRF
         """
-        return sd * self.p[0] * 0.868588963806504
+        return np.float64(sd) * self.p[0] * 0.868588963806504
 
     def dimensionless_laplace(self, pd):
         """
@@ -1176,15 +1176,6 @@ class GRF(AnalyticalInterferenceModels):
         """
         n = self.p[2]
         return self.rD**(2-n) * (self.rD**2 * pd/4)**(n/4-0.5) * mp.besselk(n/2-1, self.rD*mp.sqrt(pd)) / pd /mp.gamma(n/2)
-
-    def dimensionless_laplace_derivative(self, pd):
-        """
-        Derivative of the General Radial Flow model in Laplace domain
-
-        :param pd: Laplace parameter
-        :function: _laplace_drawdown_derivative(td, option='Stehfest') !!! check -> ERROR
-        """
-        return None
 
     def __call__(self, t):
         td = self._dimensionless_time(t)
@@ -1223,8 +1214,9 @@ class GRF(AnalyticalInterferenceModels):
         :return p[1]: intercept with the horizontal axis for s = 0
         :return p[2]: flow dimension, default radial
         """
+        n = len(self.df) / 3
         p = get_logline(self, df=self.df[self.df.index > n])
-        self.p = [p[0], p[1]*(self.rw/self.r)**2, 2]
+        self.p = [p[0], p[1]*(self.rw/self.r)**2, 2.0]
         return self.p
 
     def plot_typecurve(self, rD = None):
@@ -1267,6 +1259,56 @@ class GRF(AnalyticalInterferenceModels):
             plt.ylim((1e-2, 1e+2))
             plt.grid('True')
         plt.show()
+
+    def rpt(self, option_fit='lm', ttle='GRF', author='Author', filetype='pdf',
+            reptext='Report_grf'):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
+
+        :param option_fit: 'lm' or 'trf'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+        self.fit(option=option_fit)
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.model_label = 'GRF model'
+
+        test = ht.preprocessing(data=self.df)
+        self.der = test.ldiffs()
+
+        self.ttle = ttle
+        fig = log_plot(self)
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Well radius : {:0.4g} m '.format(self.rw), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.7, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.60, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Flow dimension n : {:3.2e} '.format(self.p[2]), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Equivalent transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.45, 'Equivalent storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.35, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
 # Parent generic class
 class AnalyticalSlugModels(AnalyticalInterferenceModels):
