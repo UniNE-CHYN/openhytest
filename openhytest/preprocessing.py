@@ -24,7 +24,6 @@ import numpy as np
 import openhytest as ht
 import scipy.interpolate as interp2d
 import matplotlib.pyplot as plt
-from scipy.interpolate import UnivariateSpline
 from scipy import signal
 
 # *************************************************************
@@ -34,8 +33,8 @@ from scipy import signal
 
 class preprocessing():
 
-    def __init__(self, data=None, der=None, npoints=30, bourdetder = 2, method = 'spline', xstart=None, xend=None, typefilter='moving', p=10, win_types=None, nval=None, idlog='linear', option='sample', Qmat = None):
-        self.data = data
+    def __init__(self, df=None, der=None, npoints=30, bourdetder = 2, method = 'spline', xstart=None, xend=None, typefilter='moving', p=10, win_types=None, nval=None, idlog='linear', option='sample', Qmat = None):
+        self.df = df
         self.der = der
         self.npoints = npoints
         self.bourdetder = bourdetder
@@ -52,43 +51,43 @@ class preprocessing():
 
     def header(self):
         """
-        header reads the header of the pandas data dataframe
+        header reads the header of the pandas df dataframe
         """
-        df = self.data.head(1)
-        self.df = list(df)
+        hd = self.df.head(1)
+        self.hd = list(hd)
 
     def ldiff(self):
         """
         ldiff creates the logarithmic derivative with centered difference scheme.
 
-        :param data:  pandas DF expects at two traces in the dataframe.
+        :param df:  pandas DF expects at two traces in the dataframe.
             The first column needs to be the time.
-             i.e. data.t
-            The second data trace needs to be sampled at the given
+             i.e. df.t
+            The second df trace needs to be sampled at the given
             time in the first column.
-                i.e. data.s
+                i.e. df.s
 
         :return der: logarithmic derivative in pandas dataframe format with the same
-            names given by the input data.
+            names given by the input df.
 
         :Examples:
-            >>>  test = ht.preprocessing(data=df)
+            >>>  test = ht.preprocessing(df=df)
             >>>  test.ldiff()
         """
         self.header()
 
         #Calculate the difference dx
-        x = self.data[self.df[0]].to_numpy()
+        x = self.df[self.hd[0]].to_numpy()
         dx = np.diff(x)
 
         #calculate xd
         xd = np.sqrt(x[:-1]*x[1:])
 
         #Calculate the difference dy
-        dy = np.diff(self.data[self.df[1]])
+        dy = np.diff(self.df[self.hd[1]])
         yd = xd*(dy/dx)
         dummy = np.array(np.transpose([xd, yd]))
-        self.der = pd.DataFrame(dummy, columns=self.df)
+        self.der = pd.DataFrame(dummy, columns=self.hd)
 
         return self.der
 
@@ -97,7 +96,7 @@ class preprocessing():
         ldiff_plot creates the plot with logarithmic derivative with centered
         difference scheme.
 
-        :param data : expects two vectors with t and s
+        :param df : expects two vectors with t and s
 
         :returns : plot inclusive legend
 
@@ -105,8 +104,8 @@ class preprocessing():
         self.ldiff()
 
         f, ax1 = plt.subplots()
-        ax1.loglog(self.data[self.df[0]], self.data[self.df[1]], marker='o', linestyle='')
-        ax1.loglog(self.der[self.df[0]], self.der[self.df[1]], marker='x', linestyle='', color='r')
+        ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
+        ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
         ax1.set_xlabel('Time')
         ax1.set_ylabel('Drawdown and log derivative')
         ax1.grid('True')
@@ -114,24 +113,24 @@ class preprocessing():
 
     def ldiffs(self, npoints=None):
         """
-        ldiffs creates the logarithmic derivative with spline functions.
+        ldiffs creates the logarithmic derivative of x with 1D interpolation of y
 
-        :param data:  pandas DF expects two traces in the dataframe.
+        :param df:  pandas DF expects two traces in the dataframe.
             The first column needs to be the time.
-             i.e. data.t
-            The second data trace needs to be sampled at the given
+             i.e. df.t
+            The second df trace needs to be sampled at the given
             time in the first column.
-                i.e. data.s
+                i.e. df.s
 
         :param npoints: optional argument allowing to adjust the number of points
                 used in the Spline; default is 30
 
         :returns der: logarithmic derivative in pandas dataframe format with the same
-            names given by the input data.
+            names given by the input df.
 
         Examples
         --------
-            >>> test = ht.preprocessing(data=df)
+            >>> test = ht.preprocessing(df=df)
             >>> test.ldiffs()
         """
         if npoints is not None:
@@ -140,18 +139,17 @@ class preprocessing():
         self.header()
 
         #interpolation xi and yi
-        x = self.data[self.df[0]].to_numpy()
+        x = self.df[self.hd[0]].to_numpy()
         xi = np.logspace(np.log10(x[0]), np.log10(x[-1]),  num=self.npoints, endpoint=True, base=10.0, dtype=np.float64)
 
         #changing k & s affects the interplolation
-        spl = UnivariateSpline(x, self.data[self.df[1]].to_numpy(), k=5, s=0.00099)
-        yi = spl(xi)
+        yi = np.interp(xi, x, self.df[self.hd[1]].to_numpy())
 
         xd = xi[1:len(xi)-1]
         yd = xd*(yi[2:len(yi)]-yi[0:len(yi)-2])/(xi[2:len(xi)]-xi[0:len(xi)-2])
 
         dummy = np.array(np.transpose([xd, yd]))
-        self.der = pd.DataFrame(dummy, columns=self.df)
+        self.der = pd.DataFrame(dummy, columns=self.hd)
         return self.der
 
 
@@ -159,7 +157,7 @@ class preprocessing():
         """
         ldiffs_plot creates the plot with logarithmic derivative with spline function
 
-        :param data : expects two vectors with t and s
+        :param df : expects two vectors with t and s
 
         :returns : plot inclusive legend
 
@@ -167,8 +165,8 @@ class preprocessing():
         self.ldiffs()
 
         f, ax1 = plt.subplots()
-        ax1.loglog(self.data[self.df[0]], self.data[self.df[1]], marker='o', linestyle='')
-        ax1.loglog(self.der[self.df[0]], self.der[self.df[1]], marker='x', linestyle='', color='r')
+        ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
+        ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
         ax1.set_xlabel('Time')
         ax1.set_ylabel('Drawdown and log derivative')
         ax1.grid('True')
@@ -179,37 +177,37 @@ class preprocessing():
         """
         ldiffb creates the logarithmic derivative with Bourdet's formula.
 
-        :param data:  pandas DF expects at least two traces in the dataframe.
+        :param df:  pandas DF expects at least two traces in the dataframe.
             The first column needs to be the time.
-                i.e. data.t
-            The second data trace needs to be sampled at the given
+                i.e. df.t
+            The second df trace needs to be sampled at the given
             time in the first column.
-                i.e. data.s
+                i.e. df.s
 
         :param bourdetder: optional argument allowing to adjust the distance between
                successive points to calculate the derivative. default is 2.
 
         :returns der: logarithmic derivative in pandas dataframe format with the same
-            names given by the input data.
+            names given by the input df.
         """
         if bourdetder is not None:
             self.bourdetder = bourdetder
 
         self.header()
 
-        x = self.data[self.df[0]].to_numpy()
+        x = self.df[self.hd[0]].to_numpy()
         logx = np.log(x)
         dx = np.diff(logx)
         dx1 = dx[0:len(dx)-2*self.bourdetder]
         dx2 = dx[2*self.bourdetder-1:len(dx)-1]
 
         #Calculate the difference dy
-        dy = np.diff(self.data[self.df[1]])
+        dy = np.diff(self.df[self.df[1]])
         dy1 = dy[0:len(dy)-2*self.bourdetder]
         dy2 = dy[2*self.bourdetder-1:len(dy)-1]
 
         #xd and yd
-        xd = np.array(x[self.bourdetder:len(self.data[self.df[1]])-self.bourdetder-1])
+        xd = np.array(x[self.bourdetder:len(self.df[self.df[1]])-self.bourdetder-1])
         yd = (dx2*dy1/dx1+dx1*dy2/dx2)/(dx1+dx2)
         dummy = np.array(np.transpose([xd, yd]))
         self. der = pd.DataFrame(dummy, columns=self.df)
@@ -220,15 +218,15 @@ class preprocessing():
         """
         ldiffb_plot creates the plot with logarithmic derivative with Bourdet's formula
 
-        :param data : expects two vectors with t and s
+        :param df : expects two vectors with t and s
 
         :returns : plot inclusive legend
         """
         self.ldiffb()
 
         f, ax1 = plt.subplots()
-        ax1.loglog(self.data[self.df[0]], self.data[self.df[1]], marker='o', linestyle='')
-        ax1.loglog(self.der[self.df[0]], self.der[self.df[1]], marker='x', linestyle='', color='r')
+        ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
+        ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
         ax1.set_xlabel('Time')
         ax1.set_ylabel('Drawdown and log derivative')
         ax1.grid('True')
@@ -239,27 +237,27 @@ class preprocessing():
         """
         ldiffh creates the logarithmic derivative with Horner formula.
 
-        :param data:  pandas DF expects at least two traces in the dataframe.
+        :param df:  pandas DF expects at least two traces in the dataframe.
             The first column needs to be the time.
-                i.e. data.t
-            The second data trace needs to be sampled at the given
+                i.e. df.t
+            The second df trace needs to be sampled at the given
             time in the first column.
-                i.e. data.s
+                i.e. df.s
 
         :returns der: logarithmic derivative in pandas dataframe format with the same
-            names given by the input data.
+            names given by the input df.
 
         """
         self.header()
 
         #create the table x1,x2,x3 and y1,y2,y3
-        x = self.data[self.df[0]].to_numpy()
+        x = self.df[self.hd[0]].to_numpy()
         x1 = np.array(x[:-2])
         x2 = np.array(x[1:-1])
         x3 = np.array(x[2:])
         xd = x2
 
-        y = self.data[self.df[1]].to_numpy()
+        y = self.df[self.hd[1]].to_numpy()
         y1 = np.array(y[:-2])
         y2 = np.array(y[1:-1])
         y3 = np.array(y[2:])
@@ -280,22 +278,22 @@ class preprocessing():
 
         yd = d1+d2-d3
         dummy = np.array(np.transpose([xd, yd]))
-        self.der = pd.DataFrame(dummy, columns=self.df)
+        self.der = pd.DataFrame(dummy, columns=self.hd)
         return self.der
 
     def ldiffh_plot(self):
             """
             ldiffh_plot creates the plot with logarithmic derivative with Horner formula
 
-            :param data : expects two vectors with t and s
+            :param df : expects two vectors with t and s
 
             :returns : plot inclusive legend
             """
             self.ldiffh()
 
             f, ax1 = plt.subplots()
-            ax1.loglog(self.data[self.df[0]], self.data[self.df[1]], marker='o', linestyle='')
-            ax1.loglog(self.der[self.df[0]], self.der[self.df[1]], marker='x', linestyle='', color='r')
+            ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
+            ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
             ax1.set_xlabel('Time')
             ax1.set_ylabel('Drawdown and log derivative')
             ax1.grid('True')
@@ -303,15 +301,15 @@ class preprocessing():
 
     def diagnostic(self, method=None):
         """
-        diagnostic creates a diagnostic plot of the data
+        diagnostic creates a diagnostic plot of the df
         (i.e. a log-log plot of the drawdown as a function of time together with its logarithmic derivative)
 
-        :param data:  pandas series expects at least two traces in the dataframe.
+        :param df:  pandas series expects at least two traces in the dataframe.
             The first column needs to be the time.
-                i.e. data.t
-            The second data trace needs to be sampled at the given
+                i.e. df.t
+            The second df trace needs to be sampled at the given
             time in the first column.
-                i.e. data.s
+                i.e. df.s
 
         :param method :    optional argument allowing to select different methods of
             computation of the derivative
@@ -338,7 +336,7 @@ class preprocessing():
         elif self.method == 'horner':
             self.ldiffh_plot()
         else :
-            print('ERROR: diagnostic(data,method)')
+            print('ERROR: diagnostic(df,method)')
             print(' The method selected for log-derivative calculation is unknown')
 
 
@@ -346,17 +344,17 @@ class preprocessing():
         """
         hyclean: Take only the values that are not nan, finite and strictly positive time.
 
-        :param data:  pandas DF expects at least two traces in the dataframe.
+        :param df:  pandas DF expects at least two traces in the dataframe.
             The first column needs to be the time and the second the data trace.
 
-        :return data: pandas series gives back the cleaned dataset
+        :return df: pandas series gives back the cleaned dataset
         """
         self.header()
-        data = self.data.replace([np.inf, -np.inf], np.nan)
-        for i in range(1, len(self.df)):
-            self.data = data[data[self.df[i]] >= 0]
+        df = self.df.replace([np.inf, -np.inf], np.nan)
+        for i in range(1, len(self.hd)):
+            self.df = df[df[self.hd[i]] >= 0]
 
-        return self.data
+        return self.df
 
     def hyselect(self, xstart=None, xend=None):
         """
@@ -368,7 +366,7 @@ class preprocessing():
         :param xstart: start of period, which will be selected
         :param xend: end of period, which will be selected
 
-        :return data: pandas series gives back the selected dataset
+        :return df: pandas series gives back the selected dataset
         """
         if xstart is not None:
             self.xstart = xstart
@@ -378,10 +376,10 @@ class preprocessing():
 
         self.header()
 
-        mask = (self.data[self.df[0]] > self.xstart) & (self.data[self.df[0]] < self.xend)
-        self.data = self.data.loc[mask]
+        mask = (self.df[self.hd[0]] > self.xstart) & (self.df[self.hd[0]] < self.xend)
+        self.df = self.df.loc[mask]
 
-        return self.data
+        return self.df
 
 
     def hyfilter(self, typefilter=None, p=None, win_types=None):
@@ -391,8 +389,8 @@ class preprocessing():
         Keep in mind that the time step need to be equally spaced for the butterworth filter.
         It can be used for moving average filter, but it is not recommended.
 
-        :param data:  pandas DF expects at least two traces in the dataframe.
-                    The first column needs to be the time and the second the data trace.
+        :param df:  pandas DF expects at least two traces in the dataframe.
+                    The first column needs to be the time and the second the df trace.
 
         :param typefilter: allows to select the type of filter
 
@@ -421,7 +419,7 @@ class preprocessing():
                 weighting window: boxcar, triang, blackman, hamming
                 (see pandas DF rolling command for more options and information)
 
-        :return data: pandas series is gives back with new data traces named 'name'+'_filt' with the 'name' given.
+        :return df: pandas series is gives back with new df traces named 'name'+'_filt' with the 'name' given.
 
         :examples:
             >>>  self.hyfilter()
@@ -445,26 +443,26 @@ class preprocessing():
                 self.p = 11
             elif self.p % 2 == 0:
                 print('ERROR: Make sure, that the size of the moving filter has an odd number.')
-            for i in range(1, len(self.df)):
-                self.data[self.df[i]+'_filt'] = self.data.iloc[:,i].rolling(window=self.p, center=True, win_type=self.win_types).mean()
+            for i in range(1, len(self.hd)):
+                self.df[self.hd[i]+'_filt'] = self.df.iloc[:,i].rolling(window=self.p, center=True, win_type=self.win_types).mean()
         elif self.typefilter == 'butter3':
-            ts = self.data[self.df[1]][0]-self.data[self.df[0]][1]
+            ts = self.df[self.hd[1]][0]-self.df[self.hd[0]][1]
             fs = 2/ts
             fc = 1.5*fs/self.p
             b, a = signal.butter(3, fc, 'low')
-            for i in range(1, len(self.df)):
-                self.data[self.df[i]+'_filt'] = signal.filtfilt(b, a, self.data[self.df[i]])
+            for i in range(1, len(self.hd)):
+                self.df[self.hd[i]+'_filt'] = signal.filtfilt(b, a, self.df[self.df[i]])
         elif self.typefilter == 'butter5':
-            ts = self.data[self.df[1]][0]-self.data[self.df[0]][1]
+            ts = self.df[self.hd[1]][0]-self.df[self.hd[0]][1]
             fs = 2/ts
             fc = 1.5*fs/p
             b, a = signal.butter(5, fc, 'low')
-            for i in range(1, len(self.df)):
-                self.data[self.df[i]+'_filt'] = signal.filtfilt(b, a, self.data[self.df[i]])
+            for i in range(1, len(self.hd)):
+                self.df[self.hd[i]+'_filt'] = signal.filtfilt(b, a, self.df[self.df[i]])
         else:
             print('ERROR: The function hyfilter does not know the filter type.')
 
-        return self.data
+        return self.df
 
 
 def indices(a, func):
@@ -562,23 +560,23 @@ def hysampling(x, y, nval, idlog='linear', option='sample'):
         print('')
         return 1
 
-def flowDim(data, dim=None):
+def flowDim(dim=None):
     """
     Computes the time evolution of flow dimensions
 
-    :param data: pandas dataframe with two vectors, time and drawdown
-    :return dim: = flowDim(data)
+    :param df: pandas dataframe with two vectors, time and drawdown
+    :return dim: = flowDim()
     """
 
     self.header()
 
     # removes all NaN and finite, strictly positive
-    data = ht.hyclean(data)
+    data = ht.hyclean(df)
 
-    dim.x = data[df[1]][1:]
+    dim.x = data[hd[1]][1:]
     # compute flow dimension
-    dim.y = np.multiply(3, (1 - np.divide(([np.log10(x) - np.log10(data[df[1]][i - 1]) for i, x in enumerate(data[df[1]]) if i > 0]), [
-        np.log11(x) - np.log10(data[df[0]][i - 1]) for i, x in enumerate(data[df[0]]) if i > 0])))
+    dim.y = np.multiply(3, (1 - np.divide(([np.log10(x) - np.log10(df[hd[1]][i - 1]) for i, x in enumerate(df[hd[1]]) if i > 0]), [
+        np.log10(x) - np.log10(df[hd[0]][i - 1]) for i, x in enumerate(df[hd[0]]) if i > 0])))
 
     return dim
 
@@ -586,7 +584,7 @@ def flowDim(data, dim=None):
         """
         Calculates the equivalent time of Birsoy and Summers (1981) solution.
 
-        :param data: needs a pandas dataframe with vector t and s
+        :param df: needs a pandas dataframe with vector t and s
         :param Qmat: needs a pandas dataframe with vector t and q
           size = nb of lines = nb of pumping periods
           two colums
@@ -603,9 +601,9 @@ def flowDim(data, dim=None):
         if np.size(self.Qmat.t, 1) < 2:
             print('Warning - birsoy_time function: The Qmat contains only 2 line')
 
-        pe = np.zeros(np.size(self.data[self.df[1]]))
+        pe = np.zeros(np.size(self.df[self.hd[1]]))
         for i in range(np.size(self.Qmat.t), 0, -1):
-            j = self.data[self.df[1].le(self.Qmat.t[i])].index
+            j = self.df[self.hd[1].le(self.Qmat.t[i])].index
             pe[j] = i
         lq = self.Qmat.q[pe]
 
@@ -616,11 +614,11 @@ def flowDim(data, dim=None):
         t = np.ones(np.size(self.Qmat.t))
         for j in range(1, np.size(self.Qmat.t, 0)-1, 1):
             for i in range(1, pe[j]-1, 1):
-                t[j] = birsoy.t[j]* (self.data.t[j] - st[i]) ** (dq[i]/ self.Qmat.q[pe[j]])
+                t[j] = birsoy.t[j]* (self.df.t[j] - st[i]) ** (dq[i]/ self.Qmat.q[pe[j]])
 
         ind = np.argsort(t)
 
         self.birsoy.t = t.sort()
-        self.birsoy.s = self.data.s[ind] / lq[ind]
+        self.birsoy.s = self.df.s[ind] / lq[ind]
 
         return self.birsoy

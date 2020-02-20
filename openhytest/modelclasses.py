@@ -24,6 +24,7 @@ Released under the MIT license:
 
 import numpy as np
 from scipy.special import expn as E1
+from scipy.special import gamma, gammaincc
 from scipy import interpolate
 import matplotlib.pyplot as plt
 from scipy.optimize import least_squares
@@ -65,7 +66,7 @@ def thiem(q, s1, s2, r1, r2):
     >>> s2=1.088
     >>> T=ht.thiem(q,s1,s2,r1,r2)
     """
-    return q / (2 * np.pi * (s1 - s2)) * np.log(r2 / r1);
+    return q / (2 * np.pi * (s1 - s2)) * np.log(r2 / r1)
 
 
 def goodman_discharge(l, T, r0):
@@ -279,7 +280,7 @@ class AnalyticalInterferenceModels():
         self.tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
                               dtype=np.float64)
         self.sc = self.__call__(self.tc)
-        test = ht.preprocessing(data=pda.DataFrame(data={"t": self.tc, "s": self.sc}))
+        test = ht.preprocessing(df=pda.DataFrame(data={"t": self.tc, "s": self.sc}))
         self.derc = test.ldiffs()
         self.mr = np.mean(res_p.fun)
         self.sr = 2 * np.nanstd(res_p.fun)
@@ -453,7 +454,7 @@ class Theis(AnalyticalInterferenceModels):
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model'
 
-        test = ht.preprocessing(data=self.df)
+        test = ht.preprocessing(df=self.df)
         self.der = test.ldiffs()
 
         self.ttle = ttle
@@ -650,7 +651,7 @@ class Theis_noflow(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model with no-flow boundary'
-        test = ht.preprocessing(data=self.df)
+        test = ht.preprocessing(df=self.df)
         self.der = test.ldiffs()
 
         self.ttle = ttle
@@ -859,7 +860,7 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Theis (1935) model with const. head boundary'
-        test = ht.preprocessing(data=self.df)
+        test = ht.preprocessing(df=self.df)
         self.der = test.ldiffs()
 
         self.ttle = ttle
@@ -1167,6 +1168,18 @@ class GRF(AnalyticalInterferenceModels):
         """
         return np.float64(sd) * self.p[0] * 0.868588963806504
 
+
+    def dimensionless(self, td):
+        """
+        Dimensionless drawdown of the Theis model with constant head boundary
+
+        :param td:  dimensionless time
+        :return sd: dimensionless drawdown
+        """
+        n = self.p[2]
+        u = self.rD ** 2 / (4 * td )
+        return self.rD ** (2-n) / (4 * np.pi**(n/2)) * gamma(n/2 - 1)*gammaincc(n/2 - 1,u)
+
     def dimensionless_laplace(self, pd):
         """
         Drawdown of the General Radial Flow model in Laplace domain
@@ -1250,7 +1263,7 @@ class GRF(AnalyticalInterferenceModels):
             #dd = list(self._laplace_drawdown_derivative(td))
             d = {'td': td, 'sd': sd}
             df = pda.DataFrame(data=d)
-            test = ht.preprocessing(data=df, npoints=20)
+            test = ht.preprocessing(df=df, npoints=20)
             der = test.ldiff()
             plt.loglog(td, sd, '-', der.td, der.sd, '.-')
             plt.title('r_D=%g, n=%g' % (self.rD ,1.5+i*.5))
@@ -1277,7 +1290,7 @@ class GRF(AnalyticalInterferenceModels):
         self.Storativity = self.S()
         self.model_label = 'GRF model'
 
-        test = ht.preprocessing(data=self.df)
+        test = ht.preprocessing(df=self.df)
         self.der = test.ldiffs()
 
         self.ttle = ttle
@@ -1534,7 +1547,7 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         self.Storativity2 = self.S2()
 
         self.model_label = 'Cooper-Bredehoeft-Papadopulos (1967)'
-        test = ht.preprocessing(data=self.df)
+        test = ht.preprocessing(df=self.df)
         self.der = test.ldiffs()
 
         self.ttle = ttle
