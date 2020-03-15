@@ -78,418 +78,17 @@
 <p>This is API documentation</p>
 <span class="target" id="module-openhytest.preprocessing"></span><div class="section" id="preprocessing-tool">
 <h2>Preprocessing tool<a class="headerlink" href="#preprocessing-tool" title="Permalink to this headline">¶</a></h2>
-<p>The openhytest preprocessing is a Python package for time series selection, 
-reprocessing, resampling, filtering and visualization. 
+<p>The openhytest preprocessing is a Python package for time series selection,
+preprocessing, resampling, filtering and visualization.
 License
 ——-
 Released under the MIT license:</p>
 <blockquote>
-<div><p>Copyright (C) 2019 openhytest Developers
+<div><p>Copyright (C) 2020 openhytest Developers
 Nathan Dutler &lt;<a class="reference external" href="mailto:nathan&#46;dutlern&#37;&#52;&#48;unine&#46;ch">nathan<span>&#46;</span>dutlern<span>&#64;</span>unine<span>&#46;</span>ch</a>&gt;
 Philippe Renard &lt;<a class="reference external" href="mailto:philippe&#46;renard&#37;&#52;&#48;unine&#46;ch">philippe<span>&#46;</span>renard<span>&#64;</span>unine<span>&#46;</span>ch</a>&gt;
 Bernard Brixel &lt;<a class="reference external" href="mailto:bernard&#46;brixel&#37;&#52;&#48;erdw&#46;ethz&#46;ch">bernard<span>&#46;</span>brixel<span>&#64;</span>erdw<span>&#46;</span>ethz<span>&#46;</span>ch</a>&gt;</p>
 </div></blockquote>
-<dl class="function">
-<dt id="openhytest.preprocessing.diagnostic">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">diagnostic</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">method='spline'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.diagnostic" title="Permalink to this definition">¶</a></dt>
-<dd><p>(i.e. a log-log plot of the drawdown as a function of time together with its logarithmic derivative)</p>
-<dl>
-<dt>data<span class="classifier">pandas series expects at least two traces in the dataframe.</span></dt><dd><dl class="simple">
-<dt>The first column needs to be the time.</dt><dd><p>i.e. data.t</p>
-</dd>
-</dl>
-<p>The second and following data trace needs to be sampled at the given
-time in the first column.</p>
-<blockquote>
-<div><p>i.e. data.s, data.s2</p>
-</div></blockquote>
-</dd>
-<dt>method<span class="classifier">optional argument allowing to select different methods of </span></dt><dd><p>computation of the derivative</p>
-</dd>
-</dl>
-<p>‘spline’ for spline resampling
-in that case d is the number of points for the spline</p>
-<p>‘direct’ for direct derivation
-in that case the value provided in the variable d is not used</p>
-<p>‘bourdet’ for the Bourdet et al. formula
-in that case d is the lag distance used to compute the derivative</p>
-<p>‘horner’  for the logarithmic derivative with Horne formula</p>
-<dl class="field-list">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>plot inclusive legend</dt><dd></dd>
-<dt>Example:</dt><dd></dd>
-</dl>
-<blockquote>
-<div><p>diagnostic(data) 
-diagnostic(data,’horner’)</p>
-</div></blockquote>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.flowDim">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">flowDim</code><span class="sig-paren">(</span><em class="sig-param">t</em>, <em class="sig-param">s</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.flowDim" title="Permalink to this definition">¶</a></dt>
-<dd><p>computes the time evolution of flow dimensions</p>
-<dl class="simple">
-<dt>Syntax:</dt><dd><p>x_dim, y_dim = flowDim(t,s)
-t = elapsed time
-s = drawdown or pressure buildup</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.hyclean">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">hyclean</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.hyclean" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>data:  pandas DF expects at least two traces in the dataframe.</dt><dd><p>The first column needs to be the time.
-i.e. data.t
-The second and following data trace needs to be sampled at the given
-time in the first column.
-i.e. data.s, data.s2</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>data:</dt><dd><p>pandas series gives back the cleaned dataset</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyclean</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.hyfilter">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">hyfilter</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">typefilter='moving'</em>, <em class="sig-param">p=10</em>, <em class="sig-param">win_types='None'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.hyfilter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Keep in mind that the time step need to be equally spaced for the butterworth filter.
-It can be used for moving average filter, but it is not recommended.</p>
-<dl class="simple">
-<dt>data:  pandas DF expects at least two traces in the dataframe.</dt><dd><p>The first column needs to be the time.
-i.e. data.t
-The second and following data trace needs to be sampled at the given
-time in the first column.
-i.e. data.s, data.s2</p>
-</dd>
-</dl>
-<p>typefilter: allows to select the type of filter</p>
-<p>‘butter2’ for the Butterworth filter with filter order 2 or 
-‘butter4’ for the Butterworth filter with filter order 4.
-The Butterworth filters high frequency components in the signal.
-It is very sensitive of outliers.Therefore the Butterworth filter is 
-more appropriate for noisy signals without outliers, the moving average is
-recommended to filter very irregular signals.</p>
-<p>‘moving’ for the moving average (Default option). 
-The moving average is less sensitive of outliers but at the same time
-less smooth using a centered windows.</p>
-<p>p: parameter that depends on the type of filter that has been chosen.</p>
-<blockquote>
-<div><dl class="simple">
-<dt>for the moving average  </dt><dd><dl class="simple">
-<dt>p = size of the moving window in number of points</dt><dd><p>by default it is equal to 5. It has to be an odd number.</p>
-</dd>
-</dl>
-</dd>
-<dt>for the Butterworth filter  </dt><dd><dl class="simple">
-<dt>p = period of the cutoff frequency in number of measurements</dt><dd><p>by default it is equal to 10</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</div></blockquote>
-<dl class="simple">
-<dt>win_types: is only defined for ‘moving’ filter. It defines the type of </dt><dd><p>weighting window: boxcar, triang, blackman, hamming 
-(see pandas DF rolling command for more options and information)</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>data</dt><dd><p>pandas series is gives back with new data traces named ‘name’+’_filt’ with
-the ‘name’ given.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyfilter</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyfilter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="s1">&#39;moving&#39;</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyfilter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="s1">&#39;moving&#39;</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="s1">&#39;triang&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span> <span class="n">data</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyfilter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="s1">&#39;butter2&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.hysampling">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">hysampling</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">y</em>, <em class="sig-param">nval</em>, <em class="sig-param">idlog='linear'</em>, <em class="sig-param">option='sample'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.hysampling" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sample a signal at regular intervals</p>
-<dl>
-<dt>Syntax:</dt><dd><p>xs,ys = hysampling(x,y,nval,idlog,option)
-x,y   = vectors containing the input signal
-nval  = number of values of the output signal
-xs,ys = sampled signal</p>
-<dl>
-<dt>idlog: allows to select the type of spacing of the samples</dt><dd><p>idlog  = ‘linear’ = Default value = linear scale
-idlog  = ‘log’    = logarithmic scale</p>
-</dd>
-<dt>option: allows to define if the points must be interpolated</dt><dd><dl class="simple">
-<dt>option = ‘sample’ = Default value</dt><dd><p>= only points from the data set are taken</p>
-</dd>
-</dl>
-<p>option = ‘interp’ = creates points by interpolation</p>
-</dd>
-</dl>
-</dd>
-<dt>Example:</dt><dd><p>ts,hs = hysampling(t,s,10)
-ts,hs = hysampling(t,s,30,’log’)
-ts,hs = hysampling(t,s,10,’linear’,’interp’)
-ts,qs = hysampling(tf,qf,30,’log’,’interp’)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.hyselect">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">hyselect</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">xstart</em>, <em class="sig-param">xend</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.hyselect" title="Permalink to this definition">¶</a></dt>
-<dd><dl>
-<dt>data:  pandas DF expects at least two traces in the dataframe.</dt><dd><p>The first column needs to be the time.
-i.e. data.t
-The second and following data trace needs to be sampled at the given
-time in the first column.
-i.e. data.s, data.s2</p>
-<p>xstart,xend = period that must be selected</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>data:</dt><dd><p>pandas series gives back the selected dataset</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">data_select</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">hyselect</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">xstart</span><span class="p">,</span> <span class="n">xend</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.indices">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">indices</code><span class="sig-paren">(</span><em class="sig-param">a</em>, <em class="sig-param">func</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.indices" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return index</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.ldiff">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">ldiff</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiff" title="Permalink to this definition">¶</a></dt>
-<dd><dl>
-<dt>data:  pandas DF expects at least two traces in the dataframe.</dt><dd><dl class="simple">
-<dt>The first column needs to be the time.</dt><dd><p>i.e. data.t</p>
-</dd>
-</dl>
-<p>The second and following data trace needs to be sampled at the given
-time in the first column.</p>
-<blockquote>
-<div><p>i.e. data.s, data.s2</p>
-</div></blockquote>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>derivative</dt><dd><p>logarithmic derivative in pandas dataframe format with the same
-names given by the input data.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">derivative</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">ldiff</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>   
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.ldiff_plot">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">ldiff_plot</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiff_plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>ldiff_plot creates the plot with logarithmic derivative with centered 
-difference scheme.
-———
-data : expects at least two vectors with x and y1, y2, y3,…</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>plot inclusive legend</dt><dd></dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ht</span><span class="o">.</span><span class="n">ldiff_plot</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.ldiffb">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">ldiffb</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">d=2</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffb" title="Permalink to this definition">¶</a></dt>
-<dd><dl>
-<dt>data:  pandas DF expects at least two traces in the dataframe.</dt><dd><dl class="simple">
-<dt>The first column needs to be the time.</dt><dd><p>i.e. data.t</p>
-</dd>
-</dl>
-<p>The second and following data trace needs to be sampled at the given
-time in the first column.</p>
-<blockquote>
-<div><p>i.e. data.s, data.s2</p>
-</div></blockquote>
-</dd>
-<dt>d = optional argument allowing to adjust the distance between </dt><dd><p>successive points to calculate the derivative.</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>derivative</dt><dd><p>logarithmic derivative in pandas dataframe format with the same
-names given by the input data.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">derivative</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">ldiffb</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.ldiffb_plot">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">ldiffb_plot</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">d=2</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffb_plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>data : expects at least two vectors with x and y1, y2, y3,…</p>
-<dl class="simple">
-<dt>d = optional argument allowing to adjust the distance between </dt><dd><p>successive points to calculate the derivative.</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>plot inclusive legend</dt><dd></dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ht</span><span class="o">.</span><span class="n">ldiffb_plot</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.ldiffh">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">ldiffh</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffh" title="Permalink to this definition">¶</a></dt>
-<dd><dl>
-<dt>data:  pandas DF expects at least two traces in the dataframe.</dt><dd><dl class="simple">
-<dt>The first column needs to be the time.</dt><dd><p>i.e. data.t</p>
-</dd>
-</dl>
-<p>The second and following data trace needs to be sampled at the given
-time in the first column.</p>
-<blockquote>
-<div><p>i.e. data.s, data.s2</p>
-</div></blockquote>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>derivative</dt><dd><p>logarithmic derivative in pandas dataframe format with the same
-names given by the input data.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">derivative</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">ldiffh</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.ldiffh_plot">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">ldiffh_plot</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffh_plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>data : expects at least two vectors with x and y1, y2, y3,…</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>plot inclusive legend</dt><dd></dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ht</span><span class="o">.</span><span class="n">ldiffh_plot</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.ldiffs">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">ldiffs</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">npoints=20</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffs" title="Permalink to this definition">¶</a></dt>
-<dd><dl>
-<dt>data:  pandas DF expects at least two traces in the dataframe.</dt><dd><dl class="simple">
-<dt>The first column needs to be the time.</dt><dd><p>i.e. data.t</p>
-</dd>
-</dl>
-<p>The second and following data trace needs to be sampled at the given
-time in the first column.</p>
-<blockquote>
-<div><p>i.e. data.s, data.s2</p>
-</div></blockquote>
-</dd>
-<dt>npoints = optional argument allowing to adjust the number of points </dt><dd><p>used in the Spline</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>derivative</dt><dd><p>logarithmic derivative in pandas dataframe format with the same
-names given by the input data.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">derivative</span> <span class="o">=</span> <span class="n">ht</span><span class="o">.</span><span class="n">ldiffs</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.preprocessing.ldiffs_plot">
-<code class="sig-prename descclassname">openhytest.preprocessing.</code><code class="sig-name descname">ldiffs_plot</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">npoints=20</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.preprocessing.ldiffs_plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>data : expects at least two vectors with x and y1, y2, y3,…</p>
-<dl class="simple">
-<dt>npoints = optional argument allowing to adjust the number of points </dt><dd><p>used in the Spline</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>plot inclusive legend</dt><dd></dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ht</span><span class="o">.</span><span class="n">ldiffs_plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
 </div>
 <span class="target" id="module-openhytest.modelclasses"></span><div class="section" id="analytical-model-classes">
 <h2>Analytical model classes<a class="headerlink" href="#analytical-model-classes" title="Permalink to this headline">¶</a></h2>
@@ -1048,6 +647,332 @@ a homogeneous confined aquifer bounded by a constant head boundary.</p>
 <dl class="method">
 <dt id="openhytest.modelclasses.Theis_constanthead.rpt">
 <code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='Theis (1935) const. head'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_thc'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.rpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>option_fit</strong> – ‘lm’ or ‘trf’</p></li>
+<li><p><strong>ttle</strong> – Title of the figure</p></li>
+<li><p><strong>author</strong> – Author name</p></li>
+<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
+<li><p><strong>reptext</strong> – savefig name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="openhytest.modelclasses.JacobLohman">
+<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">JacobLohman</code><span class="sig-paren">(</span><em class="sig-param">s=None</em>, <em class="sig-param">r=None</em>, <em class="sig-param">Rd=None</em>, <em class="sig-param">df=None</em>, <em class="sig-param">p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constant head test:
+Jacob &amp; Lohman (1952) discharge solution in the well</p>
+<dl class="field-list simple">
+<dt class="field-odd">Initialzation</dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>s</strong> – drawdown, m</p></li>
+<li><p><strong>r</strong> – radius between wells, m</p></li>
+<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.q (m^3/s) for test time respective drawdown, df.s is calculated as 1 / df.q</p></li>
+<li><p><strong>self</strong> – </p></li>
+<li><p><strong>p</strong> – solution vector</p></li>
+<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
+<li><p><strong>tc</strong> – Calculated time</p></li>
+<li><p><strong>qc</strong> – Calculated flow rate</p></li>
+<li><p><strong>derc</strong> – Calculated flow rate derivative data given as dataframe with derc.t and derc.s</p></li>
+<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
+<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
+<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
+<li><p><strong>ttle</strong> – title of the plot</p></li>
+<li><p><strong>model_label</strong> – model label of the plot</p></li>
+<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
+<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
+<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
+<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
+<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
+</ul>
+</dd>
+<dt class="field-odd">ParamRadInfluence</dt>
+<dd class="field-odd"><p>Radius of influence m</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<dl class="method">
+<dt id="openhytest.modelclasses.JacobLohman.RadiusOfInfluence">
+<code class="sig-name descname">RadiusOfInfluence</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.RadiusOfInfluence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the radius of influence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return ri</dt>
+<dd class="field-odd"><p>Distance to image well m</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.JacobLohman.T">
+<code class="sig-name descname">T</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.T" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates Transmissivity</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return Transmissivity</dt>
+<dd class="field-odd"><p>transmissivity m^2/s</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.JacobLohman.dimensionless_laplace">
+<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless flow rate of the Jacob-Lohamn model in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_flowrate(td, option=’Stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.JacobLohman.dimensionless_laplace_derivative">
+<code class="sig-name descname">dimensionless_laplace_derivative</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.dimensionless_laplace_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless flow rate derivative of the Jacob-Lohamn model in Laplace domain</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.JacobLohman.guess_params">
+<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.guess_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>First guess for the parameters of the Jacob &amp; Lohman (1952) model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return p[0]</dt>
+<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
+</dd>
+<dt class="field-even">Return p[1]</dt>
+<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.JacobLohman.perrochet">
+<code class="sig-name descname">perrochet</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.perrochet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perrochet approximation for Jacob &amp; Lohman (1952)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return qd</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.JacobLohman.plot_typecurve">
+<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.plot_typecurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type curves of the Jacob-Lohman (1952) model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.JacobLohman.rpt">
+<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='Jacob &amp; Lohman (1952)'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_jlq'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.rpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>option_fit</strong> – ‘lm’ or ‘trf’</p></li>
+<li><p><strong>ttle</strong> – Title of the figure</p></li>
+<li><p><strong>author</strong> – Author name</p></li>
+<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
+<li><p><strong>reptext</strong> – savefig name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="openhytest.modelclasses.GRF">
+<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">GRF</code><span class="sig-paren">(</span><em class="sig-param">Q=None</em>, <em class="sig-param">r=1</em>, <em class="sig-param">rw=1</em>, <em class="sig-param">df=None</em>, <em class="sig-param">p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Barker (1988) general radial flow model</p>
+<p>This class computes the dimensionless drawdown as a function of
+dimensionless time for a constant rate intereference test
+with the General Radial Flow model of Barker (1988). This solution is
+a generalisation of flow equation in 1D, 2D, 3D and non integer flow
+dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Initialzation</dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Q</strong> – pumping rate, m3/s</p></li>
+<li><p><strong>r</strong> – radius between wells, m</p></li>
+<li><p><strong>rw</strong> – radius of the well, m</p></li>
+<li><p><strong>rD</strong> – dimensionless radius</p></li>
+<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.s for test time respective drawdown</p></li>
+<li><p><strong>self</strong> – </p></li>
+<li><p><strong>p</strong> – solution vector</p></li>
+<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
+<li><p><strong>tc</strong> – Calculated time</p></li>
+<li><p><strong>sc</strong> – Calculated drawdown</p></li>
+<li><p><strong>derc</strong> – Calculated drawdown derivative data given as dataframe with derc.t and derc.s</p></li>
+<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
+<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
+<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
+<li><p><strong>ttle</strong> – title of the plot</p></li>
+<li><p><strong>model_label</strong> – model label of the plot</p></li>
+<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
+<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
+<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
+<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
+<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
+</ul>
+</dd>
+<dt class="field-odd">ParamRadInfluence</dt>
+<dd class="field-odd"><p>Radius of influence m</p>
+</dd>
+<dt class="field-even">Reference</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<p>Barker, J.A. 1988. A Generalized radial flow model fro hydraulic tests
+in fractured rock. Water Resources Research 24, no. 10: 1796-1804.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<dl class="method">
+<dt id="openhytest.modelclasses.GRF.dimensionless">
+<code class="sig-name descname">dimensionless</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.dimensionless" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless drawdown of the Theis model with constant head boundary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>td</strong> – dimensionless time</p>
+</dd>
+<dt class="field-even">Return sd</dt>
+<dd class="field-even"><p>dimensionless drawdown</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.GRF.dimensionless_laplace">
+<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drawdown of the General Radial Flow model in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_drawdown(td, option=’Stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.GRF.guess_params">
+<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.guess_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>First guess for the parameters of the Theis model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return p[0]</dt>
+<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
+</dd>
+<dt class="field-even">Return p[1]</dt>
+<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
+</dd>
+<dt class="field-odd">Return p[2]</dt>
+<dd class="field-odd"><p>flow dimension, default radial</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.GRF.plot_typecurve">
+<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">rD=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.plot_typecurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw a series of typecurves of the General Flow Model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.GRF.rpt">
+<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='GRF'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_grf'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.rpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>option_fit</strong> – ‘lm’ or ‘trf’</p></li>
+<li><p><strong>ttle</strong> – Title of the figure</p></li>
+<li><p><strong>author</strong> – Author name</p></li>
+<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
+<li><p><strong>reptext</strong> – savefig name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="openhytest.modelclasses.CooperBredehoeftPapadopulos">
+<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">CooperBredehoeftPapadopulos</code><span class="sig-paren">(</span><em class="sig-param">Q=None</em>, <em class="sig-param">r=None</em>, <em class="sig-param">rw=None</em>, <em class="sig-param">rc=None</em>, <em class="sig-param">cD=None</em>, <em class="sig-param">df=None</em>, <em class="sig-param">p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.CooperBredehoeftPapadopulos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Slug test with the Cooper et al. (1967) solution</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Q</strong> – pumping rate</p></li>
+<li><p><strong>r</strong> – distance between the observation well and pumping well</p></li>
+<li><p><strong>rw</strong> – radius of the well</p></li>
+<li><p><strong>rc</strong> – radius of the casing</p></li>
+<li><p><strong>rD</strong> – dimensionless radius</p></li>
+<li><p><strong>cD</strong> – dimensionless well bore storage coefficient</p></li>
+<li><p><strong>p</strong> – solution vector</p></li>
+<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.s for test time respective drawdown</p></li>
+<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
+<li><p><strong>tc</strong> – Calculated time</p></li>
+<li><p><strong>sc</strong> – Calculated draw down</p></li>
+<li><p><strong>derc</strong> – Calculated flow rate derivative data given as dataframe with derc.t and derc.s</p></li>
+<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
+<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
+<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
+<li><p><strong>ttle</strong> – title of the plot</p></li>
+<li><p><strong>model_label</strong> – model label of the plot</p></li>
+<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
+<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
+<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
+<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
+<li><p><strong>Storativity2</strong> – Storativtiy -</p></li>
+<li><p><strong>RadInfluence</strong> – Radius of influence m</p></li>
+<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
+</ul>
+</dd>
+<dt class="field-even">Description</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<p>Computes the normalized drawdown (Delta h / Delta h0) as a function of
+time with the Cooper et al. (1967) solution for a slug test in a
+homogeneous confined aquifer. The well is fully penetrating and the
+slug injection or withdrawal is instantaneous.</p>
+<p>The dimensionless well bore storage coefficient is: Cd = rc^2/(2*rw^2*S)</p>
+<p>Note that in the original publication of Cooper et al.
+The dimensionless parameter was alpha, it is related to Cd by: alpha = 1 / (2 Cd)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Reference</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<p>Cooper, H.H.J., J.D. Bredehoeft, and I.S. Papadopulos.
+1967. Response of a finite-diameter well to an instantaneous charge of
+water. Water Resources Research 3, no. 1: 263-269.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<dl class="method">
+<dt id="openhytest.modelclasses.CooperBredehoeftPapadopulos.plot_typecurve">
+<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">cD=array([    10</em>, <em class="sig-param">100</em>, <em class="sig-param">1000</em>, <em class="sig-param">10000</em>, <em class="sig-param">100000])</em>, <em class="sig-param">rD=1</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.CooperBredehoeftPapadopulos.plot_typecurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type curves of the Cooper-Bredehoeft-Papadopulos (1967) model</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="openhytest.modelclasses.CooperBredehoeftPapadopulos.rpt">
+<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='Cooper-Bredehoeft-Papadopulos (1967)'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_cbp'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.CooperBredehoeftPapadopulos.rpt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

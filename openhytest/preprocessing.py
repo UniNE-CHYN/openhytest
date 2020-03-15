@@ -10,7 +10,7 @@
 Preprocessing tool
 ==================
 The openhytest preprocessing is a Python package for time series selection,
-reprocessing, resampling, filtering and visualization.
+preprocessing, resampling, filtering and visualization.
 License
 -------
 Released under the MIT license:
@@ -56,7 +56,7 @@ class preprocessing():
         hd = self.df.head(1)
         self.hd = list(hd)
 
-    def ldiff(self):
+    def ldiff(self, df=None):
         """
         ldiff creates the logarithmic derivative with centered difference scheme.
 
@@ -74,6 +74,9 @@ class preprocessing():
             >>>  test = ht.preprocessing(df=df)
             >>>  test.ldiff()
         """
+        if df is not None:
+            self.df = df
+
         self.header()
 
         #Calculate the difference dx
@@ -91,7 +94,7 @@ class preprocessing():
 
         return self.der
 
-    def ldiff_plot(self):
+    def ldiff_plot(self, df=None):
         """
         ldiff_plot creates the plot with logarithmic derivative with centered
         difference scheme.
@@ -101,6 +104,9 @@ class preprocessing():
         :returns : plot inclusive legend
 
         """
+        if df is not None:
+            self.df = df
+
         self.ldiff()
 
         f, ax1 = plt.subplots()
@@ -111,7 +117,7 @@ class preprocessing():
         ax1.grid('True')
         ax1.legend(['s', 'd'])
 
-    def ldiffs(self, npoints=None):
+    def ldiffs(self, df=None, npoints=None):
         """
         ldiffs creates the logarithmic derivative of x with 1D interpolation of y
 
@@ -133,6 +139,9 @@ class preprocessing():
             >>> test = ht.preprocessing(df=df)
             >>> test.ldiffs()
         """
+        if df is not None:
+            self.df = df
+
         if npoints is not None:
             self.npoints = npoints
 
@@ -153,7 +162,7 @@ class preprocessing():
         return self.der
 
 
-    def ldiffs_plot(self):
+    def ldiffs_plot(self, df=None):
         """
         ldiffs_plot creates the plot with logarithmic derivative with spline function
 
@@ -162,6 +171,9 @@ class preprocessing():
         :returns : plot inclusive legend
 
         """
+        if df is not None:
+            self.df = df
+
         self.ldiffs()
 
         f, ax1 = plt.subplots()
@@ -173,7 +185,7 @@ class preprocessing():
         ax1.legend(['s', 'd'])
 
 
-    def ldiffb(self, bourdetder=None):
+    def ldiffb(self, df=None, bourdetder=None):
         """
         ldiffb creates the logarithmic derivative with Bourdet's formula.
 
@@ -190,6 +202,9 @@ class preprocessing():
         :returns der: logarithmic derivative in pandas dataframe format with the same
             names given by the input df.
         """
+        if df is not None:
+            self.df = df
+
         if bourdetder is not None:
             self.bourdetder = bourdetder
 
@@ -214,7 +229,7 @@ class preprocessing():
         return self.der
 
 
-    def ldiffb_plot(self):
+    def ldiffb_plot(self, df=None):
         """
         ldiffb_plot creates the plot with logarithmic derivative with Bourdet's formula
 
@@ -222,6 +237,9 @@ class preprocessing():
 
         :returns : plot inclusive legend
         """
+        if df is not None:
+            self.df = df
+
         self.ldiffb()
 
         f, ax1 = plt.subplots()
@@ -233,7 +251,7 @@ class preprocessing():
         ax1.legend(['s', 'd'])
 
 
-    def ldiffh(self):
+    def ldiffh(self, df=None):
         """
         ldiffh creates the logarithmic derivative with Horner formula.
 
@@ -248,6 +266,9 @@ class preprocessing():
             names given by the input df.
 
         """
+        if df is not None:
+            self.df = df
+
         self.header()
 
         #create the table x1,x2,x3 and y1,y2,y3
@@ -281,25 +302,28 @@ class preprocessing():
         self.der = pd.DataFrame(dummy, columns=self.hd)
         return self.der
 
-    def ldiffh_plot(self):
-            """
-            ldiffh_plot creates the plot with logarithmic derivative with Horner formula
+    def ldiffh_plot(self, df=None):
+        """
+        ldiffh_plot creates the plot with logarithmic derivative with Horner formula
 
-            :param df : expects two vectors with t and s
+        :param df : expects two vectors with t and s
 
-            :returns : plot inclusive legend
-            """
-            self.ldiffh()
+        :returns : plot inclusive legend
+        """
+        if df is not None:
+            self.df = df
 
-            f, ax1 = plt.subplots()
-            ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
-            ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
-            ax1.set_xlabel('Time')
-            ax1.set_ylabel('Drawdown and log derivative')
-            ax1.grid('True')
-            ax1.legend(['s', 'd'])
+        self.ldiffh()
 
-    def diagnostic(self, method=None):
+        f, ax1 = plt.subplots()
+        ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
+        ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel('Drawdown and log derivative')
+        ax1.grid('True')
+        ax1.legend(['s', 'd'])
+
+    def diagnostic(self, df=None, method=None):
         """
         diagnostic creates a diagnostic plot of the df
         (i.e. a log-log plot of the drawdown as a function of time together with its logarithmic derivative)
@@ -324,6 +348,9 @@ class preprocessing():
 
         :return: diagnostic plot inclusive legend
         """
+        if df is not None:
+            self.df = df
+
         if method is not None:
             self.method = method
 
@@ -340,7 +367,7 @@ class preprocessing():
             print(' The method selected for log-derivative calculation is unknown')
 
 
-    def hyclean(self):
+    def hyclean(self, df=None):
         """
         hyclean: Take only the values that are not nan, finite and strictly positive time.
 
@@ -349,6 +376,9 @@ class preprocessing():
 
         :return df: pandas series gives back the cleaned dataset
         """
+        if df is not None:
+            self.df = df
+
         self.header()
         df = self.df.replace([np.inf, -np.inf], np.nan)
         for i in range(1, len(self.hd)):
@@ -356,7 +386,7 @@ class preprocessing():
 
         return self.df
 
-    def hyselect(self, xstart=None, xend=None):
+    def hyselect(self, df=None, xstart=None, xend=None):
         """
         hyselect Select a part of a dataset strictly between xstart and xend
 
@@ -368,6 +398,9 @@ class preprocessing():
 
         :return df: pandas series gives back the selected dataset
         """
+        if df is not None:
+            self.df = df
+
         if xstart is not None:
             self.xstart = xstart
 
@@ -382,7 +415,7 @@ class preprocessing():
         return self.df
 
 
-    def hyfilter(self, typefilter=None, p=None, win_types=None):
+    def hyfilter(self, df=None, typefilter=None, p=None, win_types=None):
         """
         hyfilter Filter a signal in order to reduce the noise.
 
@@ -427,6 +460,9 @@ class preprocessing():
             >>>  self.hyfilter(typefilter='moving', p=8, win_types='triang')
             >>>  self.hyfilter(typefilter='butter3', p=10)
         """
+        if df is not None:
+            self.df = df
+
         if typefilter is not None:
             self.typefilter = typefilter
 
@@ -560,27 +596,30 @@ def hysampling(x, y, nval, idlog='linear', option='sample'):
         print('')
         return 1
 
-def flowDim(dim=None):
-    """
-    Computes the time evolution of flow dimensions
+    def flowDim(self, df=None):
+        """
+        Computes the time evolution of flow dimensions
 
-    :param df: pandas dataframe with two vectors, time and drawdown
-    :return dim: = flowDim()
-    """
+        :param df: pandas dataframe with two vectors, time and drawdown
+        :return dim: = flowDim()
+        """
+        if df is not None:
+            self.df = df
 
-    self.header()
+        self.header()
 
-    # removes all NaN and finite, strictly positive
-    data = ht.hyclean(df)
+        # removes all NaN and finite, strictly positive
+        ht.hyclean()
 
-    dim.x = data[hd[1]][1:]
-    # compute flow dimension
-    dim.y = np.multiply(3, (1 - np.divide(([np.log10(x) - np.log10(df[hd[1]][i - 1]) for i, x in enumerate(df[hd[1]]) if i > 0]), [
-        np.log10(x) - np.log10(df[hd[0]][i - 1]) for i, x in enumerate(df[hd[0]]) if i > 0])))
+        x = self.data[self.hd[1]][1:]
+        # compute flow dimension
+        y = np.multiply(3, (1 - np.divide(([np.log10(x) - np.log10(self.df[self.hd[1]][i - 1]) for i, x in enumerate(self.df[self.hd[1]]) if i > 0]), [
+            np.log10(x) - np.log10(self.df[self.hd[0]][i - 1]) for i, x in enumerate(self.df[self.hd[0]]) if i > 0])))
+        dummy = np.array(np.transpose([x, y]))
+        self.dim = pd.DataFrame(dummy, columns=self.hd)
+        return self.dim
 
-    return dim
-
-    def birsoy_time(self, Qmat=None, birsoy=None):
+    def birsoy_time(self, df=None, Qmat=None, birsoy=None):
         """
         Calculates the equivalent time of Birsoy and Summers (1981) solution.
 
@@ -593,6 +632,9 @@ def flowDim(dim=None):
 
         :return birsoy: equivalent Birsoy and Summers time, t and drawdown = s/qn, s
         """
+        if df is not None:
+            self.df = df
+
         self.header()
 
         if Qmat is not None:

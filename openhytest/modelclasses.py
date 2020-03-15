@@ -1,4 +1,4 @@
-#    Copyright (C) 2019 by
+#    Copyright (C) 2020 by
 #    Nathan Dutler <nathan.dutler@unine.ch>
 #    Philippe Renard <philippe.renard@unine.ch>
 #    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
@@ -25,9 +25,8 @@ Released under the MIT license:
 import numpy as np
 from scipy.special import expn as E1
 from scipy.special import gamma, gammaincc
-from scipy import interpolate
 import matplotlib.pyplot as plt
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares, minimize
 import mpmath as mp
 import openhytest as ht
 import pandas as pda
@@ -242,7 +241,7 @@ class AnalyticalInterferenceModels():
         print('S = ', self.S(), '-')
         print('Ri = ', self.RadiusOfInfluence(), 'm')
 
-    def fit(self, option='lm'):
+    def fit(self, option='lm', fitmethod='trust-krylov', fitbnds=None, fitcons=None):
         """
         Fit the model parameter of a given model.
 
@@ -252,9 +251,16 @@ class AnalyticalInterferenceModels():
         initial guess of the parameters, that will then be iterativly modified
         until a local minimum is obtained.
 
-        :param option:  Levenberg-Marquard (lm is default) or Trust Region Reflection algorithm (trf)
+        :param option:  Levenberg-Marquard (lm is default), Trust Region Reflection algorithm (trf) 
+        using least-squares implementation from scipy-optimize or minimize function from the same library
         :return res_p.x:    solution vector p
         """
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        if fitbnds is not None:
+            self.fitbnds = fitbnds
+        if fitcons is not None:
+            self.fitcons = fitcons            
         if self.p is None:
             print("Error, intialize p using the function guess_params")
 
@@ -272,7 +278,10 @@ class AnalyticalInterferenceModels():
             res_p = least_squares(fun, p, args=(t, s), method='lm', xtol=1e-10, verbose=1)
         elif option == 'trf':
             # Trust Region Reflective algorithm
-            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method='trf', verbose=1)
+            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method='trf', verbose=1)     
+        elif option == 'min':
+            # minimize function from scipy.optimize.minimize 
+            res_p = minimize(fun, p, args=(t, s), method=self.fitmethod, bounds=self.fitbnds, constraints=self.fitcons)
         else:
             raise Exception('Specify your option')
 
