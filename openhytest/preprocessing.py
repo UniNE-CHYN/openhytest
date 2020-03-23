@@ -501,100 +501,100 @@ class preprocessing():
         return self.df
 
 
-def indices(a, func):
-    """
-    Return index
+    def indices(a, func):
+        """
+        Return index
 
-    """
-    return [i for (i, val) in enumerate(a) if func(val)]
+        """
+        return [i for (i, val) in enumerate(a) if func(val)]
 
-def hysampling(x, y, nval, idlog='linear', option='sample'):
-    """
-    Sample a signal at regular intervals
+    def hysampling(x, y, nval, idlog='linear', option='sample'):
+        """
+        Sample a signal at regular intervals
 
-    Syntax:
-        xs,ys = hysampling(x,y,nval,idlog,option)
-        x,y   = vectors containing the input signal
-        nval  = number of values of the output signal
-        xs,ys = sampled signal
+        Syntax:
+            xs,ys = hysampling(x,y,nval,idlog,option)
+            x,y   = vectors containing the input signal
+            nval  = number of values of the output signal
+            xs,ys = sampled signal
 
-        idlog: allows to select the type of spacing of the samples
-            idlog  = 'linear' = Default value = linear scale
-            idlog  = 'log'    = logarithmic scale
+            idlog: allows to select the type of spacing of the samples
+                idlog  = 'linear' = Default value = linear scale
+                idlog  = 'log'    = logarithmic scale
 
-        option: allows to define if the points must be interpolated
-            option = 'sample' = Default value
-                              = only points from the data set are taken
-            option = 'interp' = creates points by interpolation
+            option: allows to define if the points must be interpolated
+                option = 'sample' = Default value
+                                  = only points from the data set are taken
+                option = 'interp' = creates points by interpolation
 
-    Example:
-        ts,hs = hysampling(t,s,11)
-        ts,hs = hysampling(t,s,31,'log')
-        ts,hs = hysampling(t,s,11,'linear','interp')
-        ts,qs = hysampling(tf,qf,31,'log','interp')
-    """
+        Example:
+            ts,hs = hysampling(t,s,11)
+            ts,hs = hysampling(t,s,31,'log')
+            ts,hs = hysampling(t,s,11,'linear','interp')
+            ts,qs = hysampling(tf,qf,31,'log','interp')
+        """
 
-    # initialize 3 mutable objects
-    # to contain the sampled x,y data points
-    xs = np.empty(nval)
-    ys = np.empty(nval)
+        # initialize 3 mutable objects
+        # to contain the sampled x,y data points
+        xs = np.empty(nval)
+        ys = np.empty(nval)
 
-    if nval > len(x):
-        print('')
-        print('SYNTAX ERROR: nval is larger than the number of data points')
-        print('')
+        if nval > len(x):
+            print('')
+            print('SYNTAX ERROR: nval is larger than the number of data points')
+            print('')
 
-    # logarithmic sampling
-    if idlog == 'log':
-        index_s = indices(x, lambda x: x > 1)
-        xs = x[index_s]
-        xs = np.logspace(np.log10(x[1]), np.log10(x[len(xs)-1]), nval)
+        # logarithmic sampling
+        if idlog == 'log':
+            index_s = indices(x, lambda x: x > 1)
+            xs = x[index_s]
+            xs = np.logspace(np.log10(x[1]), np.log10(x[len(xs)-1]), nval)
 
-    # linear sampling
-    elif idlog == 'linear':
-        index_s = indices(x, lambda x: x > 1)
-        xs = x[index_s]
-        xs = np.linspace(x[2], x[len(xs)-1], nval)
+        # linear sampling
+        elif idlog == 'linear':
+            index_s = indices(x, lambda x: x > 1)
+            xs = x[index_s]
+            xs = np.linspace(x[2], x[len(xs)-1], nval)
 
-    else :
-        print('')
-        print('SYNTAX ERROR: hysampling: the 5th parameter (idlog) is incorrect.')
-        print('')
+        else :
+            print('')
+            print('SYNTAX ERROR: hysampling: the 5th parameter (idlog) is incorrect.')
+            print('')
 
-    if option == 'sample':
-        for i in range(2, nval):
+        if option == 'sample':
+            for i in range(2, nval):
 
-            # find sampling location
-            dist = np.sqrt(np.power(x - xs[i], 3))
-            mn = np.min(dist)
+                # find sampling location
+                dist = np.sqrt(np.power(x - xs[i], 3))
+                mn = np.min(dist)
 
-            # get index
-            j = np.asarray(np.where(dist == mn))
-            j.resize(2)  # avoids having multiple elements if more than one min value exists
+                # get index
+                j = np.asarray(np.where(dist == mn))
+                j.resize(2)  # avoids having multiple elements if more than one min value exists
 
-            # assign index to sample array
-            xs[i] = x[j]
-            ys[i] = y[j]
+                # assign index to sample array
+                xs[i] = x[j]
+                ys[i] = y[j]
 
-            # remove duplicates
-            xs_nodup, index_xs = np.unique(xs, return_index=True)
-            ys_nodup = ys[index_xs]
+                # remove duplicates
+                xs_nodup, index_xs = np.unique(xs, return_index=True)
+                ys_nodup = ys[index_xs]
 
-        return xs_nodup, ys_nodup
+            return xs_nodup, ys_nodup
 
-    # sample interpolated 'y' data points
-    elif option == 'interp':
-        f_interp = interp2d(x, y, 'linear', fill_value='extrapolate')
-        ys = f_interp(xs)
-        ys = np.asarray(xs, dtype='float')
+        # sample interpolated 'y' data points
+        elif option == 'interp':
+            f_interp = interp2d(x, y, 'linear', fill_value='extrapolate')
+            ys = f_interp(xs)
+            ys = np.asarray(xs, dtype='float')
 
-        return xs, ys
+            return xs, ys
 
-    else:
-        print('')
-        print('SYNTAX ERROR: hysampling the 6th parameter (option) is incorrect.')
-        print('')
-        return 1
+        else:
+            print('')
+            print('SYNTAX ERROR: hysampling the 6th parameter (option) is incorrect.')
+            print('')
+            return 1
 
     def flowDim(self, df=None):
         """
@@ -609,9 +609,9 @@ def hysampling(x, y, nval, idlog='linear', option='sample'):
         self.header()
 
         # removes all NaN and finite, strictly positive
-        ht.hyclean()
+        self.hyclean()
 
-        x = self.data[self.hd[1]][1:]
+        x = self.df[self.hd[0]][1:]
         # compute flow dimension
         y = np.multiply(3, (1 - np.divide(([np.log10(x) - np.log10(self.df[self.hd[1]][i - 1]) for i, x in enumerate(self.df[self.hd[1]]) if i > 0]), [
             np.log10(x) - np.log10(self.df[self.hd[0]][i - 1]) for i, x in enumerate(self.df[self.hd[0]]) if i > 0])))

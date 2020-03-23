@@ -161,6 +161,43 @@ class AnalyticalInterferenceModels():
         """
         return (np.float64(qd) * np.log(10)) / 2.0 / self.p[0]
 
+    def _stehfest(self, td, degree=12):
+        """
+        Numerical Laplace inversion with the Stefhest method
+
+        :param x:       vector of the parameters of the function
+        :param td:      dimensionless time
+        :param degree:  parameter of the Stefhest algorithm (default: 12)
+        :return sd:     dimensionless drawdown
+
+        :Reference:
+        Widder, D. (1941). The Laplace Transform. Princeton.
+        Stehfest, H. (1970). Algorithm 368: numerical inversion of Laplace transforms. Communications of the ACM 13(1):47-49, http://dx.doi.org/10.1145/361953.361969
+
+        """
+        if self.degree is None:
+            self.degree = degree
+        elif degree != 12:
+            self.degree = degree
+        if self.degree % 2 != 0:
+            print('ERROR: The degree of the stehfest algorithm needs to be even!')
+
+        # Calculates stehfest weighting coefficents
+        if (self.stehfest_param_inv is None) or (np.size(self.stehfest_param_inv)!=self.degree):
+            self.stehfest_param_inv = np.zeros(self.degree)
+            for i in range(1,self.degree+1):
+                vi_dummy = 0
+                for k in range(int((i+1)/2), np.amin([i, self.degree/2])):
+                    vi_dummy = vi_dummy + k ** (self.degree/2)*np.prod(range(1,2*k))/(np.prod(range(1,self.degree/2-k)) * np.prod(range(1,k)) * np.prod(range(1,k-1)) * np.prod(range(1,i-k)) * np.prod(range(1,2*k-i)))
+                self.stehfest_param_inv[i-1] = (-1) ** (self.degree/2 + i) * vi_dummy
+
+        # Gaver-stehfest algorithm
+        sd = np.zeros(np.size(td))
+        for i in range(1, self.degree+1):
+            pd = i * np.log(2)/td
+            sd[i-1] = np.log(2) / td * np.sum(self.stehfest_param_inv[i-1] * eval(self.dimensionless_laplace(pd)) )
+        return sd
+
     def _laplace_drawdown(self, td, option='Stehfest', degrees=12):  # default stehfest
         """
         Alternative calculation with Laplace inversion
@@ -241,7 +278,7 @@ class AnalyticalInterferenceModels():
         print('S = ', self.S(), '-')
         print('Ri = ', self.RadiusOfInfluence(), 'm')
 
-    def fit(self, option='lm', fitmethod='trust-krylov', fitbnds=None, fitcons=None):
+    def fit(self, option='lm', fitmethod=None, fitbnds=None):
         """
         Fit the model parameter of a given model.
 
@@ -251,7 +288,7 @@ class AnalyticalInterferenceModels():
         initial guess of the parameters, that will then be iterativly modified
         until a local minimum is obtained.
 
-        :param option:  Levenberg-Marquard (lm is default), Trust Region Reflection algorithm (trf) 
+        :param option:  Levenberg-Marquard (lm is default), Trust Region Reflection algorithm (trf)
         using least-squares implementation from scipy-optimize or minimize function from the same library
         :return res_p.x:    solution vector p
         """
@@ -259,8 +296,6 @@ class AnalyticalInterferenceModels():
             self.fitmethod = fitmethod
         if fitbnds is not None:
             self.fitbnds = fitbnds
-        if fitcons is not None:
-            self.fitcons = fitcons            
         if self.p is None:
             print("Error, intialize p using the function guess_params")
 
@@ -278,10 +313,10 @@ class AnalyticalInterferenceModels():
             res_p = least_squares(fun, p, args=(t, s), method='lm', xtol=1e-10, verbose=1)
         elif option == 'trf':
             # Trust Region Reflective algorithm
-            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method='trf', verbose=1)     
+            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method='trf', verbose=1)
         elif option == 'min':
-            # minimize function from scipy.optimize.minimize 
-            res_p = minimize(fun, p, args=(t, s), method=self.fitmethod, bounds=self.fitbnds, constraints=self.fitcons)
+            # minimize function from scipy.optimize.minimize
+            res_p = minimize(fun, p, args=(t, s), method=self.fitmethod, jac=None, bounds=self.fitbnds) #CHECK !!!! NOT WORKING
         else:
             raise Exception('Specify your option')
 
@@ -409,6 +444,8 @@ class Theis(AnalyticalInterferenceModels):
         self.Storativity = None
         self.RadInfluence = None
         self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
 
     def guess_params(self):
         """
@@ -552,6 +589,8 @@ class Theis_noflow(AnalyticalInterferenceModels):
         self.Storativity = None
         self.RadInfluence = None
         self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
 
     def dimensionless(self, td):
         """
@@ -760,6 +799,8 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         self.Storativity = None
         self.RadInfluence = None
         self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
 
     def dimensionless(self, td):
         """
@@ -952,6 +993,8 @@ class JacobLohman(AnalyticalInterferenceModels):
         self.Storativity = None
         self.RadInfluence = None
         self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
 
     def dimensionless_laplace(self, pd):
         """
@@ -1227,6 +1270,10 @@ class GRF(AnalyticalInterferenceModels):
         self.Storativity = None
         self.RadInfluence = None
         self.detailled_p = None
+        self.degree = None
+        self.stehfest_param_inv = None
+        self.fitmethod = None
+        self.fitbnds = None
 
     def guess_params(self):
         """
@@ -1332,8 +1379,7 @@ class GRF(AnalyticalInterferenceModels):
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
-# Parent generic class
-class AnalyticalSlugModels(AnalyticalInterferenceModels):
+class StorativityInterferenceModels(AnalyticalInterferenceModels):
     def __init__(self):
         pass
 
@@ -1398,9 +1444,9 @@ class AnalyticalSlugModels(AnalyticalInterferenceModels):
 
 # Derived daughter classes
 
-class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
+class PapadopulosCooper(StorativityInterferenceModels):
     """
-    Slug test with the Cooper et al. (1967) solution
+    Interference test with the Papadopulos & Cooper (1967) solution
 
     :param Q: pumping rate
     :param r: distance between the observation well and pumping well
@@ -1428,22 +1474,20 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
     :param detailled_p: detailled solution struct from the fit function
 
     :Description:
-    Computes the normalized drawdown (Delta h / Delta h0) as a function of
-    time with the Cooper et al. (1967) solution for a slug test in a
-    homogeneous confined aquifer. The well is fully penetrating and the
-    slug injection or withdrawal is instantaneous.
+    The Papadopulos-Cooper (1967) solution for a constant rate pumping test in a large diameter well.
+    The aquifer is confined and homogeneous.
 
-    The dimensionless well bore storage coefficient is: Cd = rc^2/(2*rw^2*S)
+    It is assumed that there is no skin effect. However the storativity coefficient and the wellbore storage coefficient are assumed independent.
+    Two different possibilities exist to solve for storativity. It is equivalent to say that the storativity near the well is different from those of the aquifer.
+
+    The dimensionless wellbore storage coefficient is: Cd = rc^2/(2*rw^2*S)
 
     Note that in the original publication of Cooper et al.
     The dimensionless parameter was alpha, it is related to Cd by: alpha = 1 / (2 Cd)
 
     :Reference:
-    Cooper, H.H.J., J.D. Bredehoeft, and I.S. Papadopulos.
-    1967. Response of a finite-diameter well to an instantaneous charge of
-    water. Water Resources Research 3, no. 1: 263-269.
-
-    :Example:
+    Papadopulos, I.S., and H.H.J. Cooper. 1967. Drawdown in a
+    well of large diameter. Water Resources Research 3, no. 1: 241-244.
 
     """
     def __init__(self, Q=None, r=None, rw=None, rc=None, cD=None, df=None, p=None):
@@ -1471,6 +1515,8 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         self.Storativity2 = None
         self.RadInfluence = None
         self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
 
     def dimensionless_laplace(self, pd):
         sp = mp.sqrt(pd)
@@ -1538,7 +1584,7 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
         plt.legend()
         plt.show()
 
-    def rpt(self, option_fit='lm', ttle='Cooper-Bredehoeft-Papadopulos (1967)', author='Author', filetype='pdf',
+    def rpt(self, option_fit='lm', ttle='Papadopulos-Cooper (1967)', author='Author', filetype='pdf',
             reptext='Report_cbp'):
         """
         Calculates the solution and reports graphically the results of the pumping test
@@ -1590,4 +1636,3 @@ class CooperBredehoeftPapadopulos(AnalyticalSlugModels):
                  transform=plt.gcf().transFigure)
         fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
                  transform=plt.gcf().transFigure)
-        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
