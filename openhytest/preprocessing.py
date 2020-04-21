@@ -119,7 +119,7 @@ class preprocessing():
 
     def ldiffs(self, df=None, npoints=None):
         """
-        ldiffs creates the logarithmic derivative of x with 1D interpolation of y
+        ldiffs creates the logarithmic derivative of x with 1D linear interpolation of y
 
         :param df:  pandas DF expects two traces in the dataframe.
             The first column needs to be the time.
@@ -151,7 +151,6 @@ class preprocessing():
         x = self.df[self.hd[0]].to_numpy()
         xi = np.logspace(np.log10(x[0]), np.log10(x[-1]),  num=self.npoints, endpoint=True, base=10.0, dtype=np.float64)
 
-        #changing k & s affects the interplolation
         yi = np.interp(xi, x, self.df[self.hd[1]].to_numpy())
 
         xd = xi[1:len(xi)-1]
@@ -217,15 +216,15 @@ class preprocessing():
         dx2 = dx[2*self.bourdetder-1:len(dx)-1]
 
         #Calculate the difference dy
-        dy = np.diff(self.df[self.df[1]])
+        dy = np.diff(self.df[self.hd[1]].to_numpy())
         dy1 = dy[0:len(dy)-2*self.bourdetder]
         dy2 = dy[2*self.bourdetder-1:len(dy)-1]
 
         #xd and yd
-        xd = np.array(x[self.bourdetder:len(self.df[self.df[1]])-self.bourdetder-1])
+        xd = np.array(x[self.bourdetder:len(self.df[self.hd[1]])-self.bourdetder-1])
         yd = (dx2*dy1/dx1+dx1*dy2/dx2)/(dx1+dx2)
         dummy = np.array(np.transpose([xd, yd]))
-        self. der = pd.DataFrame(dummy, columns=self.df)
+        self.der = pd.DataFrame(dummy, columns=self.hd)
         return self.der
 
 
@@ -420,7 +419,7 @@ class preprocessing():
         hyfilter Filter a signal in order to reduce the noise.
 
         Keep in mind that the time step need to be equally spaced for the butterworth filter.
-        It can be used for moving average filter, but it is not recommended.
+        Unequally spaced time steps can be used for moving average filter, but it is not recommended.
 
         :param df:  pandas DF expects at least two traces in the dataframe.
                     The first column needs to be the time and the second the df trace.
@@ -508,15 +507,15 @@ class preprocessing():
         """
         return [i for (i, val) in enumerate(a) if func(val)]
 
-    def hysampling(x, y, nval, idlog='linear', option='sample'):
+    def hysampling(self, df=None, nval=None, idlog='linear', option='sample'):
         """
         Sample a signal at regular intervals
 
-        Syntax:
-            xs,ys = hysampling(x,y,nval,idlog,option)
-            x,y   = vectors containing the input signal
-            nval  = number of values of the output signal
-            xs,ys = sampled signal
+
+        :param df: pandas DF expects at least two traces in the dataframe.
+                    The first column needs to be the time and the second the df trace.
+        :param xs,ys: sampled signal
+        :param nval: number of values of the output signal
 
             idlog: allows to select the type of spacing of the samples
                 idlog  = 'linear' = Default value = linear scale
@@ -533,9 +532,17 @@ class preprocessing():
             ts,hs = hysampling(t,s,11,'linear','interp')
             ts,qs = hysampling(tf,qf,31,'log','interp')
         """
+        if df is not None:
+            self.df = df
 
-        # initialize 3 mutable objects
-        # to contain the sampled x,y data points
+        if nval is not None:
+            self.nval = nval
+
+        self.header()
+
+        x = self.df[self.hd[0]]
+        y = self.df[self.hd[1]]
+
         xs = np.empty(nval)
         ys = np.empty(nval)
 
@@ -579,22 +586,22 @@ class preprocessing():
                 # remove duplicates
                 xs_nodup, index_xs = np.unique(xs, return_index=True)
                 ys_nodup = ys[index_xs]
-
-            return xs_nodup, ys_nodup
+                self.sampeld = [xs_nodup, ys_nodup]
+            return self.sampeld
 
         # sample interpolated 'y' data points
         elif option == 'interp':
             f_interp = interp2d(x, y, 'linear', fill_value='extrapolate')
             ys = f_interp(xs)
             ys = np.asarray(xs, dtype='float')
-
-            return xs, ys
+            self.sampeld = [xs, ys]
+            return self.sampeld
 
         else:
             print('')
             print('SYNTAX ERROR: hysampling the 6th parameter (option) is incorrect.')
             print('')
-            return 1
+            return None
 
     def flowDim(self, df=None):
         """
