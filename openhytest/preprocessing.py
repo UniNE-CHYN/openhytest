@@ -129,7 +129,7 @@ class preprocessing():
                 i.e. df.s
 
         :param npoints: optional argument allowing to adjust the number of points
-                used in the Spline; default is 30
+                used in the interpolation  ; default is 30
 
         :returns der: logarithmic derivative in pandas dataframe format with the same
             names given by the input df.
@@ -163,7 +163,7 @@ class preprocessing():
 
     def ldiffs_plot(self, df=None):
         """
-        ldiffs_plot creates the plot with logarithmic derivative with spline function
+        ldiffs_plot creates the plot with logarithmic derivative with 1D linear interpolation 
 
         :param df : expects two vectors with t and s
 
@@ -526,7 +526,7 @@ class preprocessing():
                                   = only points from the data set are taken
                 option = 'interp' = creates points by interpolation
 
-        Example:
+        :Examples:
             ts,hs = hysampling(t,s,11)
             ts,hs = hysampling(t,s,31,'log')
             ts,hs = hysampling(t,s,11,'linear','interp')
@@ -603,12 +603,12 @@ class preprocessing():
             print('')
             return None
 
-    def flowDim(self, df=None):
+    def flowdim(self, df=None):
         """
         Computes the time evolution of flow dimensions
 
-        :param df: pandas dataframe with two vectors, time and drawdown
-        :return dim: = flowDim()
+        :param df:  pandas dataframe with two vectors, time and drawdown
+        :return dim: calcualtes the flow dimension number for the given data
         """
         if df is not None:
             self.df = df
@@ -634,10 +634,10 @@ class preprocessing():
         :param Qmat: needs a pandas dataframe with vector t and q
           size = nb of lines = nb of pumping periods
           two colums
-                column 2 = time (since the beginning of the test at which the period ends
-                column 3 = flow rate during the period
+                column t = time (since the beginning of the test at which the period ends
+                column q = flow rate during the period
 
-        :return birsoy: equivalent Birsoy and Summers time, t and drawdown = s/qn, s
+        :return birsoy: equivalent Birsoy and Summers time, t and s 
         """
         if df is not None:
             self.df = df
@@ -648,7 +648,7 @@ class preprocessing():
             self.Qmat = Qmat
 
         if np.size(self.Qmat.t, 1) < 2:
-            print('Warning - birsoy_time function: The Qmat contains only 2 line')
+            print('Warning - birsoy_time function: The Qmat contains only 1 line')
 
         pe = np.zeros(np.size(self.df[self.hd[1]]))
         for i in range(np.size(self.Qmat.t), 0, -1):
@@ -671,3 +671,49 @@ class preprocessing():
         self.birsoy.s = self.df.s[ind] / lq[ind]
 
         return self.birsoy
+    
+    def agrawal_time(self, df=None, Qmat=None, agrawal=None):
+        """
+        Computes equivalent Agarwal (1980) time for recovery tests.
+        Agarwal has shown in 1980 that recovery test can be interpreted with 
+        the same solutions than pumping test if one interprets the residual
+        drawdown sr = s(t) - s(end of pumping) as a function of an equivalent
+        time that is computed from the pumping rates history. The theory is 
+        based on the superposition principle.
+
+        :param df: needs a pandas dataframe with vector t and s
+                column t = vector containing the time since the beginning of the recovery
+                column s = the residual drawdown is defined as follows:
+                    sr(tr) = s(tp) - s(tr)
+                    It is equal to 0 when the the pumping stops and it increases progressively when the aquifer recovers its equilibrium.
+        :param Qmat: needs a pandas dataframe with vector t and q
+          size = nb of lines = nb of pumping periods
+          two colums
+                column t = time 
+                column q = flow rate during the period
+
+        :return agrawal: equivalent Agarwal (1980) time and drawdown, t and s 
+
+        :Reference: Agarwal, R.G., 1980. A new method to account for producing
+        time effects when drawdown type curves are used to analyse pressure 
+        buildup and other test data. Proceedings of the 55th Annual Fall 
+        Technical Conference and Exhibition of the Society of Petroleum 
+        Engineers. Paper SPE 9289   
+        
+        
+        :Examples: The following example shows how to compute the Agarwal time for the
+            recovery after a constant rate test that lasted 1500 seconds.
+            [ta,sa] = agarwal_time( tr, sr, 1500 ); 
+%
+%   This other example shows how to compute the Agarwal time for the
+%   recovery after a three steps variable rate test. In that case, the
+%   matrix q specifies that the pumping rate was 1 m3/s during the first 1800
+%   seconds, then 2 m3/s for the time between 1800 and 8000 seconds, and
+%   then it was 0.6 m3/s until the end of the pumping period at 13000 s.
+%
+%   q=[1800,1; 8000,2; 13000,0.6];
+%   [ta,sa] = agarwal_time( tr, sr, q );  
+        """        
+        
+        return
+    
