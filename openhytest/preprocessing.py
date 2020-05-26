@@ -638,6 +638,10 @@ class preprocessing():
                 column q = flow rate during the period
 
         :return birsoy: equivalent Birsoy and Summers time, t and s 
+        
+        :Reference: Birsoy, Y.K. and Summers, W.K. (1980), Determination of 
+        Aquifer Parameters from Step Tests and Intermittent Pumping Data. 
+        Groundwater, 18: 137-146. doi:10.1111/j.1745-6584.1980.tb03382.x
         """
         if df is not None:
             self.df = df
@@ -689,36 +693,45 @@ class preprocessing():
         :param df: needs a pandas dataframe with vector t and s
                 column t = vector containing the time since the beginning of the recovery
                 column s = the residual drawdown is defined as follows:
-                    sr(tr) = s(tp) - s(tr)
+                    sr(df.t) = s(Qmat.tp) - s(df.t)
                     It is equal to 0 when the the pumping stops and it increases progressively when the aquifer recovers its equilibrium.
-        :param Qmat: needs a pandas dataframe with vector t and q
-          size = nb of lines = nb of pumping periods
-          two colums
-                column t = time 
-                column q = flow rate during the period
-
-        :return agrawal: equivalent Agarwal (1980) time and drawdown, t and s 
+        
+        
+        :param Qmat: can be for a single rate pumping test 
+            or can handle a pandas dataframe with vector t time and q flow rate during the period
+          
+        :return agrawal: equivalent Agarwal (1980) time and drawdown, t and s as pandas dataframe
 
         :Reference: Agarwal, R.G., 1980. A new method to account for producing
         time effects when drawdown type curves are used to analyse pressure 
         buildup and other test data. Proceedings of the 55th Annual Fall 
         Technical Conference and Exhibition of the Society of Petroleum 
-        Engineers. Paper SPE 9289   
-        
-        
-        :Examples: The following example shows how to compute the Agarwal time for the
-            recovery after a constant rate test that lasted 1500 seconds.
-            [ta,sa] = agarwal_time( tr, sr, 1500 ); 
-%
-%   This other example shows how to compute the Agarwal time for the
-%   recovery after a three steps variable rate test. In that case, the
-%   matrix q specifies that the pumping rate was 1 m3/s during the first 1800
-%   seconds, then 2 m3/s for the time between 1800 and 8000 seconds, and
-%   then it was 0.6 m3/s until the end of the pumping period at 13000 s.
-%
-%   q=[1800,1; 8000,2; 13000,0.6];
-%   [ta,sa] = agarwal_time( tr, sr, q );  
+        Engineers. Paper SPE 9289  
         """        
+        if df is not None:
+            self.df = df
+
+        self.header()
+
+        if Qmat is not None:
+            self.Qmat = Qmat
         
-        return
-    
+        if np.size(Qmat) == 1: 
+            t = self.Qmat*self.df.t.to_numpy() / (self.Qmat + self.df.t.to_numpy())
+          
+        elif isinstance(self.Qmat, pd.DataFrame): 
+            tp = self.Qmat.t.to_numpy()
+            qp = self.Qmat.q.to_numpy()
+            t = tp[-2]/(self.df.t.to_numpy()+tp[-2]) ** (qp[0]/(qp[-2]-qp[-1]))
+            for j in range(1,np.size(tp)-1,1):
+                t = t * ((tp[-2]-tp[j-1])/ (self.df.t.to_numpy()+ tp[-2]-tp[j-1])) ** ((qp[j]-qp[j-1])/(qp[-2]-qp[-1]))
+            t = t * self.df.t.to_numpy()
+        else:
+            print('Qmat needs to be a scalar or pandas dataframe')
+         
+        t, indices = np.unique(t, return_index=True)
+        s = self.df.s[indices]
+        dummy = np.array(np.transpose([t, s]))
+        self.agrawal = pd.DataFrame(dummy, columns=self.hd) 
+        return self.agrawal
+        
