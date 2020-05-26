@@ -626,7 +626,7 @@ class preprocessing():
         self.dim = pd.DataFrame(dummy, columns=self.hd)
         return self.dim
 
-    def birsoy_time(self, df=None, Qmat=None, birsoy=None):
+    def birsoy_time(self, df=None, Qmat=None):
         """
         Calculates the equivalent time of Birsoy and Summers (1981) solution.
 
@@ -647,30 +647,35 @@ class preprocessing():
         if Qmat is not None:
             self.Qmat = Qmat
 
-        if np.size(self.Qmat.t, 1) < 2:
+        if np.size(self.Qmat.t) < 2:
             print('Warning - birsoy_time function: The Qmat contains only 1 line')
 
         pe = np.zeros(np.size(self.df[self.hd[1]]))
         for i in range(np.size(self.Qmat.t), 0, -1):
-            j = self.df[self.hd[1].le(self.Qmat.t[i])].index
-            pe[j] = i
-        lq = self.Qmat.q[pe]
-
+            j = self.df.index[self.df.t.le(self.Qmat.t[i-1])]
+            pe[j] = i-1
+        lq = self.Qmat.q[pe].to_numpy()
+        
         dq = np.diff(self.Qmat.q)
-        dq = [self.Qmat.q[:2], dq]
+        dq = np.insert(dq, 0, self.Qmat.q[0], axis = 0)
 
-        st = [1, self.Qmat.q[:-1]]
-        t = np.ones(np.size(self.Qmat.t))
-        for j in range(1, np.size(self.Qmat.t, 0)-1, 1):
-            for i in range(1, pe[j]-1, 1):
-                t[j] = birsoy.t[j]* (self.df.t[j] - st[i]) ** (dq[i]/ self.Qmat.q[pe[j]])
+        st = [0, self.Qmat.q[:-1]]
+        st = self.Qmat.t[:-1].to_numpy()
+        st = np.insert(st, 0, 0, axis=0)
+        t  = np.ones(np.size(self.df.t.to_numpy()))
+        for j in range(0, np.size(self.df.t.to_numpy()), 1):
+            for i in range(0, int(pe[j])+1, 1):
+                t[j] = t[j]* (self.df.t[j] - st[i]) ** (dq[i]/ self.Qmat.q[pe[j]])
 
         ind = np.argsort(t)
-
-        self.birsoy.t = t.sort()
-        self.birsoy.s = self.df.s[ind] / lq[ind]
-
+        t = t[ind]
+        s = self.df.s.to_numpy() 
+        s = s[ind] / lq[ind]     
+        dummy = np.array(np.transpose([t, s]))
+        self.birsoy = pd.DataFrame(dummy, columns=self.hd)    
+        
         return self.birsoy
+    
     
     def agrawal_time(self, df=None, Qmat=None, agrawal=None):
         """
