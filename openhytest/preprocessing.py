@@ -605,7 +605,11 @@ class preprocessing():
 
     def flowdim(self, df=None):
         """
-        Computes the time evolution of flow dimensions
+        Computes the time evolution of apparent flow dimensions for pressure 
+        transients whose late time pressure derivative slope is strictly
+        positive (i.e. subradial flow regimes).
+        
+        See Le Borgne et al. (2004) and Brixel et al. (2020)
 
         :param df:  pandas dataframe with two vectors, time and drawdown
         :return dim: calcualtes the flow dimension number for the given data
@@ -681,7 +685,7 @@ class preprocessing():
         return self.birsoy
     
     
-    def agrawal_time(self, df=None, Qmat=None, agrawal=None):
+    def agarwal_time(self, df=None, Qmat=None, agrawal=None):
         """
         Computes equivalent Agarwal (1980) time for recovery tests.
         Agarwal has shown in 1980 that recovery test can be interpreted with 
@@ -732,6 +736,6 @@ class preprocessing():
         t, indices = np.unique(t, return_index=True)
         s = self.df.s[indices]
         dummy = np.array(np.transpose([t, s]))
-        self.agrawal = pd.DataFrame(dummy, columns=self.hd) 
-        return self.agrawal
+        self.agarwal = pd.DataFrame(dummy, columns=self.hd) 
+        return self.agarwal
         
