@@ -603,16 +603,23 @@ class preprocessing():
             print('')
             return None
 
-    def flowdim(self, df=None):
+    def fracflowdim(self, df=None):
         """
         Computes the time evolution of apparent flow dimensions for pressure 
         transients whose late time pressure derivative slope is strictly
         positive (i.e. subradial flow regimes).
         
-        See Le Borgne et al. (2004) and Brixel et al. (2020)
-
         :param df:  pandas dataframe with two vectors, time and drawdown
-        :return dim: calcualtes the flow dimension number for the given data
+        :return dim: calcualtes the apparent flow dimension for the supplied dataset
+        
+        :Reference: Le Borgne, T., Bour, O., De Dreuzy, J-R., Davy, P. Touchard, P..
+        (2004), Equivalent mean flow models for fractured aquifers: Insights from a 
+        pumping tests scaling interpretation. WRR, 40, W03512, doi:10.1029/2003WR002436. 
+        and Brixel, B., Klepikova, M., Lei, Q., Roques, C., Jalali, M., Krietsch, H., 
+        Loew, S. (2020), Tracking fluid flow in shallow crustal fault zones: 2. Insights 
+        from cross-hole forced flow experiments in damage zones. JGR Solid Earth, 125, 
+        4, doi.org/10.1029/2019JB018200
+
         """
         if df is not None:
             self.df = df
@@ -623,6 +630,7 @@ class preprocessing():
         self.hyclean()
 
         x = self.df[self.hd[0]][1:]
+         
         # compute flow dimension
         y = np.multiply(3, (1 - np.divide(([np.log10(x) - np.log10(self.df[self.hd[1]][i - 1]) for i, x in enumerate(self.df[self.hd[1]]) if i > 0]), [
             np.log10(x) - np.log10(self.df[self.hd[0]][i - 1]) for i, x in enumerate(self.df[self.hd[0]]) if i > 0])))
