@@ -619,7 +619,6 @@ class preprocessing():
         Loew, S. (2020), Tracking fluid flow in shallow crustal fault zones: 2. Insights 
         from cross-hole forced flow experiments in damage zones. JGR Solid Earth, 125, 
         4, doi.org/10.1029/2019JB018200
-
         """
         if df is not None:
             self.df = df
