@@ -334,7 +334,7 @@ class preprocessing():
             time in the first column.
                 i.e. df.s
 
-        :param method :    optional argument allowing to select different methods of
+        :param method: optional argument allowing to select different methods of
             computation of the derivative
 
             'spline' for spline resampling in that case d is the number of points for the spline
@@ -416,10 +416,10 @@ class preprocessing():
 
     def hyfilter(self, df=None, typefilter=None, p=None, win_types=None):
         """
-        hyfilter Filter a signal in order to reduce the noise.
+        Filters a signal to reduce noise.
 
-        Keep in mind that the time step need to be equally spaced for the butterworth filter.
-        Unequally spaced time steps can be used for moving average filter, but it is not recommended.
+        Time steps need to be equally spaced for the butterworth filter.
+        Unequally-spaced time steps can be used for moving average filter (not recommended).
 
         :param df:  pandas DF expects at least two traces in the dataframe.
                     The first column needs to be the time and the second the df trace.
@@ -511,9 +511,9 @@ class preprocessing():
         """
         Sample a signal at regular intervals
 
-
-        :param df: pandas DF expects at least two traces in the dataframe.
-                    The first column needs to be the time and the second the df trace.
+        :param df: expects at least two traces in the dataframe.
+                   The first column takes time as an input. The second column takes
+                   the df trace.
         :param xs,ys: sampled signal
         :param nval: number of values of the output signal
 
@@ -606,7 +606,7 @@ class preprocessing():
     def drawdownUnconf(self, s, b):
          """
          Computes the corrected drawdown for tests in unconfined aquifers where the drawdown
-         is substantial compared with the aquifer saturated thickness.
+         is substantial (>30%) compared with the aquifer saturated thickness.
          
          :param s: numpy array, drawdown
          :param b: aquifer saturated thickness
@@ -619,9 +619,9 @@ class preprocessing():
          
     def fracflowdim(self, df=None):
         """
-        Computes the time evolution of apparent flow dimensions for pressure 
+        Computes the time evolution of apparent flow dimensions (n) for pressure 
         transients whose late time pressure derivative slope is strictly
-        positive (i.e. subradial flow regimes).
+        positive (i.e. subradial flow regimes, where 1<n<2).
         
         :param df:  pandas dataframe with two vectors, time and drawdown
         :return dim: calcualtes the apparent flow dimension for the supplied dataset
