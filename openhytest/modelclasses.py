@@ -99,7 +99,7 @@ def moy_std(q, s0, l, rw):
     the length of the test section.
 
     The method is known to overestimate the transmissivity. Errors of more
-   than one order of magnitude are possible.
+    than one order of magnitude are possible.
     :param q: flow rate, m^3/s
     :param s0: drawdown, m
     :param l: length of the section, m
@@ -292,12 +292,17 @@ class AnalyticalInterferenceModels():
         using least-squares implementation from scipy-optimize or minimize function from the same library
         :return res_p.x:    solution vector p
         """
+
         if fitmethod is not None:
             self.fitmethod = fitmethod
         if fitbnds is not None:
             self.fitbnds = fitbnds
         if self.p is None:
             print("Error, intialize p using the function guess_params")
+        
+        if option is None:
+            print('No fit is performed and given p is returned')
+            return self.p       
 
         t = self.df.t
         s = self.df.s
@@ -333,7 +338,7 @@ class AnalyticalInterferenceModels():
         self.detailled_p = res_p
         return res_p.x
 
-        # Derived daughter classes
+# Derived daughter classes
 
 class Theis(AnalyticalInterferenceModels):
     """
@@ -350,7 +355,7 @@ class Theis(AnalyticalInterferenceModels):
     distance between the pumping well and the observation well,
     S the storativity coefficient and t the time.
 
-    :Initialzation:
+    :Initialization:
     :param Q: pumping rate, m3/s
     :param r: radius between wells, m
     :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
@@ -1167,6 +1172,238 @@ class JacobLohman(AnalyticalInterferenceModels):
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
+class Warren_Root(AnalyticalInterferenceModels):
+    """
+    Warren_Root (1936) model for confined double porosity aquifer.
+
+    When the density of fracture is high, but when the porous matrix plays a 
+    significant role in the storage capacity of the aquifer, the aquifer
+    behaviour can be modeled with the help of the double porosity model. This
+    model consider that the flow is occurring mainly in the fracture while the
+    water is mainly stored in the porous matrix.
+
+    :Initialzation:
+    :param Q: pumping rate, m3/s
+    :param r: radius between wells, m
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param Rd:  dimensionless radial distance
+    :param self:
+    :param p: solution vector
+    :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated drawdown
+    :param derc: Calculated drawdown derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize:  size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :paramRadInfluence: Distance to the image well m
+    :param detailled_p: detailled solution struct from the fit function
+    :param landa: inter-porosity flow parameters
+    :param sigma: ratio between the matrix and fracture storativity
+
+    :Reference: Warren, J. E., and P. J. Root (1963), The behaviour of naturally 
+    fractured reservoirs, Society of Petroleum Engineers Journal, 3, 245-255.
+    """
+
+    def __init__(self, Q=None, r=None, Rd=None, df=None, p=None, sigma=None, landa=None):
+        self.Q = Q
+        self.r = r
+        self.Rd = Rd
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
+        self.sigma = sigma
+        self.landa = landa
+
+
+    def dimensionless_laplace(self, pd):
+        """
+        Drawdown of the Warren & Root in Laplace domain
+
+        :param pd: Laplace parameter
+        :function: _laplace_drawdown(td, option='Stehfest')
+        """
+        return 1 / pd * mp.besselk(0, mp.sqrt(pd + (self.landa * self.sigma * pd)/(self.sigma * pd + self.landa)))
+
+    def dimensionless_laplace_derivative(self, pd):
+        """
+        Drawdown derivative of the Warren & Root in Laplace domain
+
+        :param pd: Laplace parameter
+        :function: _laplace_drawdown(td, option='Stehfest')
+        """
+        return None
+
+    def __call__(self, t):
+        td = self._dimensionless_time(t)
+        self.landa = 2.2458394 * self.p[1] * mp.log(self.p[2]/self.p[1]) / self.p[3]
+        self.sigma = (self.p[2]-self.p[1]) / self.p[1]
+        sd = self._laplace_drawdown(td)
+        s = self._dimensional_drawdown(np.float64(sd))
+        return s
+
+    def guess_params(self):
+        """
+        First guess for the parameters of the Theis model with a constant head boundary
+
+        :return p[0]: slope of Jacob straight line for late time
+        :return p[1]: intercept with the horizontal axis for the early time asymptote
+        :return p[2]: intercept with the horizontal axis for the late time asymptote
+        :return p[3]: time of the minimum of the derivative
+        """
+        n = len(self.df) / 4
+        p_late = get_logline(self, self.df[self.df.index > n])
+        p_early = get_logline(self, self.df[self.df.index < 2 * n])
+        warren = ht.preprocessing(df=self.df)
+        warren.ldiffs()
+        tt = warren.der.t.to_numpy()
+        self.p = np.array([p_late[0], p_early[1], p_late[1], tt[np.argmin(warren.der.s.to_numpy())]])
+        return self.p
+
+    def RadiusOfInfluence(self):
+        """
+        Calculates the radius of influence
+
+        :return ri: Distance to image well m
+        """
+        return np.sqrt(2.2458394 * self.T() * self.p[2] / self.S2())
+
+    def S2(self):
+        """
+        Calculates the storativity for the matrix
+
+        :return : storativity of matrix
+        """
+        return 2.2458394 * self.T() * self.p[2] / self.r ** 2 - self.S()
+
+    def plot_typecurve(self, landa=0.1, sigma=[10, 100, 1000]):
+        """
+        Different type curves of the Warren & Root model
+        """
+        self.landa=landa
+        td = np.logspace(-2, 7)
+        fig, ax = plt.subplots(1,1)
+        for i in range(0, len(sigma)):
+            self.sigma = sigma[i]
+            sd = list(self._laplace_drawdown(td))
+            d = {'t': td, 's': sd}
+            df = pda.DataFrame(data=d)
+            dummy = ht.preprocessing(df=df)
+            dummy.ldiff()
+            color = next(ax._get_lines.prop_cycler)['color']
+            ax.loglog(td, sd, '-', color=color, label= '$\sigma$ = {}'.format(sigma[i]))
+            ax.loglog(dummy.der.t, dummy.der.s, ':', color=color)
+        plt.xlabel('$t_D / r_D^2$')
+        plt.ylabel('$s_D$')
+        plt.title('$\lambda$ = {}'.format(landa))
+        plt.legend()
+        plt.xlim((1e-2, 1e5))
+        plt.ylim((1e-3, 10))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+
+        landa = [1, 0.1, 0.01]
+        self.sigma = 100
+        fig, ax = plt.subplots(1,1)
+        for i in range(0, len(landa)):
+            self.landa= landa[i]
+            sd = list(self._laplace_drawdown(td))
+            d = {'t': td, 's': sd}
+            df = pda.DataFrame(data=d)
+            dummy = ht.preprocessing(df=df)
+            dummy.ldiff()
+            color = next(ax._get_lines.prop_cycler)['color']
+            ax.loglog(td, sd, '-', color=color, label= '$\lambda$ = {}'.format(landa[i]))
+            ax.loglog(dummy.der.t, dummy.der.s, ':', color=color)
+        plt.xlabel('$t_D / r_D^2$')
+        plt.ylabel('$s_D$')
+        plt.title('$\sigma$ = {}'.format(self.sigma))
+        plt.legend()
+        plt.xlim((1e-2, 1e5))
+        plt.ylim((1e-3, 10))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+
+    def rpt(self, option_fit='lm', ttle='Theis (1935) const. head', author='Author', filetype='pdf',
+            reptext='Report_thc'):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
+
+        :param option_fit: 'lm' or 'trf'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+        self.fit(option=option_fit)
+
+        self.Transmissivity = self.T()
+        self.Storativityf = self.S()
+        self.Storativitym = self.S2()
+        self.RadInfluence = self.RadiusOfInfluence()
+        self.landa = 2.2458394 * self.p[1] * mp.log(self.p[2]/self.p[1]) / self.p[3]
+        self.sigma = (self.p[2]-self.p[1]) / self.p[1]
+        self.model_label = 'Warren  & Root (1963)'
+        test = ht.preprocessing(df=self.df)
+        self.der = test.ldiffs()
+
+        self.ttle = ttle
+        fig = log_plot(self)
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.6, 'Transmissivity Tf : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity Sf : {:3.2e} '.format(self.Storativityf), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Storativity Sm : {:3.2e} '.format(self.Storativitym), fontsize=14,
+                 transform=plt.gcf().transFigure)    
+        fig.text(1.05, 0.45, 'Inter-porosity flow lambda: {:3.2e} '.format(self.landa), fontsize=14,
+                 transform=plt.gcf().transFigure)      
+        #fig.text(1.05, 0.45, 'Distance to image well Rd : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
+        #         transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'minimum derivative tm : {:0.2g} m'.format(self.p[3]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')       
+
 class GRF(AnalyticalInterferenceModels):
     """
     Barker (1988) general radial flow model
@@ -1205,8 +1442,6 @@ class GRF(AnalyticalInterferenceModels):
     Barker, J.A. 1988. A Generalized radial flow model fro hydraulic tests
     in fractured rock. Water Resources Research 24, no. 10: 1796-1804.
 
-    :Example:
-
     """
     def _dimensionless_time(self, t):
         """
@@ -1223,7 +1458,7 @@ class GRF(AnalyticalInterferenceModels):
 
     def dimensionless(self, td):
         """
-        Dimensionless drawdown of the Theis model with constant head boundary
+        Dimensionless drawdown of the GRF
 
         :param td:  dimensionless time
         :return sd: dimensionless drawdown
@@ -1277,7 +1512,7 @@ class GRF(AnalyticalInterferenceModels):
 
     def guess_params(self):
         """
-        First guess for the parameters of the Theis model.
+        First guess for the parameters of the GRF model.
 
         :return p[0]: slope of Jacob straight line for late time
         :return p[1]: intercept with the horizontal axis for s = 0

@@ -384,12 +384,13 @@ class preprocessing():
             self.df = df[df[self.hd[i]] >= 0]
 
         return self.df
+    
 
     def hyselect(self, df=None, xstart=None, xend=None):
         """
         hyselect Select a part of a dataset strictly between xstart and xend
 
-        :param data:  pandas DF expects at least two traces in the dataframe.
+        :param df:  pandas DF expects at least two traces in the dataframe.
                 The first column needs to be the time and the second the data trace.
 
         :param xstart: start of period, which will be selected
@@ -412,6 +413,47 @@ class preprocessing():
         self.df = self.df.loc[mask]
 
         return self.df
+    
+    def hynorm(self, df=None, maximum_value=None, initial_value=None): #CHECK if it works properly
+        """
+        hynorm normalizes the drawdown/recovery curve to the interval between [0, 1]
+        It is most often used for pulse test data sets.
+        
+        It is recomended to give a maximum and intial value, if available, such 
+        that the curve correlate with the origin curve. If no values are give the 
+        normalization is done with the maximum and minimum value found in the data trace.
+        
+
+        :param df:  pandas DF expects at least two traces in the dataframe.
+                The first column needs to be the time and the second the data trace.
+
+        :param maximum_value: maximum value observed during the test
+        :param initial_value: initial value at steady state conditions
+
+        :return norm: pandas series gives back the normalized drawdown/recovery
+        """
+        
+        if df is not None:
+            self.df = df
+            
+        self.header() 
+
+        t = self.df[self.hd[0]].to_numpy()
+
+        if (maximum_value & initial_value) is not None:
+            DP = maximum_value-initial_value
+            s = self.df[self.hd[1]].to_numpy() - initial_value / DP
+            dummy = np.array(np.transpose([t, s]))
+            self.norm = pd.DataFrame(dummy, columns=self.hd)
+        else:
+            s = self.df[self.hd[1]].to_numpy()
+            DP = np.amax(s) - np.amin(s)
+            s1 = s - np.amin(s) / DP
+            dummy = np.array(np.transpose([t, s1]))
+            self.norm = pd.DataFrame(dummy, columns=self.hd)
+ 
+        return self.norm
+
 
 
     def hyfilter(self, df=None, typefilter=None, p=None, win_types=None):
@@ -507,7 +549,7 @@ class preprocessing():
         """
         return [i for (i, val) in enumerate(a) if func(val)]
 
-    def hysampling(self, df=None, nval=None, idlog='linear', option='sample'):
+    def hysampling(self, df=None, nval=None, idlog='linear', option='sample'): #!!!CHECK needs to give back a pandas dataframe and needs to be checked if it works
         """
         Sample a signal at regular intervals
 
@@ -525,12 +567,9 @@ class preprocessing():
                 option = 'sample' = Default value
                                   = only points from the data set are taken
                 option = 'interp' = creates points by interpolation
+                
+        :return sampeld: gives the resampled time, t interpolated drawdown, s 
 
-        :Examples:
-            ts,hs = hysampling(t,s,11)
-            ts,hs = hysampling(t,s,31,'log')
-            ts,hs = hysampling(t,s,11,'linear','interp')
-            ts,qs = hysampling(tf,qf,31,'log','interp')
         """
         if df is not None:
             self.df = df
@@ -553,7 +592,7 @@ class preprocessing():
 
         # logarithmic sampling
         if idlog == 'log':
-            index_s = indices(x, lambda x: x > 1)
+            index_s = indices(x, lambda x: x > 1) #no function outside, simplify this
             xs = x[index_s]
             xs = np.logspace(np.log10(x[1]), np.log10(x[len(xs)-1]), nval)
 
@@ -594,7 +633,7 @@ class preprocessing():
             f_interp = interp2d(x, y, 'linear', fill_value='extrapolate')
             ys = f_interp(xs)
             ys = np.asarray(xs, dtype='float')
-            self.sampeld = [xs, ys]
+            self.sampeld = [xs, ys] 
             return self.sampeld
 
         else:
@@ -706,7 +745,7 @@ class preprocessing():
         return self.birsoy
     
     
-    def agarwal_time(self, df=None, Qmat=None, agrawal=None):
+    def agarwal_time(self, df=None, Qmat=None, agarwal=None):
         """
         Computes equivalent Agarwal (1980) time for recovery tests.
         Agarwal has shown in 1980 that recovery test can be interpreted with 
