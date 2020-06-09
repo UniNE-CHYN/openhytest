@@ -210,6 +210,18 @@ class AnalyticalInterferenceModels():
         s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=degrees), td)
         return list(s)
 
+    def _laplace_drawdown_types(self, td, option='Stehfest', degrees=12):  # default stehfest
+        """
+        Alternative calculation with Laplace inversion
+
+        :param td:      dimensionless time
+        :param x:       dummy parameter for inversion
+        :param option:  Stehfest (default, dps=10, degree=16), dehoog
+        :return sd:     dimensionless drawdown
+        """
+        s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace_types, x, method=option, dps=10, degree=degrees), td)
+        return list(s)
+
     def _laplace_drawdown_derivative(self, td, option='Stehfest', degrees=12):  # default stehfest
         """
         Alternative calculation with Laplace inversion
@@ -334,7 +346,7 @@ class AnalyticalInterferenceModels():
         self.mr = np.mean(res_p.fun)
         self.sr = 2 * np.nanstd(res_p.fun)
         self.rms = np.sqrt(np.mean(res_p.fun ** 2))
-        self.p = res_p.x
+        self.p = np.float64(res_p.x)
         self.detailled_p = res_p
         return res_p.x
 
@@ -1185,6 +1197,7 @@ class Warren_Root(AnalyticalInterferenceModels):
     :Initialzation:
     :param Q: pumping rate, m3/s
     :param r: radius between wells, m
+    :param rw: radius of the well
     :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
     :param Rd:  dimensionless radial distance
     :param self:
@@ -1211,9 +1224,10 @@ class Warren_Root(AnalyticalInterferenceModels):
     fractured reservoirs, Society of Petroleum Engineers Journal, 3, 245-255.
     """
 
-    def __init__(self, Q=None, r=None, Rd=None, df=None, p=None, sigma=None, landa=None):
+    def __init__(self, Q=None, r=None, rw=None, Rd=None, df=None, p=None, sigma=None, landa=None):
         self.Q = Q
         self.r = r
+        self.rw = None
         self.Rd = Rd
         self.p = p
         self.df = df
@@ -1234,8 +1248,6 @@ class Warren_Root(AnalyticalInterferenceModels):
         self.detailled_p = None
         self.fitmethod = None
         self.fitbnds = None
-        self.sigma = sigma
-        self.landa = landa
 
 
     def dimensionless_laplace(self, pd):
@@ -1245,21 +1257,25 @@ class Warren_Root(AnalyticalInterferenceModels):
         :param pd: Laplace parameter
         :function: _laplace_drawdown(td, option='Stehfest')
         """
-        return 1 / pd * mp.besselk(0, mp.sqrt(pd + (self.landa * self.sigma * pd)/(self.sigma * pd + self.landa)))
+        return 1 / pd * mp.besselk(0, mp.sqrt(pd + (self.landa() * self.sigma() * pd)/(self.sigma() * pd + self.landa())))
 
-    def dimensionless_laplace_derivative(self, pd):
+    def dimensionless_laplace_types(self, pd):
         """
-        Drawdown derivative of the Warren & Root in Laplace domain
+        Drawdown of the Warren & Root in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown(td, option='Stehfest')
+        :function: _laplace_drawdown_types(td, option='Stehfest')
         """
-        return None
+        return 1 / pd * mp.besselk(0, mp.sqrt(pd + (self.landa * self.sigma * pd)/(self.sigma * pd + self.landa)))
+
+    def landa(self):
+        return 2.2458394 * self.p[1] * mp.log(self.p[2]/self.p[1]) / self.p[3]
+
+    def sigma(self):
+        return (self.p[2]-self.p[1]) / self.p[1]
 
     def __call__(self, t):
         td = self._dimensionless_time(t)
-        self.landa = 2.2458394 * self.p[1] * mp.log(self.p[2]/self.p[1]) / self.p[3]
-        self.sigma = (self.p[2]-self.p[1]) / self.p[1]
         sd = self._laplace_drawdown(td)
         s = self._dimensional_drawdown(np.float64(sd))
         return s
@@ -1273,13 +1289,14 @@ class Warren_Root(AnalyticalInterferenceModels):
         :return p[2]: intercept with the horizontal axis for the late time asymptote
         :return p[3]: time of the minimum of the derivative
         """
-        n = len(self.df) / 4
-        p_late = get_logline(self, self.df[self.df.index > n])
-        p_early = get_logline(self, self.df[self.df.index < 2 * n])
         warren = ht.preprocessing(df=self.df)
         warren.ldiffs()
-        tt = warren.der.t.to_numpy()
-        self.p = np.array([p_late[0], p_early[1], p_late[1], tt[np.argmin(warren.der.s.to_numpy())]])
+        tm = warren.der.t.to_numpy()
+        dd = np.mean(warren.der.s.iloc[-3:])
+        a  = np.log(10)*dd
+        t0 = self.df.t.iloc[0] / np.exp(self.df.s.iloc[0]/dd)
+        t1 = self.df.t.iloc[-1] / np.exp(self.df.s.iloc[-1]/dd)
+        self.p = np.array([a, t0, t1, tm[np.argmin(warren.der.s.to_numpy())]])
         return self.p
 
     def RadiusOfInfluence(self):
@@ -1288,7 +1305,7 @@ class Warren_Root(AnalyticalInterferenceModels):
 
         :return ri: Distance to image well m
         """
-        return np.sqrt(2.2458394 * self.T() * self.p[2] / self.S2())
+        return np.sqrt(2.2458394 * self.T() * self.p[2] / self.S())
 
     def S2(self):
         """
@@ -1307,7 +1324,7 @@ class Warren_Root(AnalyticalInterferenceModels):
         fig, ax = plt.subplots(1,1)
         for i in range(0, len(sigma)):
             self.sigma = sigma[i]
-            sd = list(self._laplace_drawdown(td))
+            sd = self._laplace_drawdown_types(td)
             d = {'t': td, 's': sd}
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
@@ -1330,7 +1347,7 @@ class Warren_Root(AnalyticalInterferenceModels):
         fig, ax = plt.subplots(1,1)
         for i in range(0, len(landa)):
             self.landa= landa[i]
-            sd = list(self._laplace_drawdown(td))
+            sd = self._laplace_drawdown_types(td)
             d = {'t': td, 's': sd}
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
@@ -1360,12 +1377,12 @@ class Warren_Root(AnalyticalInterferenceModels):
         :param reptext: savefig name
         """
         self.fit(option=option_fit)
-
+        self.p = np.float64(self.p)
         self.Transmissivity = self.T()
         self.Storativityf = self.S()
         self.Storativitym = self.S2()
         self.RadInfluence = self.RadiusOfInfluence()
-        self.landa = 2.2458394 * self.p[1] * mp.log(self.p[2]/self.p[1]) / self.p[3]
+        self.landa = 2.2458394 * self.p[1] * np.log(np.float64(self.p[2]/self.p[1])) / self.p[3]
         self.sigma = (self.p[2]-self.p[1]) / self.p[1]
         self.model_label = 'Warren  & Root (1963)'
         test = ht.preprocessing(df=self.df)
