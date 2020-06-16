@@ -24,7 +24,7 @@ Released under the MIT license:
 
 import numpy as np
 from scipy.special import expn as E1
-from scipy.special import gamma, gammaincc
+from scipy.special import gamma, gammaincc, kn, factorial, kv
 import matplotlib.pyplot as plt
 from scipy.optimize import least_squares, minimize
 import mpmath as mp
@@ -40,7 +40,7 @@ def thiem(q, s1, s2, r1, r2):
 
     The Thiem method requires to know the pumping rate and the drawdown in
     two observation wells located at different distances from the pumping
-    well.
+    well. It assumes steady-state conditions.
 
     :param q: pumping rate, m3/s
     :param s1: drawdown in piezometer 1, m
@@ -142,6 +142,9 @@ class AnalyticalInterferenceModels():
         self.Rd = Rd
         self.p = p
         self.df = df
+        self.inversion_M = None
+        self.inversion_V = None
+        self.inversion_s = None
 
     def _dimensionless_time(self, t):
         """
@@ -161,79 +164,166 @@ class AnalyticalInterferenceModels():
         """
         return (np.float64(qd) * np.log(10)) / 2.0 / self.p[0]
 
-    def _stehfest(self, td, degree=12):
+    def _laplace_drawdown(self, td, inversion_option=None):
         """
-        Numerical Laplace inversion with the Stefhest method
+        Alternative calculation with Laplace inversion
 
-        :param x:       vector of the parameters of the function
         :param td:      dimensionless time
-        :param degree:  parameter of the Stefhest algorithm (default: 12)
+        :param option:  stehfest (default, dps=10, degree=16), dehoog
         :return sd:     dimensionless drawdown
-
-        :Reference:
-        Widder, D. (1941). The Laplace Transform. Princeton.
-        Stehfest, H. (1970). Algorithm 368: numerical inversion of Laplace transforms. Communications of the ACM 13(1):47-49, http://dx.doi.org/10.1145/361953.361969
-
         """
-        if self.degree is None:
-            self.degree = degree
-        elif degree != 12:
-            self.degree = degree
-        if self.degree % 2 != 0:
-            print('ERROR: The degree of the stehfest algorithm needs to be even!')
-
-        # Calculates stehfest weighting coefficents
-        if (self.stehfest_param_inv is None) or (np.size(self.stehfest_param_inv)!=self.degree):
-            self.stehfest_param_inv = np.zeros(self.degree)
-            for i in range(1,self.degree+1):
-                vi_dummy = 0
-                for k in range(int((i+1)/2), np.amin([i, self.degree/2])):
-                    vi_dummy = vi_dummy + k ** (self.degree/2)*np.prod(range(1,2*k))/(np.prod(range(1,self.degree/2-k)) * np.prod(range(1,k)) * np.prod(range(1,k-1)) * np.prod(range(1,i-k)) * np.prod(range(1,2*k-i)))
-                self.stehfest_param_inv[i-1] = (-1) ** (self.degree/2 + i) * vi_dummy
-
-        # Gaver-stehfest algorithm
-        sd = np.zeros(np.size(td))
-        for i in range(1, self.degree+1):
-            pd = i * np.log(2)/td
-            sd[i-1] = np.log(2) / td * np.sum(self.stehfest_param_inv[i-1] * eval(self.dimensionless_laplace(pd)) )
+        if inversion_option is not None:
+            self.inversion_option = inversion_option
+        
+        if self.inversion_option == 'stehfest':
+            sd = self.stehfest(self.dimensionless_laplace, td)
+        elif self.inversion_option == 'dehoog':
+            sd = self.dehoog(self.dimensionless_laplace, td)  
         return sd
 
-    def _laplace_drawdown(self, td, option='Stehfest', degrees=12):  # default stehfest
+    def _laplace_drawdown_types(self, td, option='stehfest', degrees=12):  # default stehfest
         """
         Alternative calculation with Laplace inversion
 
         :param td:      dimensionless time
-        :param x:       dummy parameter for inversion
-        :param option:  Stehfest (default, dps=10, degree=16), dehoog
-        :return sd:     dimensionless drawdown
-        """
-        s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=degrees), td)
-        return list(s)
-
-    def _laplace_drawdown_types(self, td, option='Stehfest', degrees=12):  # default stehfest
-        """
-        Alternative calculation with Laplace inversion
-
-        :param td:      dimensionless time
-        :param x:       dummy parameter for inversion
-        :param option:  Stehfest (default, dps=10, degree=16), dehoog
+        :param option:  stehfest (default, dps=10, degree=16), dehoog
         :return sd:     dimensionless drawdown
         """
         s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace_types, x, method=option, dps=10, degree=degrees), td)
         return list(s)
 
-    def _laplace_drawdown_derivative(self, td, option='Stehfest', degrees=12):  # default stehfest
+    def _laplace_drawdown_derivative(self, td, inversion_option=None): 
         """
         Alternative calculation with Laplace inversion
 
         :param td:      dimensionless time
-        :param x:       dummy parameter for inversion
-        :param option:  Stehfest (default, dps=10, degree=16), dehoog
+        :param option:  stehfest (default, dps=10, degree=16), dehoog
         :return dd:     dimensionless drawdown derivative
         """
-        d = list(map(
-            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=degrees), td))
-        return d
+        if inversion_option is not None:
+            self.inversion_option = inversion_option
+        
+        if self.inversion_option == 'stehfest':
+            sd = self.stehfest(self.dimensionless_laplace_derivative, td)
+        elif self.inversion_option == 'dehoog':
+            sd = self.dehoog(self.dimensionless_laplace_derivative, td)  
+        return sd
+
+    def _coeff(self, fitcoeff=12):
+        """
+        Calculates the coefficent for the stehfest method.
+
+        :param fitcoeff: number of coefficients for inversion (Default is 12)
+        :return self.inversion_V: gives the inversion coefficent for stehfest
+        :return self.inversion_M: number of coefficients for inversion
+        :return V: gives the inversion coefficent for stehfest
+        """
+        if fitcoeff != 12:
+            M = np.int(self.fitcoeff)
+        else:
+            M = fitcoeff # Default
+
+        if M % 2 > 0: # Check if M is even
+            M = M + 1
+        V = np.zeros(M)
+        for i in range(1,M+1):
+            vi = 0
+            for k in range(np.int((i+1)/2),np.int(np.min([i,M/2]))+1):
+                vi = vi + (k**(M/2)*factorial(2*k))/(factorial(np.int(M/2-k))*factorial(k)*factorial(k-1)*factorial(i-k)*factorial(2*k-i))
+            V[i-1] = (-1) ** ((M/2)+i)*vi
+        self.inversion_V = V
+        self.inversion_M = M
+        return V
+
+    def stehfest(self, Fp, td):
+        """
+        Numerical Laplace inversion with the Stefhest method
+
+        :return self.inversion_s: the calculated drawdown in time domain
+        :return s: the calculated drawdown in time domain
+
+        :References: Widder, D. (1941). The Laplace Transform. Princeton.
+        Stehfest, H. (1970). Algorithm 368: numerical inversion of Laplace transforms. 
+        Communications of the ACM 13(1):47-49, http://dx.doi.org/10.1145/361953.361969
+        """
+        p = np.zeros([self.inversion_M, np.size(td)])
+        for i in range(1,self.inversion_M+1):
+            p[i-1] = i*np.log(2)/td
+        uu = Fp(p)
+        VV = np.repeat(self.inversion_V, np.size(td)).reshape(self.inversion_M, np.size(td))
+        su = np.multiply(VV, uu)
+        s = np.log(2)/td*sum(su)
+        self.inversion_s = s
+        return s
+
+    def dehoog(self, Fp, td, alpha=0, tol=1e-9, M=20):
+        """
+        Numerical Laplace inversion with the dehoog method
+
+        de Hoog et al's quotient difference method with accelerated convergence for the continued fraction expansion
+
+        Modification: The time vector td is split in segments of equal magnitude 
+        which are inverted individually. This gives a better overall accuracy.
+            
+        :return self.inversion_s: the calculated drawdown in time domain
+        :return s: the calculated drawdown in time domain
+
+        :References: de Hoog, F. R., Knight, J. H., and Stokes, A. N. (1982). An improved 
+        method for numerical inversion of Laplace transforms. S.I.A.M. J. Sci. 
+        and Stat. Comput., 3, 357-366.
+
+        with modifications after Hollenbeck, K. J. (1998) INVLAP.M: A matlab function for numerical 
+        inversion of Laplace transforms by the de Hoog algorithm, http://www.isva.dtu.dk/staff/karl/invlap.htm 
+        """
+        if self.fitcoeff is not None:
+            M = self.fitcoeff
+
+        logallt = np.log10(td)
+        iminlogallt = np.floor(np.min(logallt))
+        imaxlogallt = np.ceil(np.max(logallt))
+        f = []
+        for ilogt in range(np.int(iminlogallt), np.int(imaxlogallt)+1):
+            t = td[((logallt>=ilogt) & (logallt<(ilogt+1)))]
+            if t is not None:
+                T = 2 * np.max(t)
+                gamma = alpha - np.log(tol) / (2*T)
+                run = np.linspace(0,2*M, 2*M+1)
+                p = gamma + 1j * np.pi * run / T    
+                a = Fp(p)      # evaluate function
+                a[0] = a[0] / 2 # zero term is halved
+                # build up e and q tables.
+                e = np.zeros((2*M+1, M+1), dtype=complex)
+                q = np.zeros((2*M, M+1), dtype=complex)
+                q[:,1] = a[1:2*M+1]/a[0:2*M]
+                for r in np.arange(1,M+1):
+                    e[0:2*(M-r)+1,r] = q[1:2*(M-r)+2,r] - q[0:2*(M-r)+1,r] + e[1:2*(M-r)+2,r-1]
+                    if r < M:
+                        rq = r + 1
+                        q[0:2*(M-rq)+2,rq] = q[1:2*(M-rq)+3,rq-1]*e[1:2*(M-rq)+3,rq-1]/e[0:2*(M-rq)+2,rq-1]
+                # build up d vector  
+                d = np.zeros((2*M+1,1), dtype=complex)
+                d[0] = a[0]
+                d[1:2*M:2] = np.vstack(-q[0,1:M+1])
+                d[2:2*M+1:2] = np.vstack(-e[0,1:M+1])
+                # build up A and B matrix
+                A = np.zeros((2*M+2,len(t)), dtype=complex)
+                B = np.zeros((2*M+2,len(t)), dtype=complex)
+                A[1,:] = d[0,0]*np.ones((1,len(t)))
+                B[0,:] = np.ones((1,len(t)))
+                B[1,:] = np.ones((1,len(t)))
+                z = np.exp(1j*np.pi*t/T)
+                for n in np.arange(2, 2*M+2):
+                    A[n,:] = A[n-1,:] + d[n-1]*np.ones((1,len(t)))*z*A[n-2,:]
+                    B[n,:] = B[n-1,:] + d[n-1]*np.ones((1,len(t)))*z*B[n-2,:]
+                    
+                h2M = .5 * ( np.ones((1,len(t))) + ( d[2*M-1]-d[2*M] ) * np.ones((1,len(t))) * z )
+                R2Mz = -h2M*(np.ones((1,len(t))) - (np.ones((1,len(t))) + d[2*M]*np.ones((1,len(t))) * z / h2M ** 2) ** 5)
+                A[2*M+1,:] = A[2*M,:] + R2Mz * A[2*M-1,:]
+                B[2*M+1,:] = B[2*M,:] + R2Mz * B[2*M-1,:]
+                fpiece = np.array(1/T * np.exp(gamma * t) * np.real(A[2*M+1,:] / B[2*M+1,:]))
+                f = np.append(f, np.hstack(fpiece))
+        self.inversion_s = f    
+        return f
 
     def __call__(self, t):
         print("Warning - undefined")
@@ -290,7 +380,8 @@ class AnalyticalInterferenceModels():
         print('S = ', self.S(), '-')
         print('Ri = ', self.RadiusOfInfluence(), 'm')
 
-    def fit(self, option='lm', fitmethod=None, fitbnds=None):
+
+    def fit(self, fitmethod=None, fitbnds=None, fitcoeff=None):
         """
         Fit the model parameter of a given model.
 
@@ -300,43 +391,58 @@ class AnalyticalInterferenceModels():
         initial guess of the parameters, that will then be iterativly modified
         until a local minimum is obtained.
 
-        :param option:  Levenberg-Marquard (lm is default), Trust Region Reflection algorithm (trf)
-        using least-squares implementation from scipy-optimize or minimize function from the same library
+        :param option:  Levenberg-Marquard (lm is default), Trust Region Reflection algorithm (trf) or 
+        dogbox using least-squares implementation from scipy-optimize or use nofit to caculate only the 
+        statistic 
+        :param fitcoeff: The number of coefficent needs to be defined for Laplace inversions.
         :return res_p.x:    solution vector p
         """
 
         if fitmethod is not None:
             self.fitmethod = fitmethod
+
         if fitbnds is not None:
             self.fitbnds = fitbnds
+        if fitcoeff is not None:
+            self.fitcoeff = fitcoeff
         if self.p is None:
-            print("Error, intialize p using the function guess_params")
-        
-        if option is None:
-            print('No fit is performed and given p is returned')
-            return self.p       
+            print("Error, intialize p using the function guess_params")    
 
         t = self.df.t
         s = self.df.s
         p = self.p
+
+        if self.inversion_option is not None:
+            if self.fitcoeff is None:
+                print('Please, first specifiy the number of coefficient used for the inversion.')
+            if inversion_option == 'stehfest':
+                self._coeff()                
 
         # costfunction
         def fun(p, t, s):
             self.p = p
             return s.to_numpy() - self.__call__(t.to_numpy())
 
-        if option == 'lm':
-            # Levenberg-Marquard -- Default
-            res_p = least_squares(fun, p, args=(t, s), method='lm', xtol=1e-10, verbose=1)
-        elif option == 'trf':
-            # Trust Region Reflective algorithm
-            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method='trf', verbose=1)
-        elif option == 'min':
-            # minimize function from scipy.optimize.minimize
-            res_p = minimize(fun, p, args=(t, s), method=self.fitmethod, jac=None, bounds=self.fitbnds) #CHECK !!!! NOT WORKING
-        else:
-            raise Exception('Specify your option')
+        if self.fitmethod == 'lm':
+            # Levenberg-Marquardt algorithm (Default). 
+            # Doesn’t handle bounds and sparse Jacobians. 
+            # Usually the most efficient method for small unconstrained problems.
+            res_p = least_squares(fun, p, args=(t, s), method=self.fitmethod, xtol=1e-10, verbose=1)
+        elif self.fitmethod == 'trf':
+            # Trust Region Reflective algorithm, particularly suitable for large sparse 
+            # problems with bounds. Generally robust method.
+            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method=self.fitmethod, verbose=1)
+            # dogleg algorithm with rectangular trust regions, typical use case is small problems 
+            # with bounds. Not recommended for problems with rank-deficient Jacobian
+        elif self.fitmethod == 'dogbox':
+            res_p = least_squares(fun, p, args=(t, s), method=self.fitmethod, verbose=1)
 
+        elif self.fitmethod == 'nofit':
+            # Calculates the statistic for a given vector p
+            res_p = least_squares(fun, p, args=(t, s), method=self.fitmethod, max_nfev=0)
+        else:
+            raise Exception('Choose your fitmethod: lm, trf and dogbox')
+        
         # define regular points to plot the calculated drawdown
         self.tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
                               dtype=np.float64)
@@ -388,6 +494,9 @@ class Theis(AnalyticalInterferenceModels):
     :param Storativity: Storativtiy -
     :paramRadInfluence: Radius of influence m
     :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param fitbnds: 
+    :param inversion_option: 'stehfest' or 'dehoog'
 
     :Example:
     >>> q = 1.3888e-2 #pumping rate in m3/s
@@ -422,7 +531,16 @@ class Theis(AnalyticalInterferenceModels):
         Drawdown of the Theis Function in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown(td, option='Stehfest')
+        :function: _laplace_drawdown(td, inversion_option='stehfest')
+        """
+        return 1 / pd * kv(0, np.sqrt(pd))
+
+    def dimensionless_laplace2(self, pd): #!!!! can be removed, used to check with stehfest against mpmath laplaceinversion
+        """
+        Drawdown of the Theis Function in Laplace domain
+
+        :param pd: Laplace parameter
+        :function: _laplace_drawdown(td, inversion_option='stehfest')
         """
         return 1 / pd * mp.besselk(0, mp.sqrt(pd))
 
@@ -431,9 +549,9 @@ class Theis(AnalyticalInterferenceModels):
         Derivative of the Theis Function in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown_derivative(td, option='Stehfest')
+        :function: _laplace_drawdown_derivative(td, inversion_option='stehfest')
         """
-        return 0.5 * mp.besselk(1, mp.sqrt(pd)) / mp.sqrt(pd)
+        return 0.5 * kv(1, np.sqrt(pd)) / np.sqrt(pd)
 
     def __call__(self, t):
         td = self._dimensionless_time(t)
@@ -441,7 +559,7 @@ class Theis(AnalyticalInterferenceModels):
         s = self._dimensional_drawdown(sd)
         return s
 
-    def __init__(self, Q=None, r=None, df=None, p=None):
+    def __init__(self, Q=None, r=None, df=None, p=None, inversion_option=None):
         self.Q = Q
         self.r = r
         self.p = p
@@ -463,6 +581,8 @@ class Theis(AnalyticalInterferenceModels):
         self.detailled_p = None
         self.fitmethod = None
         self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
 
     def guess_params(self):
         """
@@ -500,17 +620,23 @@ class Theis(AnalyticalInterferenceModels):
         plt.legend(['Theis', 'Derivative'])
         plt.show()
 
-    def rpt(self, option_fit='lm', ttle='Theis (1935)', author='Author', filetype='pdf', reptext='Report_ths'):
+    def rpt(self, fitmethod=None, ttle='Theis (1935)', author='Author', filetype='pdf', reptext='Report_ths'):
         """
         Calculates the solution and reports graphically the results of the pumping test
 
-        :param option_fit: 'lm' or 'trf'
+        :param option_fit: 'lm', 'trf' or 'dogbox'
         :param ttle: Title of the figure
         :param author: Author name
         :param filetype: 'pdf', 'png' or 'svg'
         :param reptext: savefig name
         """
-        self.fit(option=option_fit)
+
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'lm' #set Default
+
+        self.fit()
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()
@@ -585,7 +711,7 @@ class Theis_noflow(AnalyticalInterferenceModels):
     >>> t_noflow.trial()
     """
 
-    def __init__(self, Q=None, r=None, Rd=None, df=None, p=None):
+    def __init__(self, Q=None, r=None, Rd=None, df=None, p=None, inversion_option=None):
         self.Q = Q
         self.r = r
         self.Rd = Rd
@@ -608,6 +734,8 @@ class Theis_noflow(AnalyticalInterferenceModels):
         self.detailled_p = None
         self.fitmethod = None
         self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
 
     def dimensionless(self, td):
         """
@@ -636,18 +764,18 @@ class Theis_noflow(AnalyticalInterferenceModels):
         Drawdown of the Theis with no-flow boundary function in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown(td, option='Stehfest')
+        :function: _laplace_drawdown(td, inversion_option='Stehfest')
         """
-        return 1 / pd * mp.besselk(0, mp.sqrt(pd)) + 1 / (pd) * mp.besselk(0, mp.sqrt(pd) * self.Rd)
+        return 1 / pd * kv(0, np.sqrt(pd)) + 1 / (pd) * kv(0, np.sqrt(pd) * self.Rd)
 
     def dimensionless_laplace_derivative(self, pd):
         """
         Drawdown derivative of the Theis with no-flow boundary function in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown_derivative(td, option='Stehfest')
+        :function: _laplace_drawdown_derivative(td, inversion_option='Stehfest')
         """
-        return 0.5 * mp.besselk(1, mp.sqrt(pd)) / mp.sqrt(pd) + 0.5 * mp.besselk(1, mp.sqrt(pd) * self.Rd) / mp.sqrt(
+        return 0.5 * kv(1, np.sqrt(pd)) / np.sqrt(pd) + 0.5 * kv(1, np.sqrt(pd) * self.Rd) / np.sqrt(
             pd) * self.Rd
 
     def __call__(self, t):
@@ -700,17 +828,22 @@ class Theis_noflow(AnalyticalInterferenceModels):
         plt.legend()
         plt.show()
 
-    def rpt(self, option_fit='lm', ttle='Theis (1935) no flow', author='Author', filetype='pdf', reptext='Report_thn'):
+    def rpt(self, fitmethod=None, ttle='Theis (1935) no flow', author='Author', filetype='pdf', reptext='Report_thn'):
         """
         Calculates the solution and reports graphically the results of the pumping test
 
-        :param option_fit: 'lm' or 'trf'
+        :param option_fit: 'lm' or 'trf' or 'dogbox'
         :param ttle: Title of the figure
         :param author: Author name
         :param filetype: 'pdf', 'png' or 'svg'
         :param reptext: savefig name
         """
-        self.fit(option=option_fit)
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'lm' #set Default
+
+        self.fit()
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()
@@ -795,7 +928,7 @@ class Theis_constanthead(AnalyticalInterferenceModels):
     734-738.
     """
 
-    def __init__(self, Q=None, r=None, Rd=None, df=None, p=None):
+    def __init__(self, Q=None, r=None, Rd=None, df=None, p=None, inversion_option=None):
         self.Q = Q
         self.r = r
         self.Rd = Rd
@@ -818,6 +951,8 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         self.detailled_p = None
         self.fitmethod = None
         self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
 
     def dimensionless(self, td):
         """
@@ -910,18 +1045,23 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         plt.legend()
         plt.show()
 
-    def rpt(self, option_fit='lm', ttle='Theis (1935) const. head', author='Author', filetype='pdf',
+    def rpt(self, fitmethod='lm', ttle='Theis (1935) const. head', author='Author', filetype='pdf',
             reptext='Report_thc'):
         """
         Calculates the solution and reports graphically the results of the pumping test
 
-        :param option_fit: 'lm' or 'trf'
+        :param option_fit: 'lm' or 'trf' or 'dogbox'
         :param ttle: Title of the figure
         :param author: Author name
         :param filetype: 'pdf', 'png' or 'svg'
         :param reptext: savefig name
         """
-        self.fit(option=option_fit)
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'lm' #set Default
+
+        self.fit()
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()
@@ -1030,7 +1170,7 @@ class JacobLohman(AnalyticalInterferenceModels):
 
     def __call__(self, t):
         td = self._dimensionless_time(t)
-        qd = self._laplace_drawdown(td, degrees=12)
+        qd = self._laplace_drawdown(td, degrees=12, option='Stehfest')
         q = self._dimensional_flowrate(qd)
         return q
 
