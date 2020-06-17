@@ -24,7 +24,7 @@ Released under the MIT license:
 
 import numpy as np
 from scipy.special import expn as E1
-from scipy.special import gamma, gammaincc, kn, factorial, kv
+from scipy.special import gamma, gammaincc, kn, factorial, kv, yv
 import matplotlib.pyplot as plt
 from scipy.optimize import least_squares, minimize
 import mpmath as mp
@@ -146,11 +146,13 @@ class AnalyticalInterferenceModels():
         self.inversion_V = None
         self.inversion_s = None
 
+
     def _dimensionless_time(self, t):
         """
         Calculates dimensionless time
         """
         return (t / (0.5628 * self.p[1])) * 0.25
+
 
     def _dimensional_drawdown(self, sd):
         """
@@ -158,18 +160,19 @@ class AnalyticalInterferenceModels():
         """
         return (sd * self.p[0] * 2) / 2.302585092994046
 
+
     def _dimensional_flowrate(self, qd):
         """
         Calculates the dimensional flow rate
         """
-        return (np.float64(qd) * np.log(10)) / 2.0 / self.p[0]
+        return qd * np.log(10) / 2.0 / self.p[0]
 
     def _laplace_drawdown(self, td, inversion_option=None):
         """
         Alternative calculation with Laplace inversion
 
         :param td:      dimensionless time
-        :param option:  stehfest (default, dps=10, degree=16), dehoog
+        :param inversion_option:  stehfest or dehoog
         :return sd:     dimensionless drawdown
         """
         if inversion_option is not None:
@@ -181,23 +184,31 @@ class AnalyticalInterferenceModels():
             sd = self.dehoog(self.dimensionless_laplace, td)  
         return sd
 
-    def _laplace_drawdown_types(self, td, option='stehfest', degrees=12):  # default stehfest
+
+    def _laplace_drawdown_types(self, td, inversion_option=None): 
         """
         Alternative calculation with Laplace inversion
 
         :param td:      dimensionless time
-        :param option:  stehfest (default, dps=10, degree=16), dehoog
+        :param inversion_option:  stehfest or dehoog
         :return sd:     dimensionless drawdown
         """
-        s = map(lambda x: mp.invertlaplace(self.dimensionless_laplace_types, x, method=option, dps=10, degree=degrees), td)
-        return list(s)
+        if inversion_option is not None:
+            self.inversion_option = inversion_option
+        
+        if self.inversion_option == 'stehfest':
+            sd = self.stehfest(self.dimensionless_laplace_types, td)
+        elif self.inversion_option == 'dehoog':
+            sd = self.dehoog(self.dimensionless_laplace_types, td)  
+        return sd
+  
 
     def _laplace_drawdown_derivative(self, td, inversion_option=None): 
         """
         Alternative calculation with Laplace inversion
 
         :param td:      dimensionless time
-        :param option:  stehfest (default, dps=10, degree=16), dehoog
+        :param inversion_option:  stehfest or dehoog
         :return dd:     dimensionless drawdown derivative
         """
         if inversion_option is not None:
@@ -208,6 +219,7 @@ class AnalyticalInterferenceModels():
         elif self.inversion_option == 'dehoog':
             sd = self.dehoog(self.dimensionless_laplace_derivative, td)  
         return sd
+
 
     def _coeff(self, fitcoeff=12):
         """
@@ -235,6 +247,7 @@ class AnalyticalInterferenceModels():
         self.inversion_M = M
         return V
 
+
     def stehfest(self, Fp, td):
         """
         Numerical Laplace inversion with the Stefhest method
@@ -255,6 +268,7 @@ class AnalyticalInterferenceModels():
         s = np.log(2)/td*sum(su)
         self.inversion_s = s
         return s
+
 
     def dehoog(self, Fp, td, alpha=0, tol=1e-9, M=20):
         """
@@ -282,9 +296,9 @@ class AnalyticalInterferenceModels():
         iminlogallt = np.floor(np.min(logallt))
         imaxlogallt = np.ceil(np.max(logallt))
         f = []
-        for ilogt in range(np.int(iminlogallt), np.int(imaxlogallt)+1):
+        for ilogt in np.arange(np.int(iminlogallt), np.int(imaxlogallt)+1):
             t = td[((logallt>=ilogt) & (logallt<(ilogt+1)))]
-            if t is not None:
+            if len(t) > 0:
                 T = 2 * np.max(t)
                 gamma = alpha - np.log(tol) / (2*T)
                 run = np.linspace(0,2*M, 2*M+1)
@@ -329,6 +343,7 @@ class AnalyticalInterferenceModels():
         print("Warning - undefined")
         return None
 
+
     def T(self):
         """
         Calculates Transmissivity
@@ -337,6 +352,7 @@ class AnalyticalInterferenceModels():
         """
         return np.log(10)/np.pi/4 * self.Q / self.p[0]
 
+
     def S(self):
         """
         Calculates Storativity
@@ -344,6 +360,7 @@ class AnalyticalInterferenceModels():
         :return Storativity:  storativity -
         """
         return 2.2458394 * self.T() * self.p[1] / self.r ** 2
+
 
     def trial(self, p=np.nan):  # loglog included: derivatives are missing at the moment.
         """
@@ -413,10 +430,13 @@ class AnalyticalInterferenceModels():
         p = self.p
 
         if self.inversion_option is not None:
-            if self.fitcoeff is None:
-                print('Please, first specifiy the number of coefficient used for the inversion.')
-            if inversion_option == 'stehfest':
-                self._coeff()                
+            if self.inversion_option == 'stehfest':
+                if self.fitcoeff is None:
+                    print('Please, first specifiy the number of coefficient used for the inversion.')
+                else:
+                    if fitcoeff is None:
+                        self.fitcoeff = 16
+                    self._coeff()                
 
         # costfunction
         def fun(p, t, s):
@@ -700,6 +720,9 @@ class Theis_noflow(AnalyticalInterferenceModels):
     :param Storativity: Storativtiy -
     :param RadInfluence: Distance to the image well m
     :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param fitbnds: 
+    :param inversion_option: 'stehfest' or 'dehoog'
 
     :Example:
     >>> q = 0.0132 #pumping rate in m3/s
@@ -913,6 +936,9 @@ class Theis_constanthead(AnalyticalInterferenceModels):
     :param Storativity: Storativtiy -
     :paramRadInfluence: Distance to the image well m
     :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param fitbnds: 
+    :param inversion_option: 'stehfest' or 'dehoog'
 
     :Example:
     >>> q = 0.03 #pumping rate in m3/s
@@ -981,18 +1007,18 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         Drawdown of the Theis with constant head boundary function in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown(td, option='Stehfest')
+        :function: _laplace_drawdown(td, inversion_option='Stehfest')
         """
-        return 1 / pd * mp.besselk(0, mp.sqrt(pd)) - 1 / (pd) * mp.besselk(0, mp.sqrt(pd) * self.Rd)
+        return 1 / pd * kv(0, np.sqrt(pd)) - 1 / (pd) * kv(0, np.sqrt(pd) * self.Rd)
 
     def dimensionless_laplace_derivative(self, pd):
         """
         Drawdown derivative of the Theis with constant head boundary function in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown(td, option='Stehfest')
+        :function: _laplace_drawdown(td, inversion_option='Stehfest')
         """
-        return 0.5 * mp.besselk(1, mp.sqrt(pd)) / mp.sqrt(pd) - 0.5 * mp.besselk(1, mp.sqrt(pd) * self.Rd) / mp.sqrt(
+        return 0.5 * kv(1, np.sqrt(pd)) / np.sqrt(pd) - 0.5 * kv(1, np.sqrt(pd) * self.Rd) / np.sqrt(
             pd) * self.Rd
 
     def __call__(self, t):
@@ -1125,11 +1151,14 @@ class JacobLohman(AnalyticalInterferenceModels):
     :param Storativity: Storativtiy -
     :paramRadInfluence: Radius of influence m
     :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param fitbnds: 
+    :param inversion_option: 'stehfest' or 'dehoog'
 
     :Example:
 
     """
-    def __init__(self, s=None, r=None, Rd=None, df=None, p=None):
+    def __init__(self, s=None, r=None, Rd=None, df=None, p=None, inversion_option=None):
         self.s = s
         self.r = r
         self.Rd = Rd
@@ -1152,6 +1181,9 @@ class JacobLohman(AnalyticalInterferenceModels):
         self.detailled_p = None
         self.fitmethod = None
         self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
+
 
     def dimensionless_laplace(self, pd):
         """
@@ -1160,7 +1192,7 @@ class JacobLohman(AnalyticalInterferenceModels):
         :param pd: Laplace parameter
         :function: _laplace_flowrate(td, option='Stehfest')
         """
-        return mp.besselk(1, mp.sqrt(pd)) / (mp.sqrt(pd) * mp.besselk(0, mp.sqrt(pd)))
+        return kv(1, np.sqrt(pd)) / (np.sqrt(pd) * kv(0, np.sqrt(pd)))
 
     def dimensionless_laplace_derivative(self, pd):
         """
@@ -1170,7 +1202,7 @@ class JacobLohman(AnalyticalInterferenceModels):
 
     def __call__(self, t):
         td = self._dimensionless_time(t)
-        qd = self._laplace_drawdown(td, degrees=12, option='Stehfest')
+        qd = self._laplace_drawdown(td)
         q = self._dimensional_flowrate(qd)
         return q
 
@@ -1215,15 +1247,16 @@ class JacobLohman(AnalyticalInterferenceModels):
         """
         Type curves of the Jacob-Lohman (1952) model
         """
+        
         plt.figure(1)
         td = np.logspace(-4, 10)
         g = 0.57721566
         ax = plt.gca()
-        qd = self._laplace_drawdown(td, degrees=16)
+        qd = self._laplace_drawdown(td, inversion_option='dehoog')
         sd = list(map(lambda x: 1/x, qd))
         d = {'td': td, 'sd': sd}
         df = pda.DataFrame(data=d)
-        test = ht.preprocessing(data=df, npoints=50)
+        test = ht.preprocessing(df=df, npoints=50)
         der = test.ldiffs()
         color = next(ax._get_lines.prop_cycler)['color']
         plt.loglog(td, qd, '-', color=color, label='q_D')
@@ -1269,18 +1302,23 @@ class JacobLohman(AnalyticalInterferenceModels):
         rms = np.sqrt(np.mean(residual ** 2))
         print('Root-mean-square ', rms, 'm^3/s')
 
-    def rpt(self, option_fit='lm', ttle='Jacob & Lohman (1952)', author='Author', filetype='pdf',
-            reptext='Report_jlq'):
+    def rpt(self, fitmethod='lm', ttle='Jacob & Lohman (1952)', author='Author', filetype='pdf',
+            reptext='Report_JL'):
         """
         Calculates the solution and reports graphically the results of the pumping test
 
-        :param option_fit: 'lm' or 'trf'
+        :param fitmethod: 'lm' or 'trf' or 'dogbox'
         :param ttle: Title of the figure
         :param author: Author name
         :param filetype: 'pdf', 'png' or 'svg'
         :param reptext: savefig name
         """
-        self.fit(option=option_fit)
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'lm' #set Default
+        self.inversion_option = 'stehfest'
+        self.fit()
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()
@@ -1324,9 +1362,9 @@ class JacobLohman(AnalyticalInterferenceModels):
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
-class Warren_Root(AnalyticalInterferenceModels):
+class WarrenRoot(AnalyticalInterferenceModels):
     """
-    Warren_Root (1936) model for confined double porosity aquifer.
+    WarrenRoot (1936) model for confined double porosity aquifer.
 
     When the density of fracture is high, but when the porous matrix plays a 
     significant role in the storage capacity of the aquifer, the aquifer
@@ -1359,12 +1397,15 @@ class Warren_Root(AnalyticalInterferenceModels):
     :param detailled_p: detailled solution struct from the fit function
     :param landa: inter-porosity flow parameters
     :param sigma: ratio between the matrix and fracture storativity
+    :param fitmethod: see fit function for the various options
+    :param fitbnds: 
+    :param inversion_option: 'stehfest' or 'dehoog'
 
     :Reference: Warren, J. E., and P. J. Root (1963), The behaviour of naturally 
     fractured reservoirs, Society of Petroleum Engineers Journal, 3, 245-255.
     """
 
-    def __init__(self, Q=None, r=None, rw=None, Rd=None, df=None, p=None, sigma=None, landa=None):
+    def __init__(self, Q=None, r=None, rw=None, Rd=None, df=None, p=None, sigma=None, landa=None, inversion_option=None):
         self.Q = Q
         self.r = r
         self.rw = None
@@ -1388,6 +1429,8 @@ class Warren_Root(AnalyticalInterferenceModels):
         self.detailled_p = None
         self.fitmethod = None
         self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
 
 
     def dimensionless_laplace(self, pd):
@@ -1395,21 +1438,21 @@ class Warren_Root(AnalyticalInterferenceModels):
         Drawdown of the Warren & Root in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown(td, option='Stehfest')
+        :function: _laplace_drawdown(td, inversion_option='dehoog')
         """
-        return 1 / pd * mp.besselk(0, mp.sqrt(pd + (self.landa() * self.sigma() * pd)/(self.sigma() * pd + self.landa())))
+        return 1 / pd * kv(0, np.sqrt(pd + (self.landa() * self.sigma() * pd)/(self.sigma() * pd + self.landa())))
 
     def dimensionless_laplace_types(self, pd):
         """
         Drawdown of the Warren & Root in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown_types(td, option='Stehfest')
+        :function: _laplace_drawdown_types(td, inversion_option='dehoog')
         """
-        return 1 / pd * mp.besselk(0, mp.sqrt(pd + (self.landa * self.sigma * pd)/(self.sigma * pd + self.landa)))
+        return 1 / pd * kv(0, np.sqrt(pd + (self.landa * self.sigma * pd)/(self.sigma * pd + self.landa)))
 
     def landa(self):
-        return 2.2458394 * self.p[1] * mp.log(self.p[2]/self.p[1]) / self.p[3]
+        return 2.2458394 * self.p[1] * np.log(self.p[2]/self.p[1]) / self.p[3]
 
     def sigma(self):
         return (self.p[2]-self.p[1]) / self.p[1]
@@ -1417,7 +1460,7 @@ class Warren_Root(AnalyticalInterferenceModels):
     def __call__(self, t):
         td = self._dimensionless_time(t)
         sd = self._laplace_drawdown(td)
-        s = self._dimensional_drawdown(np.float64(sd))
+        s = self._dimensional_drawdown(sd)
         return s
 
     def guess_params(self):
@@ -1464,7 +1507,7 @@ class Warren_Root(AnalyticalInterferenceModels):
         fig, ax = plt.subplots(1,1)
         for i in range(0, len(sigma)):
             self.sigma = sigma[i]
-            sd = self._laplace_drawdown_types(td)
+            sd = self._laplace_drawdown_types(td, inversion_option='dehoog')
             d = {'t': td, 's': sd}
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
@@ -1487,7 +1530,7 @@ class Warren_Root(AnalyticalInterferenceModels):
         fig, ax = plt.subplots(1,1)
         for i in range(0, len(landa)):
             self.landa= landa[i]
-            sd = self._laplace_drawdown_types(td)
+            sd = self._laplace_drawdown_types(td, inversion_option='dehoog')
             d = {'t': td, 's': sd}
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
@@ -1505,18 +1548,24 @@ class Warren_Root(AnalyticalInterferenceModels):
         plt.legend()
         plt.show()
 
-    def rpt(self, option_fit='lm', ttle='Theis (1935) const. head', author='Author', filetype='pdf',
-            reptext='Report_thc'):
+    def rpt(self, fitmethod='trf', ttle='Warren & Root example', author='openhytest developer', filetype='pdf',
+            reptext='Report_wc'):
         """
         Calculates the solution and reports graphically the results of the pumping test
 
-        :param option_fit: 'lm' or 'trf'
+        :param option_fit: 'lm' or 'trf' (default) or 'dogbox'
         :param ttle: Title of the figure
         :param author: Author name
         :param filetype: 'pdf', 'png' or 'svg'
         :param reptext: savefig name
         """
-        self.fit(option=option_fit)
+
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'trf' #set Default
+        self.inversion_option = 'dehoog'
+        self.fit()
         self.p = np.float64(self.p)
         self.Transmissivity = self.T()
         self.Storativityf = self.S()
@@ -1594,6 +1643,9 @@ class GRF(AnalyticalInterferenceModels):
     :param Storativity: Storativtiy -
     :paramRadInfluence: Radius of influence m
     :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param fitbnds: 
+    :param inversion_option: 'stehfest' or 'dehoog'
 
     :Reference:
     Barker, J.A. 1988. A Generalized radial flow model fro hydraulic tests
@@ -1629,10 +1681,10 @@ class GRF(AnalyticalInterferenceModels):
         Drawdown of the General Radial Flow model in Laplace domain
 
         :param pd: Laplace parameter
-        :function: _laplace_drawdown(td, option='Stehfest')
+        :function: _laplace_drawdown(td, inversion_option='dehoog')
         """
         n = self.p[2]
-        return self.rD**(2-n) * (self.rD**2 * pd/4)**(n/4-0.5) * mp.besselk(n/2-1, self.rD*mp.sqrt(pd)) / pd /mp.gamma(n/2)
+        return self.rD**(2-n) * (self.rD**2 * pd/4)**(n/4-0.5) * kv(n/2-1, self.rD*np.sqrt(pd)) / pd / gamma(n/2)
 
     def __call__(self, t):
         td = self._dimensionless_time(t)
@@ -1640,7 +1692,7 @@ class GRF(AnalyticalInterferenceModels):
         s = self._dimensional_drawdown(sd)
         return s
 
-    def __init__(self, Q=None, r=1, rw=1, df=None, p=None):
+    def __init__(self, Q=None, r=1, rw=1, df=None, p=None, inversion_option=None):
         self.Q = Q
         self.r = r
         self.rw = rw
@@ -1662,10 +1714,10 @@ class GRF(AnalyticalInterferenceModels):
         self.Storativity = None
         self.RadInfluence = None
         self.detailled_p = None
-        self.degree = None
-        self.stehfest_param_inv = None
         self.fitmethod = None
         self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
 
     def guess_params(self):
         """
@@ -1694,7 +1746,7 @@ class GRF(AnalyticalInterferenceModels):
         for n in np.linspace(1, 3, 9):
             self.p = np.array([0,0,n])
             color = next(ax._get_lines.prop_cycler)['color']
-            sd = list(self._laplace_drawdown(td))
+            sd = self._laplace_drawdown(td, inversion_option='dehoog')
             ax.loglog(td, sd, '-', color=color, label=n)
         plt.xlabel('$t_D$')
         plt.ylabel('$s_D$')
@@ -1707,7 +1759,7 @@ class GRF(AnalyticalInterferenceModels):
         for i in range(0,4):
             plt.subplot(2,2,i+1)
             self.p = np.array([0,0,1.5+i*0.5])
-            sd = list(self._laplace_drawdown(td))
+            sd = self._laplace_drawdown(td, inversion_option='dehoog')
             #dd = list(self._laplace_drawdown_derivative(td))
             d = {'td': td, 'sd': sd}
             df = pda.DataFrame(data=d)
@@ -1721,7 +1773,7 @@ class GRF(AnalyticalInterferenceModels):
             plt.grid('True')
         plt.show()
 
-    def rpt(self, option_fit='lm', ttle='GRF', author='Author', filetype='pdf',
+    def rpt(self, fitmethod='trf', ttle='GRF', author='openhytest developer', filetype='pdf',
             reptext='Report_grf'):
         """
         Calculates the solution and reports graphically the results of the pumping test
@@ -1732,7 +1784,12 @@ class GRF(AnalyticalInterferenceModels):
         :param filetype: 'pdf', 'png' or 'svg'
         :param reptext: savefig name
         """
-        self.fit(option=option_fit)
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'trf' #set Default
+
+        self.fit()
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()
@@ -1771,6 +1828,7 @@ class GRF(AnalyticalInterferenceModels):
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
+
 class StorativityInterferenceModels(AnalyticalInterferenceModels):
     def __init__(self):
         pass
@@ -1780,14 +1838,6 @@ class StorativityInterferenceModels(AnalyticalInterferenceModels):
 
     def _dimensional_drawdown(self, sd):
         return 0.868589 * self.p[0] * np.float64(sd)
-
-    def _laplace_drawdown(self, td, option='Stehfest'):  # default stehfest
-        return list(
-            map(lambda x: mp.invertlaplace(self.dimensionless_laplace, x, method=option, dps=10, degree=12), td))
-
-    def _laplace_drawdown_derivative(self, td, option='Stehfest'):  # default stehfest
-        return list(map(
-            lambda x: mp.invertlaplace(self.dimensionless_laplace_derivative, x, method=option, dps=10, degree=12), td))
 
     def __call__(self, t):
         print("Warning - undefined")
@@ -1815,13 +1865,13 @@ class StorativityInterferenceModels(AnalyticalInterferenceModels):
         figt = plt.figure()
         ax1 = figt.add_subplot(211)
         ax2 = figt.add_subplot(212)
-        ax1.loglog(self.df.t, list(self.__call__(self.df.t)), self.df.t, self.df.s, 'o')
+        ax1.loglog(self.df.t, self.__call__(self.df.t), self.df.t, self.df.s, 'o')
         ax1.set_ylabel('s')
         ax1.grid()
         ax1.minorticks_on()
         ax1.grid(which='major', linestyle='--', linewidth='0.5', color='black')
         ax1.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
-        ax2.semilogx(self.df.t, list(self.__call__(self.df.t)), self.df.t, self.df.s, 'o')
+        ax2.semilogx(self.df.t, self.__call__(self.df.t), self.df.t, self.df.s, 'o')
         ax2.set_ylabel('s')
         ax2.set_xlabel('t')
         ax2.grid()
@@ -1864,6 +1914,9 @@ class PapadopulosCooper(StorativityInterferenceModels):
     :param Storativity2: Storativtiy -
     :param RadInfluence: Radius of influence m
     :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param fitbnds: 
+    :param inversion_option: 'stehfest' or 'dehoog'
 
     :Description:
     The Papadopulos-Cooper (1967) solution for a constant rate pumping test in a large diameter well.
@@ -1882,7 +1935,7 @@ class PapadopulosCooper(StorativityInterferenceModels):
     well of large diameter. Water Resources Research 3, no. 1: 241-244.
 
     """
-    def __init__(self, Q=None, r=None, rw=None, rc=None, cD=None, df=None, p=None):
+    def __init__(self, Q=None, r=1, rw=None, rc=1, cD=None, df=None, p=None, inversion_option=None):
         self.Q = Q
         self.r = r
         self.rw = rw
@@ -1909,20 +1962,22 @@ class PapadopulosCooper(StorativityInterferenceModels):
         self.detailled_p = None
         self.fitmethod = None
         self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
 
     def dimensionless_laplace(self, pd):
-        sp = mp.sqrt(pd)
-        return mp.besselk(0, self.rD * sp) / (pd * (sp * mp.besselk(1, sp) + self.cd * pd * mp.besselk(0, sp)))
+        sp = np.sqrt(pd)
+        return kv(0, self.rD * sp) / (pd * (sp * kv(1, sp) + self.cd * pd * kv(0, sp)))
 
     def dimensionless_laplace_derivative(self, pd):
-        sp = mp.sqrt(pd)
+        sp = np.sqrt(pd)
         cds = self.cd * sp
-        k0 = mp.besselk(0, sp)
-        k1 = mp.besselk(1, sp)
-        kr0 = mp.besselk(0, sp * self.rD)
-        kr1 = mp.besselk(1, sp * self.rD)
+        k0 = kv(0, sp)
+        k1 = kv(1, sp)
+        kr0 = kv(0, sp * self.rD)
+        kr1 = kv(1, sp * self.rD)
         return 0.5 * ((2 * self.cd - 1) * kr0 * k0 + kr1 * k1 + cds * kr1 * k0 - cds * kr0 * k1) / (
-            mp.power(sp * k1 + self.cd * pd * k0, 2))
+            np.power(sp * k1 + self.cd * pd * k0, 2))
 
     def __call__(self, t):
         self.cd = self.Cd()
@@ -1946,8 +2001,8 @@ class PapadopulosCooper(StorativityInterferenceModels):
         ax = plt.gca()
         for i in range(0, len(cD)):
             self.cd = cD[i]
-            sd = list(self._laplace_drawdown(td * cD[i]))
-            dd = list(self._laplace_drawdown_derivative(td * cD[i]))
+            sd = self._laplace_drawdown(td * cD[i], inversion_option='dehoog')
+            dd = self._laplace_drawdown_derivative(td * cD[i], inversion_option='dehoog')
             color = next(ax._get_lines.prop_cycler)['color']
             plt.loglog(td, sd, '-', color=color, label=cD[i])
             plt.loglog(td, dd, '-.', color=color)
@@ -1963,8 +2018,8 @@ class PapadopulosCooper(StorativityInterferenceModels):
         ax = plt.gca()
         for i in range(0, len(cD)):
             self.cd = cD[i]
-            sd = list(self._laplace_drawdown(td))
-            dd = list(self._laplace_drawdown_derivative(td))
+            sd = self._laplace_drawdown(td, inversion_option='dehoog')
+            dd = self._laplace_drawdown_derivative(td, )
             color = next(ax._get_lines.prop_cycler)['color']
             plt.loglog(td, sd, '-', color=color, label=cD[i])
             plt.loglog(td, dd, '-.', color=color)
@@ -1976,18 +2031,23 @@ class PapadopulosCooper(StorativityInterferenceModels):
         plt.legend()
         plt.show()
 
-    def rpt(self, option_fit='lm', ttle='Papadopulos-Cooper (1967)', author='Author', filetype='pdf',
+    def rpt(self, fitmethod='trf', ttle='Papadopulos-Cooper (1967)', author='Author', filetype='pdf',
             reptext='Report_cbp'):
         """
         Calculates the solution and reports graphically the results of the pumping test
 
-        :param option_fit: 'lm' or 'trf'
+        :param option_fit: 'lm' or 'trf' or 'dogbox'
         :param ttle: Title of the figure
         :param author: Author name
         :param filetype: 'pdf', 'png' or 'svg'
         :param reptext: savefig name
         """
-        self.fit(option=option_fit)
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'trf' #set Default
+
+        self.fit()
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()

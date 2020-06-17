@@ -643,18 +643,18 @@ class preprocessing():
             return None
 
     def drawdownUnconf(self, s, b):
-         """
-         Computes the corrected drawdown for tests in unconfined aquifers where the drawdown
-         is substantial (>30%) compared with the aquifer saturated thickness.
+        """
+        Computes the corrected drawdown for tests in unconfined aquifers where the drawdown
+        is substantial (>30%) compared with the aquifer saturated thickness.
          
-         :param s: numpy array, drawdown
-         :param b: aquifer saturated thickness
+        :param s: numpy array, drawdown
+        :param b: aquifer saturated thickness
          
-         :Reference: Hantush, M.S. (1956),  Analysis of data from pumping tests in
-         leaky aquifers. Transactions, American Geophysical Union, 36:702-14.
-         """
-         s_corr = (s[0]-s)-((s[0]-s)**2/(2*b))
-         return s_corr     
+        :Reference: Hantush, M.S. (1956),  Analysis of data from pumping tests in
+        leaky aquifers. Transactions, American Geophysical Union, 36:702-14.
+        """
+        s_corr = (s[0]-s)-((s[0]-s)**2/(2*b))
+        return s_corr     
          
     def fracflowdim(self, df=None):
         """
