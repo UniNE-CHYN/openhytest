@@ -21,7 +21,6 @@ Released under the MIT license:
 """
 import pandas as pd
 import numpy as np
-import openhytest as ht
 import scipy.interpolate as interp2d
 import matplotlib.pyplot as plt
 from scipy import signal
@@ -641,6 +640,7 @@ class preprocessing():
             print('SYNTAX ERROR: hysampling the 6th parameter (option) is incorrect.')
             print('')
             return None
+        
 
     def drawdownUnconf(self, s, b):
         """
@@ -655,6 +655,7 @@ class preprocessing():
         """
         s_corr = (s[0]-s)-((s[0]-s)**2/(2*b))
         return s_corr     
+    
          
     def fracflowdim(self, df=None):
         """

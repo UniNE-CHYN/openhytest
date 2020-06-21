@@ -24,9 +24,9 @@ Released under the MIT license:
 
 import numpy as np
 from scipy.special import expn as E1
-from scipy.special import gamma, gammaincc, kn, factorial, kv, yv
+from scipy.special import gamma, gammaincc, factorial, kv
 import matplotlib.pyplot as plt
-from scipy.optimize import least_squares, minimize
+from scipy.optimize import least_squares, Bounds
 import mpmath as mp
 import openhytest as ht
 import pandas as pda
@@ -118,6 +118,7 @@ def get_logline(self, df):
     p[1] = 10 ** (-p[1] / p[0])
     self.p = p
     return self.p
+
 
 def log_plot(self):
     fig = plt.figure()
@@ -291,13 +292,15 @@ class AnalyticalInterferenceModels():
         """
         if self.fitcoeff is not None:
             M = self.fitcoeff
-
+        
         logallt = np.log10(td)
-        iminlogallt = np.floor(np.min(logallt))
-        imaxlogallt = np.ceil(np.max(logallt))
+        iminlogall = np.int(np.floor(np.nanmin(logallt)))  
+        imaxlogall = np.int(np.ceil(np.nanmax(logallt)))
+        iminlogallt = np.int(iminlogall)
+        imaxlogallt = np.int(imaxlogall)
         f = []
-        for ilogt in np.arange(np.int(iminlogallt), np.int(imaxlogallt)+1):
-            t = td[((logallt>=ilogt) & (logallt<(ilogt+1)))]
+        for ilogt in range(iminlogallt, imaxlogallt+1):
+            t = td[((logallt>=ilogt) & (logallt<ilogt+1))]
             if len(t) > 0:
                 T = 2 * np.max(t)
                 gamma = alpha - np.log(tol) / (2*T)
@@ -362,7 +365,7 @@ class AnalyticalInterferenceModels():
         return 2.2458394 * self.T() * self.p[1] / self.r ** 2
 
 
-    def trial(self, p=np.nan):  # loglog included: derivatives are missing at the moment.
+    def trial(self, p=None, inversion_option=None):  # loglog included: derivatives are missing at the moment.
         """
         Display data and calculated solution together
 
@@ -373,19 +376,26 @@ class AnalyticalInterferenceModels():
 
         :param p:   a solution vector can be initialized
         """
-        if np.isnan(p):
+        
+        if inversion_option is not None:
+            self.inversion_option = inversion_option
+        else:
+            if self.inversion_option is None:
+                self.inversion_option = 'dehoog'
+        
+        if p is not None:
             p = self.p
 
         figt = plt.figure()
         ax1 = figt.add_subplot(211)
         ax2 = figt.add_subplot(212)
-        ax1.loglog(self.df.t, self.__call__(self.df.t), self.df.t, self.df.s, 'o')
+        ax1.loglog(self.df.t.to_numpy(), self.__call__(self.df.t.to_numpy()), self.df.t.to_numpy(), self.df.s.to_numpy(), 'o')
         ax1.set_ylabel('s')
         ax1.grid()
         ax1.minorticks_on()
         ax1.grid(which='major', linestyle='--', linewidth='0.5', color='black')
         ax1.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
-        ax2.semilogx(self.df.t, self.__call__(self.df.t), self.df.t, self.df.s, 'o')
+        ax2.semilogx(self.df.t.to_numpy(), self.__call__(self.df.t.to_numpy()), self.df.t.to_numpy(), self.df.s.to_numpy(), 'o')
         ax2.set_ylabel('s')
         ax2.set_xlabel('t')
         ax2.grid()
@@ -398,7 +408,7 @@ class AnalyticalInterferenceModels():
         print('Ri = ', self.RadiusOfInfluence(), 'm')
 
 
-    def fit(self, fitmethod=None, fitbnds=None, fitcoeff=None):
+    def fit(self, fitmethod=None, fitcoeff=None):
         """
         Fit the model parameter of a given model.
 
@@ -418,8 +428,6 @@ class AnalyticalInterferenceModels():
         if fitmethod is not None:
             self.fitmethod = fitmethod
 
-        if fitbnds is not None:
-            self.fitbnds = fitbnds
         if fitcoeff is not None:
             self.fitcoeff = fitcoeff
         if self.p is None:
@@ -477,6 +485,7 @@ class AnalyticalInterferenceModels():
         return res_p.x
 
 # Derived daughter classes
+
 
 class Theis(AnalyticalInterferenceModels):
     """
@@ -1125,6 +1134,214 @@ class Theis_constanthead(AnalyticalInterferenceModels):
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
+
+class HantushJacob(AnalyticalInterferenceModels):
+    """
+    Hantush and Jacob (1955) solution 
+    
+    Computes the drawdown at time t for a constant rate pumping test in a
+    homogeneous, isotropic and leaky confined aquifer of infinite extent.
+
+    :Initialization:
+    :param Q: pumping rate, m3/s
+    :param r: radius between wells, m
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param self:
+    :param p: solution vector
+    :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated drawdown
+    :param derc: Calculated drawdown derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize:  size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :paramRadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param inversion_option: 'stehfest' or 'dehoog'
+    :param e: Thickness of the aquitard 
+    """
+
+    def dimensionless_laplace(self, pd):
+        """
+        Hantush-Jacob (1955) Function in Laplace domain 
+
+        :param pd: Laplace parameter
+        :function: _laplace_drawdown(td, fitmethod='stehfest')
+        """
+        return 1/pd * kv(0, np.sqrt(pd + self.p[2] ** 2))
+
+    
+    def dimensionless_laplace_derivative(self, pd):
+        """
+        Derivative of Hantush-Jacob (1955) Function in Laplace domain
+
+        :param pd: Laplace parameter
+        :function: _laplace_drawdown_derivative(td, fitmethod='stehfest')
+        """
+        return None
+
+    def __call__(self, t):
+        td = self._dimensionless_time(t)
+        sd = self._laplace_drawdown(td)
+        s = self._dimensional_drawdown(sd)
+        return s
+
+    def __init__(self, Q=None, r=None, e=None, df=None, p=None, inversion_option=None):
+        self.Q = Q
+        self.r = r
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
+        self.e = e
+
+
+    def guess_params(self):
+        """
+        First guess for the parameters of the Hantush and Jacob (1955) solution
+
+        :return p[0]: slope of Jacob straight line for late time
+        :return p[1]: intercept with the horizontal axis for s = 0
+        :return p[2]: r/B 
+        """
+        n = len(self.df) / 3
+        x1 = get_logline(self, df=self.df[self.df.index > n])
+        ths = ht.Theis(Q=self.Q, r=self.r ,df=self.df, p=x1)
+        x1 = ths.fit(fitmethod='lm')
+        x2 = np.exp(-self.df.s.iloc[-1]/self.p[0]*2.3/2+0.1)
+        if (x2 > 1):
+            x2 = np.log(-self.df.s.iloc[-1]/self.p[0]*2.3/2)
+        self.p = np.hstack([x1, x2])
+        return self.p
+
+
+    def RadiusOfInfluence(self):
+        """
+        Calculates the radius of influence
+
+        :return RadInfluence: radius of influence m
+        """
+        return 2 * np.sqrt(self.T() * self.df.t[len(self.df.t) - 1] / self.S())
+
+
+    def plot_typecurve(self, rb=[2,1,0.3,.1,0.03,0.01]):
+        """
+        Draw the type curves of Hantush and Jacob (1955)
+        """
+        td = np.logspace(-2, 5)
+        ax = plt.gca()
+        self.p = [1,1,1]
+        for i in range(0, len(rb)):
+            self.p[2] = rb[i]
+            sd = self._laplace_drawdown(td, inversion_option='dehoog')
+            d = {'td': td, 'sd': sd}
+            df = pda.DataFrame(data=d)
+            test = ht.preprocessing(df=df, npoints=50)
+            der = test.ldiffs()
+            color = next(ax._get_lines.prop_cycler)['color']
+            plt.loglog(td, sd, '-', color=color, label=rb[i])
+            plt.loglog(der.td, der.sd, '-.', color=color)
+        theis = ht.Theis()
+        st=theis.dimensionless(td)
+        plt.loglog(td, st, 'k--', label='Theis')
+        plt.xlabel('$t_D / r_D^2$')
+        plt.ylabel('$s_D$')
+        plt.xlim((1e-2, 1e5))
+        plt.ylim((1e-3, 1e1))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+        
+
+    def aquitard_conductivity(self):
+        """
+        Calculates the aquitard conductivity
+        """
+        B = self.r/self.p[2]
+        return self.T() * self.e / B ** 2
+
+    def rpt(self, fitmethod=None, ttle='Hantush&Jacob (1955)', author='openhytest developer', filetype='pdf', reptext='Report_HJ'):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
+
+        :param option_fit: 'lm', 'trf' or 'dogbox'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'trf' #set Default
+
+        self.fit()
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.RadInfluence = self.RadiusOfInfluence()
+        self.model_label = 'Hantush & Jacob (1955) model'
+        self.Ka = self.aquitard_conductivity()
+
+        test = ht.preprocessing(df=self.df)
+        self.der = test.ldiffs()
+
+        self.ttle = ttle
+        fig = log_plot(self)
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.70, 'Thickness of aquitard: {:0.4g} m '.format(self.e), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Aquitard conductivity k: {:3.2g} m/s'.format(self.Ka), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, 'r/B: {:0.2g} '.format(self.p[2]), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
+
+
 class JacobLohman(AnalyticalInterferenceModels):
     """
     Constant head test:
@@ -1317,7 +1534,6 @@ class JacobLohman(AnalyticalInterferenceModels):
             self.fitmethod = fitmethod
         else:
             self.fitmethod = 'lm' #set Default
-        self.inversion_option = 'stehfest'
         self.fit()
 
         self.Transmissivity = self.T()
@@ -1440,7 +1656,7 @@ class WarrenRoot(AnalyticalInterferenceModels):
         :param pd: Laplace parameter
         :function: _laplace_drawdown(td, inversion_option='dehoog')
         """
-        return 1 / pd * kv(0, np.sqrt(pd + (self.landa() * self.sigma() * pd)/(self.sigma() * pd + self.landa())))
+        return 1 / pd * kv(0, np.sqrt(pd + (self.landa() * self.sigma() * pd) / (self.sigma() * pd + self.landa() * np.ones(np.shape(pd)) )))
 
     def dimensionless_laplace_types(self, pd):
         """
@@ -1497,6 +1713,78 @@ class WarrenRoot(AnalyticalInterferenceModels):
         :return : storativity of matrix
         """
         return 2.2458394 * self.T() * self.p[2] / self.r ** 2 - self.S()
+    
+    def approximation(self, td):
+        """
+        Calculates the asymptotic approximation
+
+        :return : drawdown
+        """
+        return 0.5*(np.log(td*4/(1+self.sigma()))-0.5772-E1(1,self.landa()*(1+self.sigma())*td/self.sigma())+E1(1,self.landa()*td/self.sigma())) 
+    
+    
+    def fit_approximation(self, fitmethod='trf', fitcoeff=16):
+        """
+        Fit the approximation parameter of the Warren & Root model.
+
+        The function optimizes the value of the parameters of the model so that
+        the model fits the observations. The fit is obtained by an iterative
+        non linear least square procedure. This is why the function requires an
+        initial guess of the parameters, that will then be iterativly modified
+        until a local minimum is obtained.
+
+        :param option:  Levenberg-Marquard (lm is default), Trust Region Reflection algorithm (trf) or 
+        dogbox using least-squares implementation from scipy-optimize or use nofit to caculate only the 
+        statistic 
+        :param fitcoeff: The number of coefficent needs to be defined for Laplace inversions.
+        :return res_p.x:    solution vector p
+        """
+
+        t = self.df.t
+        s = self.df.s
+        p = self.p             
+
+        # costfunction
+        def fun(p, t, s):
+            self.p = p
+            td = self._dimensionless_time(t)
+            sd= self.approximation(td)
+            sapprox = self._dimensional_drawdown(sd)
+            return s.to_numpy() - sapprox
+
+        if fitmethod == 'lm':
+            # Levenberg-Marquardt algorithm (Default). 
+            # Doesn’t handle bounds and sparse Jacobians. 
+            # Usually the most efficient method for small unconstrained problems.
+            res_p = least_squares(fun, p, args=(t, s), method=fitmethod, xtol=1e-10, verbose=1)
+        elif fitmethod == 'trf':
+            # Trust Region Reflective algorithm, particularly suitable for large sparse 
+            # problems with bounds. Generally robust method.
+            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method=fitmethod, verbose=1)
+            # dogleg algorithm with rectangular trust regions, typical use case is small problems 
+            # with bounds. Not recommended for problems with rank-deficient Jacobian
+        elif fitmethod == 'dogbox':
+            res_p = least_squares(fun, p, args=(t, s), method=fitmethod, verbose=1)
+
+        elif fitmethod == ' nofit':
+            # Calculates the statistic for a given vector p
+            res_p = least_squares(fun, p, args=(t, s), method=fitmethod, max_nfev=0)
+        else:
+            raise Exception('Choose your fitmethod: lm, trf, dogbox or nofit')
+        
+        # define regular points to plot the calculated drawdown
+        self.tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
+                              dtype=np.float64)
+        self.sc = self.__call__(self.tc)
+        test = ht.preprocessing(df=pda.DataFrame(data={"t": self.tc, "s": self.sc}))
+        self.derc = test.ldiffs()
+        self.mr = np.mean(res_p.fun)
+        self.sr = 2 * np.nanstd(res_p.fun)
+        self.rms = np.sqrt(np.mean(res_p.fun ** 2))
+        self.p = np.float64(res_p.x)
+        self.detailled_p = res_p
+        return res_p.x
+    
 
     def plot_typecurve(self, landa=0.1, sigma=[10, 100, 1000]):
         """
@@ -1564,7 +1852,9 @@ class WarrenRoot(AnalyticalInterferenceModels):
             self.fitmethod = fitmethod
         else:
             self.fitmethod = 'trf' #set Default
-        self.inversion_option = 'dehoog'
+            
+        Bounds([0, 0, 0, 0], [np.inf, np.inf, np.inf, np.inf])
+
         self.fit()
         self.p = np.float64(self.p)
         self.Transmissivity = self.T()
