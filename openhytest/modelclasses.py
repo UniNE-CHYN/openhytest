@@ -1283,6 +1283,7 @@ class HantushJacob(AnalyticalInterferenceModels):
         """
         B = self.r/self.p[2]
         return self.T() * self.e / B ** 2
+    
 
     def rpt(self, fitmethod=None, ttle='Hantush&Jacob (1955)', author='openhytest developer', filetype='pdf', reptext='Report_HJ'):
         """
@@ -2321,6 +2322,7 @@ class PapadopulosCooper(StorativityInterferenceModels):
         plt.legend()
         plt.show()
 
+
     def rpt(self, fitmethod='trf', ttle='Papadopulos-Cooper (1967)', author='Author', filetype='pdf',
             reptext='Report_cbp'):
         """
@@ -2378,3 +2380,203 @@ class PapadopulosCooper(StorativityInterferenceModels):
                  transform=plt.gcf().transFigure)
         fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
                  transform=plt.gcf().transFigure)
+
+
+class Slugtests(AnalyticalInterferenceModels):
+    def __init__(self):
+        pass
+
+    def _dimensionless_time(self, t):
+        return None
+
+    def _dimensional_drawdown(self, sd):
+        return None
+
+    def __call__(self, t):
+        print("Warning - undefined")
+        return None
+
+
+class Hvorslev(Slugtests):
+    
+    """
+    Hvorslev (1951) Solution for a slug test using normalized drawdown
+    
+    :param rw: radius of the well
+    :param rc: radius of the casing
+    :param p: solution vector
+    :param df: pandas dataframe with two vectors named df.t and normalized df.s for test time respective drawdown
+    :param der: Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated draw down
+    :param derc: Calculated flow rate derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize: size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :param RadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+
+    
+    :Description:
+    Solution for a slug test in confined aquifer with negligible storage.
+    
+    """
+    
+    
+    def __init__(self, rw=None, rc=None, df=None, p=None):
+        self.rw = rw
+        self.rc = rc
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+        self.fitcoeff = None        
+        
+    def __call__(self, t):
+        return self.dimensionless(t)
+        
+    def dimensionless(self, td):
+        """
+        Dimensionless drawdown Hvosrslev slug model
+
+        :param td:  dimensionless time
+        :return sd: dimensionless drawdown
+        """
+        return np.exp(-td / self.p)
+    
+    
+    def guess_params(self):
+        """
+        First guess for the parameters
+
+        :return p[0]: t0, intercept with the horizontal axis for the early time asymptote
+        """
+        n = len(self.df) / 4
+        p = get_logline(self, df=self.df[self.df.index < n])
+        self.p = p[1]
+        return self.p
+
+    
+    def plot_typecurve(self, p=1):
+        """
+        Type curves of the Hvorslev (1951) model
+        """
+        self.p = p
+        td = np.logspace(-1, 3)
+        plt.figure(1)
+        ax = plt.gca()
+        sd = self.dimensionless(td)
+        color = next(ax._get_lines.prop_cycler)['color']
+        plt.semilogy(td, sd, '-', color=color, label='s')
+        plt.xlabel('$t_D$')
+        plt.ylabel('$s_D$')
+        plt.xlim((0, 10))
+        plt.ylim((1e-5, 1))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+        
+    
+    def rpt(self, fitmethod='trf', ttle='Hvorslev', author='openhytest developer', filetype='pdf',
+            reptext='Report_hvorslev'):
+        """
+        Calculates the solution and reports graphically the results of the slug test
+
+        :param option_fit: 'lm' or 'trf' or 'dogbox'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """   
+
+
+class Neuzil(StorativityInterferenceModels):
+    """
+    Shut-in pulse or slug test with the Neuzil (1982) solution
+
+    :param r: distance between the observation well and pumping well
+    :param rw: radius of the well
+    :param rc: radius of the casing
+    :param rD: dimensionless radius
+    :param cD: dimensionless well bore storage coefficient
+    :param p: solution vector
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param der: Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated draw down
+    :param derc: Calculated flow rate derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize: size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :param Storativity2: Storativtiy -
+    :param RadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param inversion_option: 'stehfest' or 'dehoog'
+
+    :Description:
+    The aquifer is supposed to be confined, the well fully penetrating and the 
+    slug injection or withdrawal is supposed to be instantaneous.
+
+    NB: Modified from Cooper et al. (1967) solution for a slug test.
+    Note that in the original publication of Cooper et al. 
+    The dimensionless parameter was alpha, it is related to Cd by: alpha = 1 / (2 Cd)
+
+    :Reference:
+    Neuzil, C. E. (1982), On conducting the modified ‘Slug’ test in tight 
+    formations, Water Resour. Res., 18( 2), 439– 441, doi:10.1029/WR018i002p00439.
+
+    """
+    def __init__(self, r=None, rw=None, rc=None, cD=None, df=None, p=None, inversion_option=None):
+        self.r = r
+        self.rw = rw
+        self.rc = rc
+        self.rD = r / rc
+        self.cD = cD
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.Storativity2 = None
+        self.RadInfluence = None
+        self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
