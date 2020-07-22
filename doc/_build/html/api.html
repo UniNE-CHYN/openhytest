@@ -1,17 +1,18 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API documentation &#8212; OpenHyTest alpha 0.1 documentation</title>
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
@@ -28,45 +29,10 @@
         <li class="right" >
           <a href="installation.html" title="Installation"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">OpenHyTest alpha 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">OpenHyTest alpha 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">API documentation</a></li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">API documentation</a><ul>
-<li><a class="reference internal" href="#preprocessing-tool">Preprocessing tool</a></li>
-<li><a class="reference internal" href="#analytical-model-classes">Analytical model classes</a><ul>
-<li><a class="reference internal" href="#license">License</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="installation.html"
-                        title="previous chapter">Installation</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/api.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -102,698 +68,9 @@ Philippe Renard &lt;<a class="reference external" href="mailto:philippe&#46;rena
 Bernard Brixel &lt;<a class="reference external" href="mailto:bernard&#46;brixel&#37;&#52;&#48;erdw&#46;ethz&#46;ch">bernard<span>&#46;</span>brixel<span>&#64;</span>erdw<span>&#46;</span>ethz<span>&#46;</span>ch</a>&gt;</p>
 </dd>
 </dl>
-<dl class="function">
-<dt id="openhytest.modelclasses.thiem">
-<code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">thiem</code><span class="sig-paren">(</span><em class="sig-param">q</em>, <em class="sig-param">s1</em>, <em class="sig-param">s2</em>, <em class="sig-param">r1</em>, <em class="sig-param">r2</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.thiem" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the transmissivity with Thiem (1906) solution</p>
-<p>The Thiem method requires to know the pumping rate and the drawdown in
-two observation wells located at different distances from the pumping
-well.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>q</strong> – pumping rate, m3/s</p></li>
-<li><p><strong>s1</strong> – drawdown in piezometer 1, m</p></li>
-<li><p><strong>s2</strong> – drawdown in piezometer 2, m</p></li>
-<li><p><strong>r1</strong> – distance piezometer 1 to pumping well, m</p></li>
-<li><p><strong>r2</strong> – distance piezometer 2 to pumping well, m</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return T</dt>
-<dd class="field-even"><p>transmissivity, m2/s</p>
-</dd>
-<dt class="field-odd">Data set</dt>
-<dd class="field-odd"><p>The data set for this example comes from the following reference:</p>
-</dd>
-</dl>
-<p>Kruseman and de Ridder (1994), Analysis and Evaluation of Pumping Test
-Data. International Institute for Land Reclamation and Improvement,
-Wageningen. The Netherlands. 377 pp.
-Data set from table 3.2 pp. 56-60
-The result found by Kruseman and de Rider was: T = 4.5 e-3 m2/s</p>
-<dl class="field-list simple">
-<dt class="field-odd">Example</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">=</span><span class="mf">0.00912</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">r1</span><span class="o">=</span><span class="mf">0.8</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">r2</span><span class="o">=</span><span class="mi">30</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span><span class="o">=</span><span class="mf">2.236</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span><span class="o">=</span><span class="mf">1.088</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">T</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">thiem</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="n">s1</span><span class="p">,</span><span class="n">s2</span><span class="p">,</span><span class="n">r1</span><span class="p">,</span><span class="n">r2</span><span class="p">)</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="function">
-<dt id="openhytest.modelclasses.goodman_discharge">
-<code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">goodman_discharge</code><span class="sig-paren">(</span><em class="sig-param">l</em>, <em class="sig-param">T</em>, <em class="sig-param">r0</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.goodman_discharge" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes discharge rate for a well close to a constant head boundary</p>
-<p>The flow field is a half infinite space with a constant head boundary.
-The aquifer is supposed to be confined, homogeneous and the well fully
-penetrating the aquifer.</p>
-<p>The calculation is based on the Dupuit’s solution with an image well.
-This equation is also known as the Goodman formula (1965).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>l</strong> – Distance to the hydraulic boundary m</p></li>
-<li><p><strong>T</strong> – Transmissivity m^2/s</p></li>
-<li><p><strong>r0</strong> – radius of the well m</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return q</dt>
-<dd class="field-even"><p>flow rate m^3/s</p>
-</dd>
-<dt class="field-odd">Reference</dt>
-<dd class="field-odd"><p>Goodman, R., 1965. Groundwater inflows during tunnel driving.</p>
-</dd>
-</dl>
-<p>Engineering Geology, 2(2): 39-56.</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="openhytest.modelclasses.Theis">
-<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">Theis</code><span class="sig-paren">(</span><em class="sig-param">Q=None</em>, <em class="sig-param">r=None</em>, <em class="sig-param">df=None</em>, <em class="sig-param">p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis" title="Permalink to this definition">¶</a></dt>
-<dd><p>The Theis (1935) solution assumes that the aquifer is confined,
-homogeneous, isotropic, and infinite. The well as radius that is
-negligible. It is pumped at a constant rate Q and is 100 percent
-efficient.</p>
-<p>Under these assumptions, Theis solution can be expressed as:</p>
-<blockquote>
-<div><p>s(r,t) = Q/(4 pi T) E1( r2S / 4Tt)</p>
-</div></blockquote>
-<p>where Q is the pumping rate, T the transmissivity, r the radial
-distance between the pumping well and the observation well,
-S the storativity coefficient and t the time.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Initialzation</dt>
-<dd class="field-odd"><p></p></dd>
-<dt class="field-even">Parameters</dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>Q</strong> – pumping rate, m3/s</p></li>
-<li><p><strong>r</strong> – radius between wells, m</p></li>
-<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.s for test time respective drawdown</p></li>
-<li><p><strong>self</strong> – </p></li>
-<li><p><strong>p</strong> – solution vector</p></li>
-<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
-<li><p><strong>tc</strong> – Calculated time</p></li>
-<li><p><strong>sc</strong> – Calculated drawdown</p></li>
-<li><p><strong>derc</strong> – Calculated drawdown derivative data given as dataframe with derc.t and derc.s</p></li>
-<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
-<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
-<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
-<li><p><strong>ttle</strong> – title of the plot</p></li>
-<li><p><strong>model_label</strong> – model label of the plot</p></li>
-<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
-<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
-<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
-<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
-<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
-</ul>
-</dd>
-<dt class="field-odd">ParamRadInfluence</dt>
-<dd class="field-odd"><p>Radius of influence m</p>
-</dd>
-<dt class="field-even">Example</dt>
-<dd class="field-even"><p></p></dd>
-</dl>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="mf">1.3888e-2</span> <span class="c1">#pumping rate in m3/s</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="mi">250</span> <span class="c1">#radial distance in m</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">theis</span><span class="p">(</span><span class="n">Q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">plot_typecurve</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">guess_params</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">trial</span><span class="p">()</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis.RadiusOfInfluence">
-<code class="sig-name descname">RadiusOfInfluence</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.RadiusOfInfluence" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the radius of influence</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return RadInfluence</dt>
-<dd class="field-odd"><p>radius of influence m</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis.dimensionless">
-<code class="sig-name descname">dimensionless</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.dimensionless" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the dimensionless drawdown for a given dimensionless reduced time td/rd^2</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>td</strong> – dimensionless time</p>
-</dd>
-<dt class="field-even">Return sd</dt>
-<dd class="field-even"><p>dimensionless drawdown</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis.dimensionless_laplace">
-<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Drawdown of the Theis Function in Laplace domain</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
-</dd>
-<dt class="field-even">Function</dt>
-<dd class="field-even"><p>_laplace_drawdown(td, option=’Stehfest’)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis.dimensionless_laplace_derivative">
-<code class="sig-name descname">dimensionless_laplace_derivative</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.dimensionless_laplace_derivative" title="Permalink to this definition">¶</a></dt>
-<dd><p>Derivative of the Theis Function in Laplace domain</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
-</dd>
-<dt class="field-even">Function</dt>
-<dd class="field-even"><p>_laplace_drawdown_derivative(td, option=’Stehfest’)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis.dimensionless_logderivative">
-<code class="sig-name descname">dimensionless_logderivative</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.dimensionless_logderivative" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the dimensionless drawdown derivative for a given dimensionless reduced time td/rd^2</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>td</strong> – dimensionless time</p>
-</dd>
-<dt class="field-even">Return sd</dt>
-<dd class="field-even"><p>dimensionless derivative</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis.guess_params">
-<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.guess_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>First guess for the parameters of the Theis model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return p[0]</dt>
-<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
-</dd>
-<dt class="field-even">Return p[1]</dt>
-<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis.plot_typecurve">
-<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.plot_typecurve" title="Permalink to this definition">¶</a></dt>
-<dd><p>Draw a series of typecurves of Theis (1935).</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis.rpt">
-<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='Theis (1935)'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_ths'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.rpt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>option_fit</strong> – ‘lm’ or ‘trf’</p></li>
-<li><p><strong>ttle</strong> – Title of the figure</p></li>
-<li><p><strong>author</strong> – Author name</p></li>
-<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
-<li><p><strong>reptext</strong> – savefig name</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="openhytest.modelclasses.Theis_noflow">
-<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">Theis_noflow</code><span class="sig-paren">(</span><em class="sig-param">Q=None</em>, <em class="sig-param">r=None</em>, <em class="sig-param">Rd=None</em>, <em class="sig-param">df=None</em>, <em class="sig-param">p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow" title="Permalink to this definition">¶</a></dt>
-<dd><p>Theis model with a no-flow boundary.</p>
-<p>This is a Theis model in a confined aquifer with an impermeable boundary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Initialzation</dt>
-<dd class="field-odd"><p></p></dd>
-<dt class="field-even">Parameters</dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>Q</strong> – pumping rate, m3/s</p></li>
-<li><p><strong>r</strong> – radius between wells, m</p></li>
-<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.s for test time respective drawdown</p></li>
-<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
-<li><p><strong>self</strong> – </p></li>
-<li><p><strong>p</strong> – solution vector</p></li>
-<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
-<li><p><strong>tc</strong> – Calculated time</p></li>
-<li><p><strong>sc</strong> – Calculated drawdown</p></li>
-<li><p><strong>derc</strong> – Calculated drawdown derivative data given as dataframe with derc.t and derc.s</p></li>
-<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
-<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
-<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
-<li><p><strong>ttle</strong> – title of the plot</p></li>
-<li><p><strong>model_label</strong> – model label of the plot</p></li>
-<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
-<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
-<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
-<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
-<li><p><strong>RadInfluence</strong> – Distance to the image well m</p></li>
-<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
-</ul>
-</dd>
-<dt class="field-odd">Example</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="mf">0.0132</span> <span class="c1">#pumping rate in m3/s</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="mi">20</span> <span class="c1">#radial distance in m</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">theis_noflow</span><span class="p">(</span><span class="n">Q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">.</span><span class="n">plot_typecurve</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">.</span><span class="n">guess_params</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">.</span><span class="n">trial</span><span class="p">()</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_noflow.RadiusOfInfluence">
-<code class="sig-name descname">RadiusOfInfluence</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.RadiusOfInfluence" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the radius of influence</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return ri</dt>
-<dd class="field-odd"><p>radius to image well m</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_noflow.dimensionless">
-<code class="sig-name descname">dimensionless</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.dimensionless" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dimensionless drawdown of the Theis model with a no-flow boundary</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>td</strong> – dimensionless time</p></li>
-<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return sd</dt>
-<dd class="field-even"><p>dimensionless drawdown</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_noflow.dimensionless_laplace">
-<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Drawdown of the Theis with no-flow boundary function in Laplace domain</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
-</dd>
-<dt class="field-even">Function</dt>
-<dd class="field-even"><p>_laplace_drawdown(td, option=’Stehfest’)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_noflow.dimensionless_laplace_derivative">
-<code class="sig-name descname">dimensionless_laplace_derivative</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.dimensionless_laplace_derivative" title="Permalink to this definition">¶</a></dt>
-<dd><p>Drawdown derivative of the Theis with no-flow boundary function in Laplace domain</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
-</dd>
-<dt class="field-even">Function</dt>
-<dd class="field-even"><p>_laplace_drawdown_derivative(td, option=’Stehfest’)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_noflow.dimensionless_logderivative">
-<code class="sig-name descname">dimensionless_logderivative</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.dimensionless_logderivative" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dimensionless drawdown derivative of the Theis model with a no-flow boundary</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>td</strong> – dimensionless time</p></li>
-<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return dd</dt>
-<dd class="field-even"><p>dimensionless drawdown derivative</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_noflow.guess_params">
-<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.guess_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>First guess for the parameters of the Theis model with a no-flow boundary</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return p[0]</dt>
-<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
-</dd>
-<dt class="field-even">Return p[1]</dt>
-<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
-</dd>
-<dt class="field-odd">Return p[2]</dt>
-<dd class="field-odd"><p>time of intersection between the 2 straight lines</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_noflow.plot_typecurve">
-<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">Rd=array([ 1.3</em>, <em class="sig-param">3.3</em>, <em class="sig-param">10.</em>, <em class="sig-param">33. ])</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.plot_typecurve" title="Permalink to this definition">¶</a></dt>
-<dd><p>Type curves of the Theis model with a no-flow boundary</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_noflow.rpt">
-<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='Theis (1935) no flow'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_thn'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.rpt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>option_fit</strong> – ‘lm’ or ‘trf’</p></li>
-<li><p><strong>ttle</strong> – Title of the figure</p></li>
-<li><p><strong>author</strong> – Author name</p></li>
-<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
-<li><p><strong>reptext</strong> – savefig name</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="openhytest.modelclasses.Theis_constanthead">
-<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">Theis_constanthead</code><span class="sig-paren">(</span><em class="sig-param">Q=None</em>, <em class="sig-param">r=None</em>, <em class="sig-param">Rd=None</em>, <em class="sig-param">df=None</em>, <em class="sig-param">p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead" title="Permalink to this definition">¶</a></dt>
-<dd><p>Theis (1941) model with a constant head boundary.</p>
-<p>Computes the drawdown at time t for a constant rate pumping test in
-a homogeneous confined aquifer bounded by a constant head boundary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Initialzation</dt>
-<dd class="field-odd"><p></p></dd>
-<dt class="field-even">Parameters</dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>Q</strong> – pumping rate, m3/s</p></li>
-<li><p><strong>r</strong> – radius between wells, m</p></li>
-<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.s for test time respective drawdown</p></li>
-<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
-<li><p><strong>self</strong> – </p></li>
-<li><p><strong>p</strong> – solution vector</p></li>
-<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
-<li><p><strong>tc</strong> – Calculated time</p></li>
-<li><p><strong>sc</strong> – Calculated drawdown</p></li>
-<li><p><strong>derc</strong> – Calculated drawdown derivative data given as dataframe with derc.t and derc.s</p></li>
-<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
-<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
-<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
-<li><p><strong>ttle</strong> – title of the plot</p></li>
-<li><p><strong>model_label</strong> – model label of the plot</p></li>
-<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
-<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
-<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
-<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
-<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
-</ul>
-</dd>
-<dt class="field-odd">ParamRadInfluence</dt>
-<dd class="field-odd"><p>Distance to the image well m</p>
-</dd>
-<dt class="field-even">Example</dt>
-<dd class="field-even"><p></p></dd>
-</dl>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="mf">0.03</span> <span class="c1">#pumping rate in m3/s</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="mi">20</span> <span class="c1">#radial distance in m</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">theis_constanthead</span><span class="p">(</span><span class="n">Q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">.</span><span class="n">plot_typecurve</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">.</span><span class="n">guess_params</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">.</span><span class="n">trial</span><span class="p">()</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Reference</dt>
-<dd class="field-odd"><p>Theis, C.V., 1941. The effect of a well on the flow of a</p>
-</dd>
-</dl>
-<p>nearby stream. Transactions of the American Geophysical Union, 22(3):
-734-738.</p>
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_constanthead.RadiusOfInfluence">
-<code class="sig-name descname">RadiusOfInfluence</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.RadiusOfInfluence" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the radius of influence</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return ri</dt>
-<dd class="field-odd"><p>Distance to image well m</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_constanthead.dimensionless">
-<code class="sig-name descname">dimensionless</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.dimensionless" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dimensionless drawdown of the Theis model with constant head boundary</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>td</strong> – dimensionless time</p></li>
-<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return sd</dt>
-<dd class="field-even"><p>dimensionless drawdown</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_constanthead.dimensionless_laplace">
-<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Drawdown of the Theis with constant head boundary function in Laplace domain</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
-</dd>
-<dt class="field-even">Function</dt>
-<dd class="field-even"><p>_laplace_drawdown(td, option=’Stehfest’)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_constanthead.dimensionless_laplace_derivative">
-<code class="sig-name descname">dimensionless_laplace_derivative</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.dimensionless_laplace_derivative" title="Permalink to this definition">¶</a></dt>
-<dd><p>Drawdown derivative of the Theis with constant head boundary function in Laplace domain</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
-</dd>
-<dt class="field-even">Function</dt>
-<dd class="field-even"><p>_laplace_drawdown(td, option=’Stehfest’)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_constanthead.dimensionless_logderivative">
-<code class="sig-name descname">dimensionless_logderivative</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.dimensionless_logderivative" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dimensionless drawdown derivative of the Theis model with constant head boundary</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>td</strong> – dimensionless time</p></li>
-<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return sd</dt>
-<dd class="field-even"><p>dimensionless drawdown</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_constanthead.guess_params">
-<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.guess_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>First guess for the parameters of the Theis model with a constant head boundary</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return p[0]</dt>
-<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
-</dd>
-<dt class="field-even">Return p[1]</dt>
-<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
-</dd>
-<dt class="field-odd">Return p[2]</dt>
-<dd class="field-odd"><p>time of intersection between the 2 straight lines</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_constanthead.plot_typecurve">
-<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">Rd=array([ 1.5</em>, <em class="sig-param">3.</em>, <em class="sig-param">10.</em>, <em class="sig-param">30. ])</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.plot_typecurve" title="Permalink to this definition">¶</a></dt>
-<dd><p>Type curves of the Theis model with a constant head boundary</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.Theis_constanthead.rpt">
-<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='Theis (1935) const. head'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_thc'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.rpt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>option_fit</strong> – ‘lm’ or ‘trf’</p></li>
-<li><p><strong>ttle</strong> – Title of the figure</p></li>
-<li><p><strong>author</strong> – Author name</p></li>
-<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
-<li><p><strong>reptext</strong> – savefig name</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="openhytest.modelclasses.JacobLohman">
-<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">JacobLohman</code><span class="sig-paren">(</span><em class="sig-param">s=None</em>, <em class="sig-param">r=None</em>, <em class="sig-param">Rd=None</em>, <em class="sig-param">df=None</em>, <em class="sig-param">p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman" title="Permalink to this definition">¶</a></dt>
-<dd><p>Constant head test:
-Jacob &amp; Lohman (1952) discharge solution in the well</p>
-<dl class="field-list simple">
-<dt class="field-odd">Initialzation</dt>
-<dd class="field-odd"><p></p></dd>
-<dt class="field-even">Parameters</dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>s</strong> – drawdown, m</p></li>
-<li><p><strong>r</strong> – radius between wells, m</p></li>
-<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.q (m^3/s) for test time respective drawdown, df.s is calculated as 1 / df.q</p></li>
-<li><p><strong>self</strong> – </p></li>
-<li><p><strong>p</strong> – solution vector</p></li>
-<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
-<li><p><strong>tc</strong> – Calculated time</p></li>
-<li><p><strong>qc</strong> – Calculated flow rate</p></li>
-<li><p><strong>derc</strong> – Calculated flow rate derivative data given as dataframe with derc.t and derc.s</p></li>
-<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
-<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
-<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
-<li><p><strong>ttle</strong> – title of the plot</p></li>
-<li><p><strong>model_label</strong> – model label of the plot</p></li>
-<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
-<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
-<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
-<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
-<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
-</ul>
-</dd>
-<dt class="field-odd">ParamRadInfluence</dt>
-<dd class="field-odd"><p>Radius of influence m</p>
-</dd>
-<dt class="field-even">Example</dt>
-<dd class="field-even"><p></p></dd>
-</dl>
-<dl class="method">
-<dt id="openhytest.modelclasses.JacobLohman.RadiusOfInfluence">
-<code class="sig-name descname">RadiusOfInfluence</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.RadiusOfInfluence" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the radius of influence</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return ri</dt>
-<dd class="field-odd"><p>Distance to image well m</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.JacobLohman.T">
-<code class="sig-name descname">T</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.T" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates Transmissivity</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return Transmissivity</dt>
-<dd class="field-odd"><p>transmissivity m^2/s</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.JacobLohman.dimensionless_laplace">
-<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dimensionless flow rate of the Jacob-Lohamn model in Laplace domain</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
-</dd>
-<dt class="field-even">Function</dt>
-<dd class="field-even"><p>_laplace_flowrate(td, option=’Stehfest’)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.JacobLohman.dimensionless_laplace_derivative">
-<code class="sig-name descname">dimensionless_laplace_derivative</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.dimensionless_laplace_derivative" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dimensionless flow rate derivative of the Jacob-Lohamn model in Laplace domain</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.JacobLohman.guess_params">
-<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.guess_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>First guess for the parameters of the Jacob &amp; Lohman (1952) model</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return p[0]</dt>
-<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
-</dd>
-<dt class="field-even">Return p[1]</dt>
-<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.JacobLohman.perrochet">
-<code class="sig-name descname">perrochet</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.perrochet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Perrochet approximation for Jacob &amp; Lohman (1952)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return qd</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.JacobLohman.plot_typecurve">
-<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.plot_typecurve" title="Permalink to this definition">¶</a></dt>
-<dd><p>Type curves of the Jacob-Lohman (1952) model</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="openhytest.modelclasses.JacobLohman.rpt">
-<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='Jacob &amp; Lohman (1952)'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_jlq'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.rpt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>option_fit</strong> – ‘lm’ or ‘trf’</p></li>
-<li><p><strong>ttle</strong> – Title of the figure</p></li>
-<li><p><strong>author</strong> – Author name</p></li>
-<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
-<li><p><strong>reptext</strong> – savefig name</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
+<dl class="py class">
 <dt id="openhytest.modelclasses.GRF">
-<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">GRF</code><span class="sig-paren">(</span><em class="sig-param">Q=None</em>, <em class="sig-param">r=1</em>, <em class="sig-param">rw=1</em>, <em class="sig-param">df=None</em>, <em class="sig-param">p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">GRF</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Q</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">rw</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">df</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">p</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF" title="Permalink to this definition">¶</a></dt>
 <dd><p>Barker (1988) general radial flow model</p>
 <p>This class computes the dimensionless drawdown as a function of
 dimensionless time for a constant rate intereference test
@@ -836,14 +113,10 @@ dimension.</p>
 </dl>
 <p>Barker, J.A. 1988. A Generalized radial flow model fro hydraulic tests
 in fractured rock. Water Resources Research 24, no. 10: 1796-1804.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Example</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<dl class="method">
+<dl class="py method">
 <dt id="openhytest.modelclasses.GRF.dimensionless">
-<code class="sig-name descname">dimensionless</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">td</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.dimensionless" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dimensionless drawdown of the Theis model with constant head boundary</p>
+<code class="sig-name descname">dimensionless</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">td</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.dimensionless" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless drawdown of the GRF</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>td</strong> – dimensionless time</p>
@@ -854,9 +127,9 @@ in fractured rock. Water Resources Research 24, no. 10: 1796-1804.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="openhytest.modelclasses.GRF.dimensionless_laplace">
-<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">pd</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Drawdown of the General Radial Flow model in Laplace domain</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -868,10 +141,10 @@ in fractured rock. Water Resources Research 24, no. 10: 1796-1804.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="openhytest.modelclasses.GRF.guess_params">
-<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param">self</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.guess_params" title="Permalink to this definition">¶</a></dt>
-<dd><p>First guess for the parameters of the Theis model.</p>
+<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.guess_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>First guess for the parameters of the GRF model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return p[0]</dt>
 <dd class="field-odd"><p>slope of Jacob straight line for late time</p>
@@ -885,15 +158,15 @@ in fractured rock. Water Resources Research 24, no. 10: 1796-1804.</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="openhytest.modelclasses.GRF.plot_typecurve">
-<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">rD=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.plot_typecurve" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">rD</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.plot_typecurve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draw a series of typecurves of the General Flow Model.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="py method">
 <dt id="openhytest.modelclasses.GRF.rpt">
-<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='GRF'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_grf'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.rpt" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">option_fit</span><span class="o">=</span><span class="default_value">'lm'</span></em>, <em class="sig-param"><span class="n">ttle</span><span class="o">=</span><span class="default_value">'GRF'</span></em>, <em class="sig-param"><span class="n">author</span><span class="o">=</span><span class="default_value">'Author'</span></em>, <em class="sig-param"><span class="n">filetype</span><span class="o">=</span><span class="default_value">'pdf'</span></em>, <em class="sig-param"><span class="n">reptext</span><span class="o">=</span><span class="default_value">'Report_grf'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.GRF.rpt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -910,24 +183,24 @@ in fractured rock. Water Resources Research 24, no. 10: 1796-1804.</p>
 
 </dd></dl>
 
-<dl class="class">
-<dt id="openhytest.modelclasses.CooperBredehoeftPapadopulos">
-<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">CooperBredehoeftPapadopulos</code><span class="sig-paren">(</span><em class="sig-param">Q=None</em>, <em class="sig-param">r=None</em>, <em class="sig-param">rw=None</em>, <em class="sig-param">rc=None</em>, <em class="sig-param">cD=None</em>, <em class="sig-param">df=None</em>, <em class="sig-param">p=None</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.CooperBredehoeftPapadopulos" title="Permalink to this definition">¶</a></dt>
-<dd><p>Slug test with the Cooper et al. (1967) solution</p>
+<dl class="py class">
+<dt id="openhytest.modelclasses.JacobLohman">
+<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">JacobLohman</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">Rd</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">df</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">p</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constant head test:
+Jacob &amp; Lohman (1952) discharge solution in the well</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>Q</strong> – pumping rate</p></li>
-<li><p><strong>r</strong> – distance between the observation well and pumping well</p></li>
-<li><p><strong>rw</strong> – radius of the well</p></li>
-<li><p><strong>rc</strong> – radius of the casing</p></li>
-<li><p><strong>rD</strong> – dimensionless radius</p></li>
-<li><p><strong>cD</strong> – dimensionless well bore storage coefficient</p></li>
+<dt class="field-odd">Initialzation</dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>s</strong> – drawdown, m</p></li>
+<li><p><strong>r</strong> – radius between wells, m</p></li>
+<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.q (m^3/s) for test time respective drawdown, df.s is calculated as 1 / df.q</p></li>
+<li><p><strong>self</strong> – </p></li>
 <li><p><strong>p</strong> – solution vector</p></li>
-<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.s for test time respective drawdown</p></li>
 <li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
 <li><p><strong>tc</strong> – Calculated time</p></li>
-<li><p><strong>sc</strong> – Calculated draw down</p></li>
+<li><p><strong>qc</strong> – Calculated flow rate</p></li>
 <li><p><strong>derc</strong> – Calculated flow rate derivative data given as dataframe with derc.t and derc.s</p></li>
 <li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
 <li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
@@ -938,41 +211,90 @@ in fractured rock. Water Resources Research 24, no. 10: 1796-1804.</p>
 <li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
 <li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
 <li><p><strong>Storativity</strong> – Storativtiy -</p></li>
-<li><p><strong>Storativity2</strong> – Storativtiy -</p></li>
-<li><p><strong>RadInfluence</strong> – Radius of influence m</p></li>
 <li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
 </ul>
 </dd>
-<dt class="field-even">Description</dt>
+<dt class="field-odd">ParamRadInfluence</dt>
+<dd class="field-odd"><p>Radius of influence m</p>
+</dd>
+<dt class="field-even">Example</dt>
 <dd class="field-even"><p></p></dd>
 </dl>
-<p>Computes the normalized drawdown (Delta h / Delta h0) as a function of
-time with the Cooper et al. (1967) solution for a slug test in a
-homogeneous confined aquifer. The well is fully penetrating and the
-slug injection or withdrawal is instantaneous.</p>
-<p>The dimensionless well bore storage coefficient is: Cd = rc^2/(2*rw^2*S)</p>
-<p>Note that in the original publication of Cooper et al.
-The dimensionless parameter was alpha, it is related to Cd by: alpha = 1 / (2 Cd)</p>
+<dl class="py method">
+<dt id="openhytest.modelclasses.JacobLohman.RadiusOfInfluence">
+<code class="sig-name descname">RadiusOfInfluence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.RadiusOfInfluence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the radius of influence</p>
 <dl class="field-list simple">
-<dt class="field-odd">Reference</dt>
-<dd class="field-odd"><p></p></dd>
+<dt class="field-odd">Return ri</dt>
+<dd class="field-odd"><p>Distance to image well m</p>
+</dd>
 </dl>
-<p>Cooper, H.H.J., J.D. Bredehoeft, and I.S. Papadopulos.
-1967. Response of a finite-diameter well to an instantaneous charge of
-water. Water Resources Research 3, no. 1: 263-269.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Example</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<dl class="method">
-<dt id="openhytest.modelclasses.CooperBredehoeftPapadopulos.plot_typecurve">
-<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">cD=array([    10</em>, <em class="sig-param">100</em>, <em class="sig-param">1000</em>, <em class="sig-param">10000</em>, <em class="sig-param">100000])</em>, <em class="sig-param">rD=1</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.CooperBredehoeftPapadopulos.plot_typecurve" title="Permalink to this definition">¶</a></dt>
-<dd><p>Type curves of the Cooper-Bredehoeft-Papadopulos (1967) model</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="openhytest.modelclasses.CooperBredehoeftPapadopulos.rpt">
-<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">option_fit='lm'</em>, <em class="sig-param">ttle='Cooper-Bredehoeft-Papadopulos (1967)'</em>, <em class="sig-param">author='Author'</em>, <em class="sig-param">filetype='pdf'</em>, <em class="sig-param">reptext='Report_cbp'</em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.CooperBredehoeftPapadopulos.rpt" title="Permalink to this definition">¶</a></dt>
+<dl class="py method">
+<dt id="openhytest.modelclasses.JacobLohman.T">
+<code class="sig-name descname">T</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.T" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates Transmissivity</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return Transmissivity</dt>
+<dd class="field-odd"><p>transmissivity m^2/s</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.JacobLohman.dimensionless_laplace">
+<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless flow rate of the Jacob-Lohamn model in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_flowrate(td, option=’Stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.JacobLohman.dimensionless_laplace_derivative">
+<code class="sig-name descname">dimensionless_laplace_derivative</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.dimensionless_laplace_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless flow rate derivative of the Jacob-Lohamn model in Laplace domain</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.JacobLohman.guess_params">
+<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.guess_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>First guess for the parameters of the Jacob &amp; Lohman (1952) model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return p[0]</dt>
+<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
+</dd>
+<dt class="field-even">Return p[1]</dt>
+<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.JacobLohman.perrochet">
+<code class="sig-name descname">perrochet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">td</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.perrochet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perrochet approximation for Jacob &amp; Lohman (1952)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return qd</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.JacobLohman.plot_typecurve">
+<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.plot_typecurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type curves of the Jacob-Lohman (1952) model</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.JacobLohman.rpt">
+<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">option_fit</span><span class="o">=</span><span class="default_value">'lm'</span></em>, <em class="sig-param"><span class="n">ttle</span><span class="o">=</span><span class="default_value">'Jacob &amp; Lohman (1952)'</span></em>, <em class="sig-param"><span class="n">author</span><span class="o">=</span><span class="default_value">'Author'</span></em>, <em class="sig-param"><span class="n">filetype</span><span class="o">=</span><span class="default_value">'pdf'</span></em>, <em class="sig-param"><span class="n">reptext</span><span class="o">=</span><span class="default_value">'Report_jlq'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.JacobLohman.rpt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -989,12 +311,627 @@ water. Water Resources Research 3, no. 1: 263-269.</p>
 
 </dd></dl>
 
+<dl class="py class">
+<dt id="openhytest.modelclasses.Theis">
+<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">Theis</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Q</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">df</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">p</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">inversion_option</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Theis (1935) solution assumes that the aquifer is confined,
+homogeneous, isotropic, and infinite. The well as radius that is
+negligible. It is pumped at a constant rate Q and is 100 percent
+efficient.</p>
+<p>Under these assumptions, Theis solution can be expressed as:</p>
+<blockquote>
+<div><p>s(r,t) = Q/(4 pi T) E1( r2S / 4Tt)</p>
+</div></blockquote>
+<p>where Q is the pumping rate, T the transmissivity, r the radial
+distance between the pumping well and the observation well,
+S the storativity coefficient and t the time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Initialization</dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Q</strong> – pumping rate, m3/s</p></li>
+<li><p><strong>r</strong> – radius between wells, m</p></li>
+<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.s for test time respective drawdown</p></li>
+<li><p><strong>self</strong> – </p></li>
+<li><p><strong>p</strong> – solution vector</p></li>
+<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
+<li><p><strong>tc</strong> – Calculated time</p></li>
+<li><p><strong>sc</strong> – Calculated drawdown</p></li>
+<li><p><strong>derc</strong> – Calculated drawdown derivative data given as dataframe with derc.t and derc.s</p></li>
+<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
+<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
+<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
+<li><p><strong>ttle</strong> – title of the plot</p></li>
+<li><p><strong>model_label</strong> – model label of the plot</p></li>
+<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
+<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
+<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
+<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
+<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
+<li><p><strong>fitmethod</strong> – see fit function for the various options</p></li>
+<li><p><strong>fitbnds</strong> – </p></li>
+<li><p><strong>inversion_option</strong> – ‘stehfest’ or ‘dehoog’</p></li>
+</ul>
+</dd>
+<dt class="field-odd">ParamRadInfluence</dt>
+<dd class="field-odd"><p>Radius of influence m</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="mf">1.3888e-2</span> <span class="c1">#pumping rate in m3/s</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="mi">250</span> <span class="c1">#radial distance in m</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">theis</span><span class="p">(</span><span class="n">Q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">plot_typecurve</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">guess_params</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">theis_model</span><span class="o">.</span><span class="n">trial</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis.RadiusOfInfluence">
+<code class="sig-name descname">RadiusOfInfluence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.RadiusOfInfluence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the radius of influence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return RadInfluence</dt>
+<dd class="field-odd"><p>radius of influence m</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis.dimensionless">
+<code class="sig-name descname">dimensionless</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">td</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.dimensionless" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the dimensionless drawdown for a given dimensionless reduced time td/rd^2</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>td</strong> – dimensionless time</p>
+</dd>
+<dt class="field-even">Return sd</dt>
+<dd class="field-even"><p>dimensionless drawdown</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis.dimensionless_laplace">
+<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drawdown of the Theis Function in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_drawdown(td, inversion_option=’stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis.dimensionless_laplace2">
+<code class="sig-name descname">dimensionless_laplace2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.dimensionless_laplace2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drawdown of the Theis Function in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_drawdown(td, inversion_option=’stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis.dimensionless_laplace_derivative">
+<code class="sig-name descname">dimensionless_laplace_derivative</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.dimensionless_laplace_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Derivative of the Theis Function in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_drawdown_derivative(td, inversion_option=’stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis.dimensionless_logderivative">
+<code class="sig-name descname">dimensionless_logderivative</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">td</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.dimensionless_logderivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the dimensionless drawdown derivative for a given dimensionless reduced time td/rd^2</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>td</strong> – dimensionless time</p>
+</dd>
+<dt class="field-even">Return sd</dt>
+<dd class="field-even"><p>dimensionless derivative</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis.guess_params">
+<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.guess_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>First guess for the parameters of the Theis model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return p[0]</dt>
+<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
+</dd>
+<dt class="field-even">Return p[1]</dt>
+<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis.plot_typecurve">
+<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.plot_typecurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw a series of typecurves of Theis (1935).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis.rpt">
+<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">fitmethod</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ttle</span><span class="o">=</span><span class="default_value">'Theis (1935)'</span></em>, <em class="sig-param"><span class="n">author</span><span class="o">=</span><span class="default_value">'Author'</span></em>, <em class="sig-param"><span class="n">filetype</span><span class="o">=</span><span class="default_value">'pdf'</span></em>, <em class="sig-param"><span class="n">reptext</span><span class="o">=</span><span class="default_value">'Report_ths'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis.rpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>option_fit</strong> – ‘lm’, ‘trf’ or ‘dogbox’</p></li>
+<li><p><strong>ttle</strong> – Title of the figure</p></li>
+<li><p><strong>author</strong> – Author name</p></li>
+<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
+<li><p><strong>reptext</strong> – savefig name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="openhytest.modelclasses.Theis_constanthead">
+<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">Theis_constanthead</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Q</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">Rd</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">df</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">p</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">inversion_option</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead" title="Permalink to this definition">¶</a></dt>
+<dd><p>Theis (1941) model with a constant head boundary.</p>
+<p>Computes the drawdown at time t for a constant rate pumping test in
+a homogeneous confined aquifer bounded by a constant head boundary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Initialzation</dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Q</strong> – pumping rate, m3/s</p></li>
+<li><p><strong>r</strong> – radius between wells, m</p></li>
+<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.s for test time respective drawdown</p></li>
+<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
+<li><p><strong>self</strong> – </p></li>
+<li><p><strong>p</strong> – solution vector</p></li>
+<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
+<li><p><strong>tc</strong> – Calculated time</p></li>
+<li><p><strong>sc</strong> – Calculated drawdown</p></li>
+<li><p><strong>derc</strong> – Calculated drawdown derivative data given as dataframe with derc.t and derc.s</p></li>
+<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
+<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
+<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
+<li><p><strong>ttle</strong> – title of the plot</p></li>
+<li><p><strong>model_label</strong> – model label of the plot</p></li>
+<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
+<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
+<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
+<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
+<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
+</ul>
+</dd>
+<dt class="field-odd">ParamRadInfluence</dt>
+<dd class="field-odd"><p>Distance to the image well m</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="mf">0.03</span> <span class="c1">#pumping rate in m3/s</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="mi">20</span> <span class="c1">#radial distance in m</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">theis_constanthead</span><span class="p">(</span><span class="n">Q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">.</span><span class="n">plot_typecurve</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">.</span><span class="n">guess_params</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_head</span><span class="o">.</span><span class="n">trial</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Reference</dt>
+<dd class="field-odd"><p>Theis, C.V., 1941. The effect of a well on the flow of a</p>
+</dd>
+</dl>
+<p>nearby stream. Transactions of the American Geophysical Union, 22(3):
+734-738.</p>
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_constanthead.RadiusOfInfluence">
+<code class="sig-name descname">RadiusOfInfluence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.RadiusOfInfluence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the radius of influence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return ri</dt>
+<dd class="field-odd"><p>Distance to image well m</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_constanthead.dimensionless">
+<code class="sig-name descname">dimensionless</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">td</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.dimensionless" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless drawdown of the Theis model with constant head boundary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>td</strong> – dimensionless time</p></li>
+<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return sd</dt>
+<dd class="field-even"><p>dimensionless drawdown</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_constanthead.dimensionless_laplace">
+<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drawdown of the Theis with constant head boundary function in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_drawdown(td, option=’Stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_constanthead.dimensionless_laplace_derivative">
+<code class="sig-name descname">dimensionless_laplace_derivative</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.dimensionless_laplace_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drawdown derivative of the Theis with constant head boundary function in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_drawdown(td, option=’Stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_constanthead.dimensionless_logderivative">
+<code class="sig-name descname">dimensionless_logderivative</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">td</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.dimensionless_logderivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless drawdown derivative of the Theis model with constant head boundary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>td</strong> – dimensionless time</p></li>
+<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return sd</dt>
+<dd class="field-even"><p>dimensionless drawdown</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_constanthead.guess_params">
+<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.guess_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>First guess for the parameters of the Theis model with a constant head boundary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return p[0]</dt>
+<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
+</dd>
+<dt class="field-even">Return p[1]</dt>
+<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
+</dd>
+<dt class="field-odd">Return p[2]</dt>
+<dd class="field-odd"><p>time of intersection between the 2 straight lines</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_constanthead.plot_typecurve">
+<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">Rd</span><span class="o">=</span><span class="default_value">array([1.5, 3.0, 10.0, 30.0])</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.plot_typecurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type curves of the Theis model with a constant head boundary</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_constanthead.rpt">
+<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">fitmethod</span><span class="o">=</span><span class="default_value">'lm'</span></em>, <em class="sig-param"><span class="n">ttle</span><span class="o">=</span><span class="default_value">'Theis (1935) const. head'</span></em>, <em class="sig-param"><span class="n">author</span><span class="o">=</span><span class="default_value">'Author'</span></em>, <em class="sig-param"><span class="n">filetype</span><span class="o">=</span><span class="default_value">'pdf'</span></em>, <em class="sig-param"><span class="n">reptext</span><span class="o">=</span><span class="default_value">'Report_thc'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_constanthead.rpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>option_fit</strong> – ‘lm’ or ‘trf’ or ‘dogbox’</p></li>
+<li><p><strong>ttle</strong> – Title of the figure</p></li>
+<li><p><strong>author</strong> – Author name</p></li>
+<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
+<li><p><strong>reptext</strong> – savefig name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="openhytest.modelclasses.Theis_noflow">
+<em class="property">class </em><code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">Theis_noflow</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Q</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">Rd</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">df</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">p</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">inversion_option</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Theis model with a no-flow boundary.</p>
+<p>This is a Theis model in a confined aquifer with an impermeable boundary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Initialzation</dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>Q</strong> – pumping rate, m3/s</p></li>
+<li><p><strong>r</strong> – radius between wells, m</p></li>
+<li><p><strong>df</strong> – pandas dataframe with two vectors named df.t and df.s for test time respective drawdown</p></li>
+<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
+<li><p><strong>self</strong> – </p></li>
+<li><p><strong>p</strong> – solution vector</p></li>
+<li><p><strong>der</strong> – Drawdown derivative from the input data given as dataframe with der.t and der.s</p></li>
+<li><p><strong>tc</strong> – Calculated time</p></li>
+<li><p><strong>sc</strong> – Calculated drawdown</p></li>
+<li><p><strong>derc</strong> – Calculated drawdown derivative data given as dataframe with derc.t and derc.s</p></li>
+<li><p><strong>mr</strong> – mean resiuduals from the fit function</p></li>
+<li><p><strong>sr</strong> – standard derivative from the fit function</p></li>
+<li><p><strong>rms</strong> – root-mean-square from the fit function</p></li>
+<li><p><strong>ttle</strong> – title of the plot</p></li>
+<li><p><strong>model_label</strong> – model label of the plot</p></li>
+<li><p><strong>xsize</strong> – size of the plot in x (default is 8 inch)</p></li>
+<li><p><strong>ysize</strong> – size of the plot in y (default is 6 inch)</p></li>
+<li><p><strong>Transmissivity</strong> – Transmissivity m^2/s</p></li>
+<li><p><strong>Storativity</strong> – Storativtiy -</p></li>
+<li><p><strong>RadInfluence</strong> – Distance to the image well m</p></li>
+<li><p><strong>detailled_p</strong> – detailled solution struct from the fit function</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="mf">0.0132</span> <span class="c1">#pumping rate in m3/s</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="mi">20</span> <span class="c1">#radial distance in m</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">theis_noflow</span><span class="p">(</span><span class="n">Q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">.</span><span class="n">plot_typecurve</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">.</span><span class="n">guess_params</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t_noflow</span><span class="o">.</span><span class="n">trial</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_noflow.RadiusOfInfluence">
+<code class="sig-name descname">RadiusOfInfluence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.RadiusOfInfluence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the radius of influence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return ri</dt>
+<dd class="field-odd"><p>radius to image well m</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_noflow.dimensionless">
+<code class="sig-name descname">dimensionless</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">td</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.dimensionless" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless drawdown of the Theis model with a no-flow boundary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>td</strong> – dimensionless time</p></li>
+<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return sd</dt>
+<dd class="field-even"><p>dimensionless drawdown</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_noflow.dimensionless_laplace">
+<code class="sig-name descname">dimensionless_laplace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.dimensionless_laplace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drawdown of the Theis with no-flow boundary function in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_drawdown(td, inversion_option=’Stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_noflow.dimensionless_laplace_derivative">
+<code class="sig-name descname">dimensionless_laplace_derivative</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">pd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.dimensionless_laplace_derivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drawdown derivative of the Theis with no-flow boundary function in Laplace domain</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pd</strong> – Laplace parameter</p>
+</dd>
+<dt class="field-even">Function</dt>
+<dd class="field-even"><p>_laplace_drawdown_derivative(td, inversion_option=’Stehfest’)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_noflow.dimensionless_logderivative">
+<code class="sig-name descname">dimensionless_logderivative</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">td</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.dimensionless_logderivative" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dimensionless drawdown derivative of the Theis model with a no-flow boundary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>td</strong> – dimensionless time</p></li>
+<li><p><strong>Rd</strong> – dimensionless radial distance</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return dd</dt>
+<dd class="field-even"><p>dimensionless drawdown derivative</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_noflow.guess_params">
+<code class="sig-name descname">guess_params</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.guess_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>First guess for the parameters of the Theis model with a no-flow boundary</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return p[0]</dt>
+<dd class="field-odd"><p>slope of Jacob straight line for late time</p>
+</dd>
+<dt class="field-even">Return p[1]</dt>
+<dd class="field-even"><p>intercept with the horizontal axis for s = 0</p>
+</dd>
+<dt class="field-odd">Return p[2]</dt>
+<dd class="field-odd"><p>time of intersection between the 2 straight lines</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_noflow.plot_typecurve">
+<code class="sig-name descname">plot_typecurve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">Rd</span><span class="o">=</span><span class="default_value">array([1.3, 3.3, 10.0, 33.0])</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.plot_typecurve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type curves of the Theis model with a no-flow boundary</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="openhytest.modelclasses.Theis_noflow.rpt">
+<code class="sig-name descname">rpt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span></em>, <em class="sig-param"><span class="n">fitmethod</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ttle</span><span class="o">=</span><span class="default_value">'Theis (1935) no flow'</span></em>, <em class="sig-param"><span class="n">author</span><span class="o">=</span><span class="default_value">'Author'</span></em>, <em class="sig-param"><span class="n">filetype</span><span class="o">=</span><span class="default_value">'pdf'</span></em>, <em class="sig-param"><span class="n">reptext</span><span class="o">=</span><span class="default_value">'Report_thn'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.Theis_noflow.rpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the solution and reports graphically the results of the pumping test</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>option_fit</strong> – ‘lm’ or ‘trf’ or ‘dogbox’</p></li>
+<li><p><strong>ttle</strong> – Title of the figure</p></li>
+<li><p><strong>author</strong> – Author name</p></li>
+<li><p><strong>filetype</strong> – ‘pdf’, ‘png’ or ‘svg’</p></li>
+<li><p><strong>reptext</strong> – savefig name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="openhytest.modelclasses.goodman_discharge">
+<code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">goodman_discharge</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">l</span></em>, <em class="sig-param"><span class="n">T</span></em>, <em class="sig-param"><span class="n">r0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.goodman_discharge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes discharge rate for a well close to a constant head boundary</p>
+<p>The flow field is a half infinite space with a constant head boundary.
+The aquifer is supposed to be confined, homogeneous and the well fully
+penetrating the aquifer.</p>
+<p>The calculation is based on the Dupuit’s solution with an image well.
+This equation is also known as the Goodman formula (1965).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>l</strong> – Distance to the hydraulic boundary m</p></li>
+<li><p><strong>T</strong> – Transmissivity m^2/s</p></li>
+<li><p><strong>r0</strong> – radius of the well m</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return q</dt>
+<dd class="field-even"><p>flow rate m^3/s</p>
+</dd>
+<dt class="field-odd">Reference</dt>
+<dd class="field-odd"><p>Goodman, R., 1965. Groundwater inflows during tunnel driving.</p>
+</dd>
+</dl>
+<p>Engineering Geology, 2(2): 39-56.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="openhytest.modelclasses.thiem">
+<code class="sig-prename descclassname">openhytest.modelclasses.</code><code class="sig-name descname">thiem</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">q</span></em>, <em class="sig-param"><span class="n">s1</span></em>, <em class="sig-param"><span class="n">s2</span></em>, <em class="sig-param"><span class="n">r1</span></em>, <em class="sig-param"><span class="n">r2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#openhytest.modelclasses.thiem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the transmissivity with Thiem (1906) solution</p>
+<p>The Thiem method requires to know the pumping rate and the drawdown in
+two observation wells located at different distances from the pumping
+well. It assumes steady-state conditions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>q</strong> – pumping rate, m3/s</p></li>
+<li><p><strong>s1</strong> – drawdown in piezometer 1, m</p></li>
+<li><p><strong>s2</strong> – drawdown in piezometer 2, m</p></li>
+<li><p><strong>r1</strong> – distance piezometer 1 to pumping well, m</p></li>
+<li><p><strong>r2</strong> – distance piezometer 2 to pumping well, m</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return T</dt>
+<dd class="field-even"><p>transmissivity, m2/s</p>
+</dd>
+<dt class="field-odd">Data set</dt>
+<dd class="field-odd"><p>The data set for this example comes from the following reference:</p>
+</dd>
+</dl>
+<p>Kruseman and de Ridder (1994), Analysis and Evaluation of Pumping Test
+Data. International Institute for Land Reclamation and Improvement,
+Wageningen. The Netherlands. 377 pp.
+Data set from table 3.2 pp. 56-60
+The result found by Kruseman and de Rider was: T = 4.5 e-3 m2/s</p>
+<dl class="field-list simple">
+<dt class="field-odd">Example</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">=</span><span class="mf">0.00912</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r1</span><span class="o">=</span><span class="mf">0.8</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r2</span><span class="o">=</span><span class="mi">30</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s1</span><span class="o">=</span><span class="mf">2.236</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s2</span><span class="o">=</span><span class="mf">1.088</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">T</span><span class="o">=</span><span class="n">ht</span><span class="o">.</span><span class="n">thiem</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="n">s1</span><span class="p">,</span><span class="n">s2</span><span class="p">,</span><span class="n">r1</span><span class="p">,</span><span class="n">r2</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </div>
 </div>
 </div>
 
 
+            <div class="clearer"></div>
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">API documentation</a><ul>
+<li><a class="reference internal" href="#preprocessing-tool">Preprocessing tool</a></li>
+<li><a class="reference internal" href="#analytical-model-classes">Analytical model classes</a><ul>
+<li><a class="reference internal" href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installation.html"
+                        title="previous chapter">Installation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -1011,12 +948,13 @@ water. Water Resources Research 3, no. 1: 263-269.</p>
         <li class="right" >
           <a href="installation.html" title="Installation"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">OpenHyTest alpha 0.1 documentation</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">OpenHyTest alpha 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">API documentation</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, OpenHyTest Developer.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.1.
     </div>
   </body>
 </html>
