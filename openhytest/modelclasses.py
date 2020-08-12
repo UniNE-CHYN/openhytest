@@ -27,6 +27,7 @@ from scipy.special import expn as E1
 from scipy.special import gamma, gammaincc, factorial, kv
 import matplotlib.pyplot as plt
 from scipy.optimize import least_squares, Bounds
+from scipy.interpolate import interp1d
 import mpmath as mp
 import openhytest as ht
 import pandas as pda
@@ -467,7 +468,7 @@ class AnalyticalInterferenceModels():
 
         elif self.fitmethod == 'nofit':
             # Calculates the statistic for a given vector p
-            res_p = least_squares(fun, p, args=(t, s), method=self.fitmethod, max_nfev=0)
+            res_p = least_squares(fun, p, args=(t, s), method='trf', max_nfev=1)
         else:
             raise Exception('Choose your fitmethod: lm, trf and dogbox')
         
@@ -535,6 +536,10 @@ class Theis(AnalyticalInterferenceModels):
     >>> theis_model.guess_params()
     >>> theis_model.fit()
     >>> theis_model.trial()
+
+    :Reference: Theis, C.V., 1935. The relation between the lowering of the 
+    piezometric surface and the rate and duration of discharge of a well using 
+    groundwater storage, Am. Geophys. Union Trans., vol. 16, pp. 519-524.
     """
 
     def dimensionless(self, td):
@@ -1135,6 +1140,176 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
 
+class Theis_multirate(AnalyticalInterferenceModels):
+    """
+    Theis model for multiple rate tests (1935)
+
+    Calculate the drawdown at time t for multiple rate tests without accounting for quadratic head losses.
+
+    The model is designed to interpret drawdown within a piezometer during
+    a step drawdown test. It can also be used to interpret simultaneously 
+    the pumping and recovery data.
+
+    :Initialization:
+    :param Q: given in 2 vectors Q.t and Q.q or a scalar as pumping rate, m3/s
+    :param r: radius between wells, m
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param self:
+    :param p: solution vector
+    :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated drawdown
+    :param derc: Calculated drawdown derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize:  size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :paramRadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param inversion_option: 'stehfest' or 'dehoog'
+
+    :Reference: 
+    
+    """
+
+    def dimensionless(self, td):
+        """
+        Calculates the dimensionless drawdown of the Theis model for multiple rate tests (1935)
+
+        :param td:  dimensionless time
+        :return sd: dimensionless drawdown
+        """
+        s = np.zeros(np.shape(td))
+        for i in range(0, np.size(self.Q.t)):         
+            self.p[0] = self.p[0] * self.diff_Q[i]
+            if i == 0:
+                s = s + 0.5 * E1(1, 0.25 / td)
+            else:
+                si = np.array([i for i, x in enumerate(self.df.t.ge(self.Q.t[i-1])) if x], dtype=int)
+                s[si] = s[si] + 0.5 * E1(1, 0.25 / (td[si]-self.Q.t[i-1]))
+        return s
+
+
+    def __call__(self, t):
+        td = self._dimensionless_time(t)
+        sd = self.dimensionless(td)
+        s = self._dimensional_drawdown(sd)
+        return s
+
+
+    def __init__(self, Q=None, r=None, df=None, p=None, inversion_option=None):
+        self.Q = Q
+        self.r = r
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
+
+
+    def guess_params(self):
+        """
+        First guess for the parameters of the Theis model for multiple rate tests
+
+        :return p[0]: slope of Jacob straight line for late time
+        :return p[1]: intercept with the horizontal axis for s = 0
+        """
+        if np.isscalar(self.Q):
+            print('Pumping rate needs to be given by pandas dataframe with Q.t and Q.q vector')
+        else:
+            self.pumpingrates = np.hstack((self.Q.q[0], np.diff(self.Q.q)))
+            self.begintime = np.hstack([0, self.Q.t.iloc[:-1].to_numpy()])
+
+            iss = self.df.t[self.df.t < self.begintime[1]].index
+
+        if np.isscalar(self.Q):
+            n = len(self.df) / 3
+            self.p = get_logline(self, df=self.df[self.df.index > n])
+            self.p[0] = self.p[0] / (self.Q)
+        elif self.Q.t is not None:
+            test = ht.preprocessing()
+            test.birsoy_time(df=self.df, Qmat=self.Q)
+            self.p = get_logline(self, df=test.birsoy)
+
+        else:
+            print('')
+
+
+    def rpt(self, fitmethod=None, ttle='Theis (1935)', author='Author', filetype='pdf', reptext='Report_ths'):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
+
+        :param option_fit: 'lm', 'trf' or 'dogbox'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'trf' #set Default
+
+        self.fit() 
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.RadInfluence = self.RadiusOfInfluence()
+        self.model_label = 'Theis multirate model'
+
+        test = ht.preprocessing(df=self.df)
+        self.der = test.ldiffs()
+
+        self.ttle = ttle
+        fig = log_plot(self)
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Radius of Investigation Ri : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
+
+
 class HantushJacob(AnalyticalInterferenceModels):
     """
     Hantush and Jacob (1955) solution 
@@ -1166,6 +1341,10 @@ class HantushJacob(AnalyticalInterferenceModels):
     :param fitmethod: see fit function for the various options
     :param inversion_option: 'stehfest' or 'dehoog'
     :param e: Thickness of the aquitard 
+
+    :Reference: 
+
+
     """
 
     def dimensionless_laplace(self, pd):
@@ -2387,15 +2566,48 @@ class Slugtests(AnalyticalInterferenceModels):
         pass
 
     def _dimensionless_time(self, t):
-        return None
-
-    def _dimensional_drawdown(self, sd):
-        return None
+        return t / self.p[1]*self.p[0]
 
     def __call__(self, t):
         print("Warning - undefined")
         return None
 
+
+    def T(self):
+        """
+        Calculates Transmissivity for slug test
+
+        :return Transmissivity:  transmissivity m^2/s
+        """
+        Sw = self.Vs * self.Ceff * self.rho * self.g
+        return 0.5 * Sw / (self.p[1]*np.pi)
+
+    def S(self):
+        """
+        Calculates Storativity for slug test
+
+        :return Storativity:  storativity -
+        """
+        Sw = self.Vs * self.Ceff * self.rho * self.g
+        return 0.5 * Sw / (self.p[0] * np.pi * self.rw ** 2)
+
+    def RI_Guyonnet(self):
+        """
+        Calculates the radius of investigation according to Guyonnet et al. (1993)
+
+        :return radius: radius in meter
+        """
+        n = 0.462
+        m = 0.495
+        xlim = 2.5
+        tdl = self.p[0] * self.df.t[-1:].to_numpy() / self.p[1]
+        x = tdl ** n / self.p[0] ** m
+        rdi = 0
+        if x < xlim:
+            rdi = self.rw * 3.54 * tdl ** n
+        else:
+            rdi = self.rw * 8.37 * self.p[0] ** m
+        return rdi
 
 class Hvorslev(Slugtests):
     
@@ -2427,7 +2639,6 @@ class Hvorslev(Slugtests):
     Solution for a slug test in confined aquifer with negligible storage.
     
     """
-    
     
     def __init__(self, rw=None, rc=None, df=None, p=None):
         self.rw = rw
@@ -2509,17 +2720,18 @@ class Hvorslev(Slugtests):
         """   
 
 
-class Neuzil(StorativityInterferenceModels):
+class Neuzil(Slugtests):
     """
     Shut-in pulse or slug test with the Neuzil (1982) solution
 
-    :param r: distance between the observation well and pumping well
     :param rw: radius of the well
-    :param rc: radius of the casing
-    :param rD: dimensionless radius
+    :param Ceff: effective Compressibility of test section
+    :param Vs: Volume of the test section
     :param cD: dimensionless well bore storage coefficient
     :param p: solution vector
     :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param rho: density of water 1000 kg/m^3
+    :param g: gravity 9.81 m/s^2
     :param der: Drawdown derivative from the input data given as dataframe with der.t and der.s
     :param tc: Calculated time
     :param sc: Calculated draw down
@@ -2543,6 +2755,9 @@ class Neuzil(StorativityInterferenceModels):
     The aquifer is supposed to be confined, the well fully penetrating and the 
     slug injection or withdrawal is supposed to be instantaneous.
 
+    The dimensionless time td is related with well-bore storage, well bore radius, time and transmissivity as followed:
+    td / cd = 2 T t / rc^2
+
     NB: Modified from Cooper et al. (1967) solution for a slug test.
     Note that in the original publication of Cooper et al. 
     The dimensionless parameter was alpha, it is related to Cd by: alpha = 1 / (2 Cd)
@@ -2552,15 +2767,16 @@ class Neuzil(StorativityInterferenceModels):
     formations, Water Resour. Res., 18( 2), 439– 441, doi:10.1029/WR018i002p00439.
 
     """
-    def __init__(self, r=None, rw=None, rc=None, cD=None, df=None, p=None, inversion_option=None):
-        self.r = r
+    def __init__(self, rw=None, cD=None, df=None, p=None, Ceff=None, Vs=None, inversion_option=None):
         self.rw = rw
-        self.rc = rc
-        self.rD = r / rc
         self.cD = cD
         self.p = p
         self.df = df
+        self.Ceff = Ceff
+        self.Vs = Vs
         self.der = None
+        self.rho = 1000 
+        self.g = 9.81
         self.tc = None
         self.sc = None
         self.derc = None
@@ -2573,10 +2789,185 @@ class Neuzil(StorativityInterferenceModels):
         self.ysize = 6
         self.Transmissivity = None
         self.Storativity = None
-        self.Storativity2 = None
         self.RadInfluence = None
         self.detailled_p = None
         self.fitmethod = None
         self.fitbnds = None
         self.inversion_option=inversion_option
         self.fitcoeff = None
+
+    def dimensionless_laplace(self, pd):
+        """
+        Neuzil (1982) Laplace domain solution for slug test (pulse) 
+        includes dimensionless well-bore storage coefficient
+        
+        Original Implementation with alpha cf. P. Hsieh
+        """
+        sp = np.sqrt(pd)
+        return self.cd * kv(0, sp) / (self.cd * pd * kv(0, sp) +  sp * kv(1, sp))
+
+    def __call__(self, t):
+        if self.cD is not None:
+            self.p[0] = self.Cd
+        else:
+            self.cd = self.p[0]
+        td = self._dimensionless_time(t)
+        s = self._laplace_drawdown(td)
+        return s
+
+
+    def guess_params(self):
+        """
+        Calculates a first set of parameters for the Neuzil (1982) solution
+
+        :return p[0]:  cd
+        :return p[1]:  t0
+        """
+        self.p = np.zeros(2)
+        len_df = np.size(self.df.t, 0)
+        # Calculating the negative derivative
+        dummy = ht.preprocessing(df=self.df)
+        dummy.ldiff()
+        dummy.ldiffs(npoints = np.uint64(len_df/1.5)); 
+        # finding the (negative) maximum and the corresponding index of the value.
+        # (the section with the steepest derivative on a slug test type curve
+        # determines the value of alpha (or C_D))  
+        ind = np.nanargmax(-dummy.der.s)
+        dmax = -dummy.der.s[ind]
+        # first guess Cd
+        #-------------------
+        # calculating from analytical solution a type curve relating the maximum of the
+        # derivative with Cd; finding from it the corresponding Cd for the found negative
+        # maximum of the derivative of s 
+        dsmax = np.array([0.13906, 0.14019, 0.14307, 0.15001, 0.16413, 0.18562, 0.21037, 0.23401, 0.25427, 0.27064, 0.28361, 0.29381, 0.3019, 0.30843, 0.31381, 0.31823, 0.32202, 0.32525, 0.32802, 0.33047, 0.33265, 0.33452, 0.33628, 0.33779, 0.33919, 0.34048, 0.34164, 0.3427, 0.34367, 0.34457, 0.3454, 0.34619, 0.34693, 0.34761, 0.34825, 0.34884, 0.34937, 0.3499, 0.35043, 0.35091, 0.35132, 0.35176, 0.35218, 0.35253, 0.35291, 0.35327, 0.35354, 0.35392, 0.3542, 0.3545, 0.35478, 0.35502, 0.35531, 0.35551, 0.35579, 0.35597, 0.35624, 0.35641, 0.35665, 0.35682, 0.35703, 0.3572, 0.35737, 0.35756, 0.35768, 0.35789, 0.35801, 0.35819, 0.35833, 0.35844, 0.35862, 0.35872, 0.35887, 0.35901, 0.35907, 0.35925, 0.35936, 0.35943, 0.35959, 0.35968, 0.35976, 0.3599, 0.35999, 0.36005, 0.36019, 0.36027, 0.36031, 0.36046, 0.36054, 0.36058, 0.3607, 0.36079, 0.36085, 0.36091, 0.36102, 0.36109, 0.36112, 0.36122, 0.36131, 0.36136])
+        cdmax = np.array([0.01, 0.026561, 0.070548, 0.18738, 0.4977, 1.3219, 3.5112, 9.326, 24.771, 65.793, 174.75, 464.16, 1232.8, 3274.5, 8697.5, 23101, 61359, 162980, 432880, 1149800, 3053900, 8111300, 21544000, 57224000, 151990000, 403700000, 1072300000, 2848000000, 7564600000, 20092000000, 53367000000, 141750000000, 376490000000, 1000000000000, 2656100000000, 7054800000000, 18738000000000, 49770000000000, 132190000000000, 351120000000000, 932600000000000, 2.4771e+15, 6.5793e+15, 1.7475e+16, 4.6416e+16, 1.2328e+17, 3.2745e+17, 8.6975e+17, 2.3101e+18, 6.1359e+18, 1.6298e+19, 4.3288e+19, 1.1498e+20, 3.0539e+20, 8.1113e+20, 2.1544e+21, 5.7224e+21, 1.5199e+22, 4.037e+22, 1.0723e+23, 2.848e+23, 7.5646e+23, 2.0092e+24, 5.3367e+24, 1.4175e+25, 3.7649e+25, 1e+26, 2.6561e+26, 7.0548e+26, 1.8738e+27, 4.977e+27, 1.3219e+28, 3.5112e+28, 9.326e+28, 2.4771e+29, 6.5793e+29, 1.7475e+30, 4.6416e+30, 1.2328e+31, 3.2745e+31, 8.6975e+31, 2.3101e+32, 6.1359e+32, 1.6298e+33, 4.3288e+33, 1.1498e+34, 3.0539e+34, 8.1113e+34, 2.1544e+35, 5.7224e+35, 1.5199e+36, 4.037e+36, 1.0723e+37, 2.848e+37, 7.5646e+37, 2.0092e+38, 5.3367e+38, 1.4175e+39, 3.7649e+39, 1e+40])
+        self.p[0] = np.exp(interp1d(dsmax, np.log(cdmax))(dmax))
+        # first guess td
+        #-------------------
+        # Finding from another type curve the dimensionless time corresponding 
+        # to a dimensionless drawdown of 0.5 for a given value of Cd
+        ind = np.argsort(self.df.s)
+        x = self.df.s[ind]
+        y = self.df.t[ind]
+        x, ind = np.unique(x, return_index=True)
+        y = y[ind]
+        t50 = interp1d(x,y)(0.5)
+        td05 = np.array([0.00586770558742, 0.01538276678787, 0.03952949140660, 0.09694461204071, 0.21719603925390, 0.42501780012524, 0.71662305681555, 1.06363233029027, 1.43760222791051, 1.82028724290396, 2.20358418424062, 2.58408967048293, 2.96136937493074, 3.33482849790512, 3.70525943721090, 4.07263907432772, 4.43792575903868, 4.80135835601924, 5.16271293241688, 5.52325181572752, 5.88231715490175, 6.23931944071651, 6.59661383581317, 6.95210659097099, 7.30643224320023, 7.66115976998289, 8.01477682034437, 8.36756008586347, 8.71970765295706, 9.07135123700411, 9.42256498353144, 9.77337153570370, 10.12374618219556, 10.47361933182128, 10.82287789841075, 11.17136553273684, 11.52044344002349, 11.86974847357249, 12.21813252184930, 12.56530458198805, 12.91318067784498, 13.26149706560916, 13.60816009137916, 13.95493769518254, 14.30274614525803, 14.64826645321799, 14.99550293657282, 15.34193768499867, 15.68705068971524, 16.03430073477501, 16.37807076609380, 16.72575485388320, 17.06977548910524, 17.41657199079698, 17.76057059792890, 18.10691433716675, 18.45055957035689, 18.79684650709133, 19.13974751846824, 19.48634380902855, 19.82851525913239, 20.17529734012830, 20.51824259258036, 20.86351679873552, 21.20754050225741, 21.55073134371076, 21.89612895043074, 22.23763508467999, 22.58365010435056, 22.92687153886336, 23.26966547231196, 23.61487577912874, 23.95648343180061, 24.30112659032918, 24.64501565697978, 24.98550026910186, 25.33145439775837, 25.67448982989344, 26.01510452333986, 26.36095666948836, 26.70355761351395, 27.04411599835794, 27.38978772050444, 27.73233575282293, 28.07209819489549, 28.41796332106905, 28.76081111070927, 29.10077224808644, 29.44537021937825, 29.78884858313224, 30.12952033870633, 30.47177166764350, 30.81619529914736, 31.15787771659484, 31.49692855122661, 31.84248208061840, 32.18546561730872, 32.52586464152356, 32.86722245603525, 33.21179163617694])
+        self.p[1] = t50 / np.exp(interp1d(np.log(cdmax),np.log(td05))(np.log(self.p[0])))
+        # Second method
+        #-------------------
+        # When the method fails because the derivative is too high, Cd is fixed arbitrarily to 50.
+        # Knowing that the dimensionless time td/cd = t/t0 = 1.7255 for sd=0.5 and Cd=50, we locate the time t corresponding to sd=0.5 and calculate t0=t/1.7255.
+        if (np.isnan(self.p[0]) or np.isnan(self.p[1])):               
+            self.p[1] = t50/1.71255
+            self.p[0] = 50
+
+        return self.p
+
+
+    def plot_typecurve(self, cD = 10 ** np.array([0, np.log10(5), np.log10(50), 5, 12, 40]), rD = 1):
+        """
+        Type curves of the Neuzil (1982) model
+        """
+        td = np.logspace(-3, 3)
+        plt.figure(1)
+        ax = plt.gca()
+        for i in range(0, len(cD)):
+            self.cd = cD[i]
+            self._coeff()
+            sd = self._laplace_drawdown(td * cD[i], inversion_option='stehfest') 
+            d = {'t': td, 's': sd}
+            df = pda.DataFrame(data=d)
+            dummy = ht.preprocessing(df=df)
+            dummy.ldiff()
+            color = next(ax._get_lines.prop_cycler)['color']
+            ax.semilogx(td, sd, '-', color=color, label= 'C_D = {}'.format(cD[i]))
+            ax.semilogx(dummy.der.t, np.abs(dummy.der.s), ':', color=color)
+        plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
+        plt.ylabel('$s_D = 2*pi*T*s/Q$')
+        plt.xlim((1e-3, 1e3))
+        plt.ylim((0, 1e0))
+        plt.grid('True')
+        plt.legend()
+        plt.show()     
+        
+        plt.figure(2)
+        ax = plt.gca()
+        for i in range(0, len(cD)):
+            self.cd = cD[i]
+            self._coeff()
+            sd = self._laplace_drawdown(
+                td * cD[i], inversion_option='stehfest')
+            d = {'t': td, 's': sd}
+            df = pda.DataFrame(data=d)
+            dummy = ht.preprocessing(df=df)
+            dummy.ldiff()
+            color = next(ax._get_lines.prop_cycler)['color']
+            ax.loglog(td, sd, '-', color=color,
+                        label='C_D = {}'.format(cD[i]))
+            ax.loglog(dummy.der.t, np.abs(dummy.der.s), ':', color=color)
+        plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
+        plt.ylabel('$s_D = 2*pi*T*s/Q$')
+        plt.xlim((1e-3, 1e3))
+        plt.ylim((1e-3, 1e0))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+
+    def rpt(self, fitmethod='lm', ttle='Neuzil (1982)', author='Author', filetype='pdf',
+                reptext='Report_nsl', p=None):
+        """
+        Calculates the solution and reports graphically the results of the slug test
+
+        :param option_fit: 'lm' or 'trf' or 'dogbox'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'lm'  # set Default
+
+        if p is not None:
+            self.p = p
+            self.fitmethod = 'nofit'
+        else:
+            self.inversion_option = 'stehfest'
+        
+        self._coeff()
+        self.fit()
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.RadInfluence = self.RI_Guyonnet()[0]
+
+        self.model_label = 'Neuzil (1982)'
+        test = ht.preprocessing(df=self.df)
+        self.der = test.ldiffs()
+
+        self.ttle = ttle
+        fig = log_plot(self)
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Effective Compressibility : {:3.2e} Pa^-1'.format(self.Ceff), fontsize = 14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Well radius : {:0.4g} m '.format(self.rw), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.7, 'Volume of test section: {:0.4g} m^3 '.format(self.Vs), fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.6, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Well bore storage Sw : {:3.2e} '.format(self.Storativity), fontsize = 14,transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.45, 'Radius of investigation: {:3.2e} m'.format(self.RadInfluence), fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.4, 'Fitting parameters :',fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'Wellbore storage cD : {:0.4g} '.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} s'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'mean residual : {:0.2g} s'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, '2 standard deviation : {:0.2g} s'.format(self.sr), fontsize=14,transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} s'.format(self.rms), fontsize=14,transform=plt.gcf().transFigure)
+
+#class Cooper(StorativityInterferenceModels):
