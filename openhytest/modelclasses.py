@@ -1912,7 +1912,7 @@ class WarrenRoot(AnalyticalInterferenceModels):
         initial guess of the parameters, that will then be iterativly modified
         until a local minimum is obtained.
 
-        :param option:  Levenberg-Marquard (lm is default), Trust Region Reflection algorithm (trf) or 
+        :param option:  Levenberg-Marquard (lm), Trust Region Reflection algorithm (trf is default) or 
         dogbox using least-squares implementation from scipy-optimize or use nofit to caculate only the 
         statistic 
         :param fitcoeff: The number of coefficent needs to be defined for Laplace inversions.
@@ -3421,3 +3421,6 @@ class Cooper(Neuzil):
             self.sr), fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} s'.format(
             self.rms), fontsize=14, transform=plt.gcf().transFigure)
+
+        
+        

@@ -1643,8 +1643,7 @@ class JacobLohman(AnalyticalInterferenceModels):
     def plot_typecurve(self):
         """
         Type curves of the Jacob-Lohman (1952) model
-        """
-        
+        """ 
         plt.figure(1)
         td = np.logspace(-4, 10)
         g = 0.57721566
@@ -2299,6 +2298,251 @@ class GRF(AnalyticalInterferenceModels):
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
 
+class Boulton(AnalyticalInterferenceModels):
+    """
+    Boulton (1963) solution for unconfined aquifers with delayed yields
+
+    :Initialzation:
+    :param Q: pumping rate, m3/s
+    :param r: radius between wells, m
+    :param rw: radius of the well, m
+    :param rD: dimensionless radius
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param self:
+    :param p: solution vector
+    :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated drawdown
+    :param derc: Calculated drawdown derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize:  size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :paramRadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param fitbnds: 
+    :param inversion_option: 'stehfest' or 'dehoog'
+    :param sigma: [sigma, phi] 
+
+    :Reference:
+    BOULTON, N.S., ANALYSIS OF DATA FROM NON-EQUILIBRIUM PUMPING TESTS ALLOWING FOR DELAYED YIELD FROM STORAGE,
+    Proceedings of the Institution of Civil Engineers, 1963, 26:3, 469-482
+    """
+
+    def __init__(self, Q=None, r=1, rw=1, sigma=None, df=None, p=None, inversion_option=None):
+        self.Q = Q
+        self.r = r
+        self.rw = rw
+        self.sigma = sigma
+        self.rD = r / rw
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
+        self.inversion_option = inversion_option
+        self.fitcoeff = None
+
+    
+    def _dimensionless_time(self, t):
+        """
+        Calculates dimensionless time
+        """
+        return 0.445268 * t * self.p[1]
+
+
+    def dimensionless_laplace(self, pd):
+        """
+        Boulton (1963) Laplace dimensionless domain solution 
+
+        :param pd: Laplace parameter
+        :param x[0]: sigma = S / S_y
+        :param x[1]: phi   = ( alpha r^2 S ) / T
+        :function: _laplace_drawdown(td, inversion_option='dehoog')
+        """
+        if self.sigma is None:
+            self.x = np.array([self.p[1]/(self.p[1]+self.p[2]), 2*self.p[3] * self.p[1]])
+        else:
+            self.x = self.sigma
+        return kv(0, np.sqrt(pd + self.x[1] * pd / (self.x[0] * (pd + self.x[1])))) / pd
+
+
+    def __call__(self, t):
+        td = self._dimensionless_time(t)
+        sd = self._laplace_drawdown(td)
+        s = self._dimensional_drawdown(sd)
+        return s
+
+
+    def guess_params(self):
+        """
+        First guess for the parameters of the Boulton model.
+
+        :return p[0]: slope of Jacob straight line for late time
+        :return p[1]: intercept with the horizontal axis for s = 0
+        :return p[2]: intercept with the horizontal axis for s = 0 for the late asymptote
+        :return p[3]: phi
+        """
+        p = np.zeros(4)
+        p[1] = self.df.t[0]
+        n = len(self.df) / 4
+        pj = get_logline(self, df=self.df[self.df.index > n])
+        p[0] = pj[0]
+        p[2] = pj[1]
+        p[3] = 1e-4
+        self.p = p
+        return self.p
+
+
+    def plot_typecurve(self, sigma = 0.01):
+        """
+        Draw a series of typecurves of the Boulton model
+        """
+        td = np.logspace(-2, 6)
+        plt.figure(1)
+        ax = plt.gca()
+        for i in range(1, 5):
+            self.sigma = np.array([0.01, 10**(-i)])
+            sd = self._laplace_drawdown(td, inversion_option='dehoog')
+            color = next(ax._get_lines.prop_cycler)['color']
+            plt.loglog(td, sd, '-', color=color, label=self.sigma[1])
+        ths = Theis()
+        st1 = ths.dimensionless(td)
+        plt.loglog(td, st1, ':k', label='Theis')
+        st2 = 0.5 * E1(1, (1 + self.sigma[0])/(4*td*self.sigma[0]))
+        plt.loglog(td, st2, ':b')
+        plt.title('$\sigma$')
+        plt.xlabel('$t_D$')
+        plt.ylabel('$s_D$')
+        plt.xlim((1e-2, 1e6))
+        plt.ylim((1e-3, 1e2))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+
+        td = np.logspace(-2, 6)
+        plt.figure(2)
+        ax = plt.gca()
+        for i in range(1, 5):
+            self.sigma = np.array([10**(-i), 0.01])
+            sd = self._laplace_drawdown(td, inversion_option='dehoog')
+            d = {'t': td, 's': sd}
+            df = pda.DataFrame(data=d)
+            dummy = ht.preprocessing(df=df)
+            dummy.ldiff()
+            color = next(ax._get_lines.prop_cycler)['color']
+            plt.loglog(td, sd, '-', color=color, label=self.sigma[0])
+            plt.loglog(dummy.der.t, dummy.der.s, '-.', color=color)
+            st2 = 0.5 * E1(1, (1 + self.sigma[0])/(4*td*self.sigma[0]))
+            plt.loglog(td, st2, ':', color=color)
+        plt.title('$\phi$')
+        plt.xlabel('$t_D$')
+        plt.ylabel('$s_D$')
+        plt.xlim((1e-2, 1e6))
+        plt.ylim((1e-3, 1e2))
+        plt.grid('True')
+        plt.legend()
+        plt.show()
+
+
+    def rpt(self, fitmethod='trf', ttle='Boulton', author='openhytest developer', filetype='pdf',
+            reptext='Report_blt', p=None):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
+
+        :param option_fit: 'lm' or 'trf' (default) or 'dogbox'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'trf'  # set Default
+
+        if p is not None:
+            self.p = p
+            self.fitmethod = 'nofit'
+        else:
+            self.inversion_option = 'stehfest'
+
+
+        self._coeff()
+        self.fit()
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.omegad = 2.2458394 * self.Transmissivity * self.p[2] / self.r**2 - self.Storativity
+        self.RadInfluence = 2*np.sqrt(self.Transmissivity*self.df.t.iloc[-1] / self.omegad)
+        self.model_label = 'Boulton model'
+
+        test = ht.preprocessing(df=self.df)
+        self.der = test.ldiffs()
+
+        self.ttle = ttle
+        fig = log_plot(self)
+
+        fig.text(0.125, 1, author, fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14,
+                 transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.65, 'Hydraulic parameters :',
+                 fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Drainage porosity : {:3.2e} '.format(self.omegad), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.45, 'Radius of investigation : {:3.2e} '.format(self.RadInfluence), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :',
+                 fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'slope a : {:0.2g} m'.format(
+            self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} s'.format(
+            self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'intercept t1  : {:0.2g} s'.format(
+            self.p[2]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, 'phi : {:0.2g} m'.format(
+            self.p[3]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, 'mean residual : {:0.2g} m'.format(
+            self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.1, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.05, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
+
+
 class StorativityInterferenceModels(AnalyticalInterferenceModels):
     def __init__(self):
         pass
@@ -2718,8 +2962,6 @@ class Hvorslev(Slugtests):
         :param filetype: 'pdf', 'png' or 'svg'
         :param reptext: savefig name
         """   
-
-
 
 
 class Neuzil(Slugtests):
@@ -3179,3 +3421,6 @@ class Cooper(Neuzil):
             self.sr), fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} s'.format(
             self.rms), fontsize=14, transform=plt.gcf().transFigure)
+
+        
+        
