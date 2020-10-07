@@ -343,6 +343,7 @@ class AnalyticalInterferenceModels():
         self.inversion_s = f    
         return f
 
+
     def __call__(self, t):
         print("Warning - undefined")
         return None
@@ -2078,7 +2079,7 @@ class WarrenRoot(AnalyticalInterferenceModels):
         fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')       
-
+    
 class GRF(AnalyticalInterferenceModels):
     """
     Barker (1988) general radial flow model
@@ -2681,20 +2682,20 @@ class PapadopulosCooper(StorativityInterferenceModels):
 
     def dimensionless_laplace(self, pd):
         sp = np.sqrt(pd)
-        return kv(0, self.rD * sp) / (pd * (sp * kv(1, sp) + self.cd * pd * kv(0, sp)))
+        return kv(0, self.rD * sp) / (pd * (sp * kv(1, sp) + self.cD * pd * kv(0, sp)))
 
     def dimensionless_laplace_derivative(self, pd):
         sp = np.sqrt(pd)
-        cds = self.cd * sp
+        cds = self.cD * sp
         k0 = kv(0, sp)
         k1 = kv(1, sp)
         kr0 = kv(0, sp * self.rD)
         kr1 = kv(1, sp * self.rD)
-        return 0.5 * ((2 * self.cd - 1) * kr0 * k0 + kr1 * k1 + cds * kr1 * k0 - cds * kr0 * k1) / (
-            np.power(sp * k1 + self.cd * pd * k0, 2))
+        return 0.5 * ((2 * self.cD - 1) * kr0 * k0 + kr1 * k1 + cds * kr1 * k0 - cds * kr0 * k1) / (
+            np.power(sp * k1 + self.cD * pd * k0, 2))
 
     def __call__(self, t):
-        self.cd = self.Cd()
+        self.cD = self.Cd()
         td = self._dimensionless_time(t)
         sd = self._laplace_drawdown(td)
         s = self._dimensional_drawdown(sd)
@@ -2714,7 +2715,7 @@ class PapadopulosCooper(StorativityInterferenceModels):
         plt.figure(1)
         ax = plt.gca()
         for i in range(0, len(cD)):
-            self.cd = cD[i]
+            self.cD = cD[i]
             sd = self._laplace_drawdown(td * cD[i], inversion_option='dehoog')
             dd = self._laplace_drawdown_derivative(td * cD[i], inversion_option='dehoog')
             color = next(ax._get_lines.prop_cycler)['color']
@@ -2731,7 +2732,7 @@ class PapadopulosCooper(StorativityInterferenceModels):
         plt.figure(2)
         ax = plt.gca()
         for i in range(0, len(cD)):
-            self.cd = cD[i]
+            self.cD = cD[i]
             sd = self._laplace_drawdown(td, inversion_option='dehoog')
             dd = self._laplace_drawdown_derivative(td, )
             color = next(ax._get_lines.prop_cycler)['color']
@@ -2795,6 +2796,310 @@ class PapadopulosCooper(StorativityInterferenceModels):
                      transform=plt.gcf().transFigure)
         self.cD = self.Cd()
         fig.text(1.05, 0.4, 'Wellbore storage : {:0.4g} '.format(self.cD), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1, 0.35, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.1, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+
+
+class Agarwal(StorativityInterferenceModels):
+    """
+    Interference test with the Agarwal (1970) solution
+
+    :param Q: pumping rate
+    :param r: distance between the observation well and pumping well
+    :param rw: radius of the well
+    :param rc: radius of the casing
+    :param rD: dimensionless radius
+    :param cD: dimensionless well bore storage coefficient
+    :param p: solution vector
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param der: Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated draw down
+    :param derc: Calculated flow rate derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize: size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :param Storativity2: Storativtiy -
+    :param RadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param fitbnds: 
+    :param inversion_option: 'stehfest' or 'dehoog'
+
+    :Description:
+    Computes drawdon in the aquifer for a constant rate pumping test in a large diameter well with skin effect. The aquifer is confined and homogeneous.
+
+    The skin factor is equal to:
+
+    sigma = (T-Ts)/Ts * log( rs / rw )
+
+    The dimensionless well bore storage coefficient is:
+
+    Cd = rc^2/(2 rw^2 S) 
+
+    with:
+    T  = transmissivity of the aquifer
+    Ts = transmissivity of the skin (perturbed zone around the well)
+    rs = radius of the skin (from the center of the well)
+    rw = radius of the well screen
+    S  = storativity of the aquifer
+
+    :Reference:
+    Agarwal, RG, R Al-Hussainy and HJ Ramey, 1970,
+    An investigation of wellbore storage and skin effect in unsteady liquid flow. SPE Journal: 279-290
+   
+
+    """
+    def __init__(self, Q=None, r=1, rw=None, rc=1, cD=None, df=None, p=None, inversion_option=None):
+        self.Q = Q
+        self.r = r
+        self.rw = rw
+        self.rc = rc
+        self.rD = r / rc
+        self.cD = cD
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.Storativity2 = None
+        self.RadInfluence = None
+        self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
+
+
+    def dimensionless_laplace(self, pd):
+        """
+        Calculates the dimensionless Agarwala drawdown in the aquifer
+        """
+        cd = self.p[0]
+        rd = self.p[1]
+        sg = self.p[2]
+        sp = np.sqrt(pd)
+        k0 = kv(0, sp)
+        k1 = kv(1, sp)
+        return kv(0, rd * sp) / (pd * (((1 + pd * cd * sg) * sp * k1) + (cd * pd * k0)))
+
+
+    def __call__(self, t):
+        self.cd = self.Cd()
+        td = self._dimensionless_time(t)
+        sd = self._laplace_drawdown(td)
+        s = self._dimensional_drawdown(sd)
+        return s
+
+
+    def guess_params(self):
+        """
+        First guess of solution vector using steady-state late time approximation.
+        """
+        n = 3 * len(self.df) / 4
+        p = get_logline(self, self.df[self.df.index > n])
+        self.p = [p[0], p[1], 1.0]
+        return self.p
+
+
+    def plot_typecurve(self, rD=1):
+        """
+        Type curves of the Agarwal (1970) model
+        """
+        #plt.figure(1, figsize=(10,10))
+        f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10,10))
+        self.rD = rD
+        td = np.logspace(-2, 8)
+        for i in range(0, 5):
+            for sg in range(0, 15, 5):  
+                self.p = [10**i, rD, sg]
+                sd = self._laplace_drawdown(td, inversion_option='dehoog')
+                color = next(ax1._get_lines.prop_cycler)['color']
+                ax1.loglog(td, sd, '-', color=color)
+        ax1.set_xlabel('$t_D$')
+        ax1.set_ylabel('$s_D$')
+        ax1.set_xlim((1e0, 1e8))
+        ax1.set_ylim((1e-1, 1e2))
+        ax1.grid('True')
+
+        td = np.logspace(-1, 4)
+        cD = 1e4
+        cD2 = 1e3
+        cD3 = 5
+        pca = PapadopulosCooper(cD = cD, p = [cD, rD])
+        sd1 = pca._laplace_drawdown(td*cD, inversion_option='dehoog')
+        dd1 = pca._laplace_drawdown_derivative(td*cD, inversion_option='dehoog')
+        color = next(ax2._get_lines.prop_cycler)['color']
+        ax2.loglog(td, sd1, '-', color=color, label='Papadopulos and Cooper model cD = 10000')
+        ax2.loglog(td, dd1, '-.', color=color) 
+        td2 = td * cD2
+        self.p = [cD2, rD, (np.log(cD)-np.log(cD2))/2]
+        sd2 = self._laplace_drawdown(td2, inversion_option='dehoog')
+        d = {'t': td2, 's': sd2}
+        df = pda.DataFrame(data=d)
+        dummy = ht.preprocessing(df=df)
+        dummy.ldiff()
+        color = next(ax2._get_lines.prop_cycler)['color']
+        ax2.loglog(td, sd2, '-', color=color, label='Agarwal model cD = 1000')
+        ax2.loglog(dummy.der.t/cD2, dummy.der.s, '-.', color=color)
+        self.p = [cD3, rD, (np.log(cD)-np.log(cD3))/2]
+        td3 = td * cD3
+        sd3 = self._laplace_drawdown(td3, inversion_option='dehoog')
+        d2 = {'t': td3, 's': sd3}
+        df2 = pda.DataFrame(data=d2)
+        dummy2 = ht.preprocessing(df=df2)
+        dummy2.ldiff()
+        color = next(ax2._get_lines.prop_cycler)['color']
+        ax2.loglog(td, sd3, '-', color=color, label='Agarwal model cD = 5')
+        ax2.loglog(dummy2.der.t/cD3, dummy2.der.s, '-.', color=color)
+        ax2.set_xlabel('$t_D / C_D$')
+        ax2.set_ylabel('$s_D$')
+        ax2.set_title(('rD = 1'))
+        ax2.set_xlim((1e-1, 1e4))
+        ax2.set_ylim((1e-1, 1e1))
+        ax2.grid('True')
+        ax2.legend()
+
+        rD = 10
+        pca = PapadopulosCooper(cD = cD, p = [cD, rD])
+        sd1 = pca._laplace_drawdown(td*cD, inversion_option='dehoog')
+        dd1 = pca._laplace_drawdown_derivative(td*cD, inversion_option='dehoog')
+        color = next(ax3._get_lines.prop_cycler)['color']
+        ax3.loglog(td, sd1, '-', color=color, label='Papadopulos and Cooper model cD = 10000')
+        ax3.loglog(td, dd1, '-.', color=color) 
+        td2 = td * cD2
+        self.p = [cD2, rD, (np.log(cD)-np.log(cD2))/2]
+        sd2 = self._laplace_drawdown(td2, inversion_option='dehoog')
+        d = {'t': td2, 's': sd2}
+        df = pda.DataFrame(data=d)
+        dummy = ht.preprocessing(df=df)
+        dummy.ldiff()
+        color = next(ax3._get_lines.prop_cycler)['color']
+        ax3.loglog(td, sd2, '-', color=color, label='Agarwal model cD = 1000')
+        ax3.loglog(dummy.der.t/cD2, dummy.der.s, '-.', color=color)
+        self.p = [cD3, rD, (np.log(cD)-np.log(cD3))/2]
+        td3 = td * cD3
+        sd3 = self._laplace_drawdown(td3, inversion_option='dehoog')
+        d2 = {'t': td3, 's': sd3}
+        df2 = pda.DataFrame(data=d2)
+        dummy2 = ht.preprocessing(df=df2)
+        dummy2.ldiff()
+        color = next(ax3._get_lines.prop_cycler)['color']
+        ax3.loglog(td, sd3, '-', color=color, label='Agarwal model cD = 5')
+        ax3.loglog(dummy2.der.t/cD3, dummy2.der.s, '-.', color=color)
+        ax3.set_xlabel('$t_D / C_D$')
+        ax3.set_ylabel('$s_D$')
+        ax3.set_title(('rD = 10'))
+        ax3.set_xlim((1e-1, 1e4))
+        ax3.set_ylim((1e-1, 1e1))
+        ax3.grid('True')
+        ax3.legend()
+
+        rD = 100
+        pca = PapadopulosCooper(cD = cD, p = [cD, rD])
+        sd1 = pca._laplace_drawdown(td*cD, inversion_option='dehoog')
+        dd1 = pca._laplace_drawdown_derivative(td*cD, inversion_option='dehoog')
+        color = next(ax4._get_lines.prop_cycler)['color']
+        ax4.loglog(td, sd1, '-', color=color, label='Papadopulos and Cooper model cD = 10000')
+        ax4.loglog(td, dd1, '-.', color=color) 
+        td2 = td * cD2
+        self.p = [cD2, rD, (np.log(cD)-np.log(cD2))/2]
+        sd2 = self._laplace_drawdown(td2, inversion_option='dehoog')
+        d = {'t': td2, 's': sd2}
+        df = pda.DataFrame(data=d)
+        dummy = ht.preprocessing(df=df)
+        dummy.ldiff()
+        color = next(ax4._get_lines.prop_cycler)['color']
+        ax4.loglog(td, sd2, '-', color=color, label='Agarwal model cD = 1000')
+        ax4.loglog(dummy.der.t/cD2, dummy.der.s, '-.', color=color)
+        self.p = [cD3, rD, (np.log(cD)-np.log(cD3))/2]
+        td3 = td * cD3
+        sd3 = self._laplace_drawdown(td3, inversion_option='dehoog')
+        d2 = {'t': td3, 's': sd3}
+        df2 = pda.DataFrame(data=d2)
+        dummy2 = ht.preprocessing(df=df2)
+        dummy2.ldiff()
+        color = next(ax4._get_lines.prop_cycler)['color']
+        ax4.loglog(td, sd3, '-', color=color, label='Agarwal model cD = 5')
+        ax4.loglog(dummy2.der.t/cD3, dummy2.der.s, '-.', color=color)
+        ax4.set_xlabel('$t_D / C_D$')
+        ax4.set_ylabel('$s_D$')
+        ax4.set_title(('rD = 100'))
+        ax4.set_xlim((1e-1, 1e4))
+        ax4.set_ylim((1e-1, 1e1))
+        ax4.grid('True')
+        ax4.legend()
+
+
+    def rpt(self, fitmethod='trf', ttle='Agarwal (1970)', author='openhytest developer', filetype='pdf',
+            reptext='Report_aga'):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
+
+        :param option_fit: 'lm' or 'trf' or 'dogbox'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'trf' #set Default
+
+        self.fit()
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.wbstorage = self.Cd()
+
+        self.model_label = 'Agarwal (1970)'
+        test = ht.preprocessing(df=self.df)
+        self.der = test.ldiffs()
+
+        self.ttle = ttle
+        fig = log_plot(self)
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Well radius : {:0.4g} m '.format(self.rw), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.7, 'Casing radius: {:0.4g} m '.format(self.rc), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.65, 'Distance to pumping well : {:0.4g} m '.format(self.r), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.6, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.45, 'Wellbore storage C_D: {:3.2e} '.format(self.wbstorage), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.4, 'Skin factor s_g: {:0.4g} '.format(self.p[2]), fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1, 0.35, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.3, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.25, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
@@ -3306,7 +3611,7 @@ class Cooper(Neuzil):
     
     def plot_typecurve(self, cD = 10 ** np.array([0, np.log10(5), np.log10(50), 5, 12, 40]), rD = 1):
         """
-        Type curves of the Neuzil (1982) model
+        Type curves of the Cooper (1967) model
         """
         td = np.logspace(-3, 3)
         plt.figure(1)
