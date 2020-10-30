@@ -127,11 +127,27 @@ def log_plot(self):
     ax1 = fig.add_subplot(111)
     ax1.set_xlabel('Time in seconds')
     ax1.set_ylabel('Drawdown in meters')
-    ax1.set_title(self.ttle)
+    
     ax1.loglog(self.df.t, self.df.s, c='r', marker='+', linestyle='', label='Drawdown')
     ax1.loglog(self.der.t, np.abs(self.der.s), c='b', marker='x', linestyle='', label='Derivative')
     ax1.loglog(self.tc, self.sc, c='g', label=self.model_label)
     ax1.loglog(self.derc.t, np.abs(self.derc.s), c='y', label='Model derivative')
+    ax1.grid(True)
+    ax1.legend()
+    return fig
+
+
+def log_plot_norm(self):
+    fig = plt.figure()
+    fig.set_size_inches(self.xsize, self.ysize)
+    ax1 = fig.add_subplot(111)
+    ax1.set_xlabel('Time in seconds')
+    ax1.set_ylabel('Normalized Drawdown')
+    
+    ax1.semilogx(self.df.t, self.df.s, c='r', marker='+', linestyle='', label='Drawdown')
+    ax1.semilogx(self.der.t, np.abs(self.der.s), c='b', marker='x', linestyle='', label='Derivative')
+    ax1.semilogx(self.tc, self.sc, c='g', label=self.model_label)
+    ax1.semilogx(self.derc.t, np.abs(self.derc.s), c='y', label='Model derivative')
     ax1.grid(True)
     ax1.legend()
     return fig
@@ -3072,7 +3088,7 @@ class Neuzil(Slugtests):
         # Calculating the negative derivative
         dummy = ht.preprocessing(df=self.df)
         dummy.ldiff()
-        dummy.ldiffs(npoints = np.uint64(len_df/1.5)); 
+        dummy.ldiffs(npoints = np.uint64(len_df/1.5))
         # finding the (negative) maximum and the corresponding index of the value.
         # (the section with the steepest derivative on a slug test type curve
         # determines the value of alpha (or C_D))  
@@ -3192,7 +3208,7 @@ class Neuzil(Slugtests):
         self.der = test.ldiffs()
 
         self.ttle = ttle
-        fig = log_plot(self)
+        fig = log_plot_norm(self)
 
         fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
         fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
@@ -3204,15 +3220,15 @@ class Neuzil(Slugtests):
 
         fig.text(1, 0.6, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.5, 'Well bore storage Sw : {:3.2e} '.format(self.Storativity), fontsize = 14,transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Storativity Sw : {:3.2e} '.format(self.Storativity), fontsize = 14,transform=plt.gcf().transFigure)
         fig.text(1.05, 0.45, 'Radius of investigation: {:3.2e} m'.format(self.RadInfluence), fontsize=14, transform=plt.gcf().transFigure)
 
         fig.text(1, 0.4, 'Fitting parameters :',fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.35, 'Wellbore storage cD : {:0.4g} '.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} s'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.25, 'mean residual : {:0.2g} s'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.2, '2 standard deviation : {:0.2g} s'.format(self.sr), fontsize=14,transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} s'.format(self.rms), fontsize=14,transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} '.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'mean residual : {:0.2g} '.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, '2 standard deviation : {:0.2g} '.format(self.sr), fontsize=14,transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} '.format(self.rms), fontsize=14,transform=plt.gcf().transFigure)
 
 
 class Cooper(Neuzil):
@@ -3388,7 +3404,7 @@ class Cooper(Neuzil):
         self.der = test.ldiffs()
 
         self.ttle = ttle
-        fig = log_plot(self)
+        fig = log_plot_norm(self)
 
         fig.text(0.125, 1, author, fontsize=14,
                  transform=plt.gcf().transFigure)
@@ -3406,20 +3422,20 @@ class Cooper(Neuzil):
                  fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(
             self.Transmissivity), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.5, 'Well bore storage Sw : {:3.2e} '.format(
+        fig.text(1.05, 0.5, 'Storativity Sw : {:3.2e} '.format(
             self.Storativity), fontsize=14, transform=plt.gcf().transFigure)
 
         fig.text(1, 0.4, 'Fitting parameters :', fontsize=14,
                  transform=plt.gcf().transFigure)
         fig.text(1.05, 0.35, 'Wellbore storage cD : {:0.4g} '.format(
             self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} s'.format(
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} '.format(
             self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.25, 'mean residual : {:0.2g} s'.format(
+        fig.text(1.05, 0.25, 'mean residual : {:0.2g} '.format(
             self.mr), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.2, '2 standard deviation : {:0.2g} s'.format(
+        fig.text(1.05, 0.2, '2 standard deviation : {:0.2g} '.format(
             self.sr), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} s'.format(
+        fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} '.format(
             self.rms), fontsize=14, transform=plt.gcf().transFigure)
 
         

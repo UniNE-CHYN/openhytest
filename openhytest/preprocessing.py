@@ -439,15 +439,15 @@ class preprocessing():
 
         t = self.df[self.hd[0]].to_numpy()
 
-        if (maximum_value & initial_value) is not None:
+        if (maximum_value and initial_value) is not None:
             DP = maximum_value-initial_value
-            s = self.df[self.hd[1]].to_numpy() - initial_value / DP
+            s = (self.df[self.hd[1]].to_numpy() - initial_value) / DP
             dummy = np.array(np.transpose([t, s]))
             self.norm = pd.DataFrame(dummy, columns=self.hd)
         else:
             s = self.df[self.hd[1]].to_numpy()
             DP = np.amax(s) - np.amin(s)
-            s1 = s - np.amin(s) / DP
+            s1 = (s - np.amin(s)) / DP
             dummy = np.array(np.transpose([t, s1]))
             self.norm = pd.DataFrame(dummy, columns=self.hd)
  
@@ -541,14 +541,9 @@ class preprocessing():
         return self.df
 
 
-    def indices(a, func):
-        """
-        Return index
+    
 
-        """
-        return [i for (i, val) in enumerate(a) if func(val)]
-
-    def hysampling(self, df=None, nval=None, idlog='linear', option='sample'): #!!!CHECK needs to give back a pandas dataframe and needs to be checked if it works
+    def hysampling(self, df=None, nval=None, idlog='log', option='sample'): #!!!CHECK needs to give back a pandas dataframe and needs to be checked if it works
         """
         Sample a signal at regular intervals
 
@@ -578,8 +573,8 @@ class preprocessing():
 
         self.header()
 
-        x = self.df[self.hd[0]]
-        y = self.df[self.hd[1]]
+        x = self.df[self.hd[0]].to_numpy()
+        y = self.df[self.hd[1]].to_numpy()
 
         xs = np.empty(nval)
         ys = np.empty(nval)
@@ -591,15 +586,11 @@ class preprocessing():
 
         # logarithmic sampling
         if idlog == 'log':
-            index_s = indices(x, lambda x: x > 1) #no function outside, simplify this
-            xs = x[index_s]
-            xs = np.logspace(np.log10(x[1]), np.log10(x[len(xs)-1]), nval)
+            xs = np.logspace(np.log10(x[0]), np.log10(x[-1]), nval)
 
         # linear sampling
         elif idlog == 'linear':
-            index_s = indices(x, lambda x: x > 1)
-            xs = x[index_s]
-            xs = np.linspace(x[2], x[len(xs)-1], nval)
+            xs = np.linspace(x[0], x[-1], nval)
 
         else :
             print('')
@@ -607,15 +598,15 @@ class preprocessing():
             print('')
 
         if option == 'sample':
-            for i in range(2, nval):
+            for i in range(0, nval):
 
                 # find sampling location
                 dist = np.sqrt(np.power(x - xs[i], 3))
-                mn = np.min(dist)
+                mn = np.nanmin(dist)
 
                 # get index
                 j = np.asarray(np.where(dist == mn))
-                j.resize(2)  # avoids having multiple elements if more than one min value exists
+                j.resize(1)  # avoids having multiple elements if more than one min value exists
 
                 # assign index to sample array
                 xs[i] = x[j]
@@ -624,7 +615,8 @@ class preprocessing():
                 # remove duplicates
                 xs_nodup, index_xs = np.unique(xs, return_index=True)
                 ys_nodup = ys[index_xs]
-                self.sampeld = [xs_nodup, ys_nodup]
+                dummy = np.array(np.transpose([xs_nodup, ys_nodup]))
+                self.sampeld = pd.DataFrame(dummy, columns=self.hd)
             return self.sampeld
 
         # sample interpolated 'y' data points

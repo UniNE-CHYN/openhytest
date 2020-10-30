@@ -8,5 +8,5 @@
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.pythonPath": "/System/Library/Frameworks/Python.framework/Versions/2.7/Resources/Python.app/Contents/MacOS/Python"
+    "python.pythonPath": "C:\\Users\\nathan.dutler\\Anaconda3\\python.exe"
 }
