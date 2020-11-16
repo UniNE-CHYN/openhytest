@@ -3268,9 +3268,8 @@ class Cooper(Neuzil):
 
     :Description:
     Conputes the normalized drawdown (Delta h / Delta h0) as a function of
-    time with the Cooper et al. (1967) solution for a slug test in a
-    homogeneous confined aquifer. The well is fully penetrating and the
-    slug injection or withdrawal is instantaneous.
+    time with the Cooper et al. (1967) solution for a slug injection or withdrawal test in a
+    homogeneous confined aquifer. The well is fully penetrating.
 
     The dimensionless well bore storage coefficient is:
     Cd = rc^2/(2 rw^2 S)
