@@ -8,5 +8,5 @@
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.pythonPath": "C:\\Users\\nathan.dutler\\Anaconda3\\python.exe"
+    "python.pythonPath": "/Users/nathan/opt/anaconda3/bin/python"
 }

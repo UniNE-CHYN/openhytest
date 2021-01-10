@@ -2869,6 +2869,23 @@ class Slugtests(AnalyticalInterferenceModels):
             rdi = self.rw * 8.37 * self.p[0] ** m
         return rdi
 
+    def Cobs(self):
+        """
+        Calculates the compressibility in the shut-in well after Neuzil (1982)
+
+        :return Cobs: 
+        """
+        if self.dV is None and self.H0 and self.rc is not None:
+            self.dV = np.pi * self.rc ** 2 *self.H0 
+
+        if self.dV and self.Vs and self.dV is not None:
+            self.Ceff = self.dV /self.Vs / self.dp
+
+        return self.Ceff
+        
+            
+
+
 class Hvorslev(Slugtests):
     
     """
@@ -2982,14 +2999,19 @@ class Hvorslev(Slugtests):
 
 class Neuzil(Slugtests):
     """
-    Shut-in pulse or slug test with the Neuzil (1982) solution
+    Shut-in pulse or slug test with the Neuzil (1982) and Cooper et al. (1967) solution
 
     :param rw: radius of the well
+    :param rw: radius of the casing / test tubing
     :param Ceff: effective Compressibility of test section
     :param Vs: Volume of the test section
+    :param L: Length of the test section
+    :param dV: Volume injected during slug test
+    :param dp: Change of pressure from initial pressure to the maximal pulse pressure
+    :param H0: Head change in the test tube 
     :param cD: dimensionless well bore storage coefficient
     :param p: solution vector
-    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown, needs to be normalized beforhand
     :param rho: density of water 1000 kg/m^3
     :param g: gravity 9.81 m/s^2
     :param der: Drawdown derivative from the input data given as dataframe with der.t and der.s
@@ -3005,7 +3027,6 @@ class Neuzil(Slugtests):
     :param ysize: size of the plot in y (default is 6 inch)
     :param Transmissivity: Transmissivity m^2/s
     :param Storativity: Storativtiy -
-    :param Storativity2: Storativtiy -
     :param RadInfluence: Radius of influence m
     :param detailled_p: detailled solution struct from the fit function
     :param fitmethod: see fit function for the various options
@@ -3026,14 +3047,25 @@ class Neuzil(Slugtests):
     Neuzil, C. E. (1982), On conducting the modified ‘Slug’ test in tight 
     formations, Water Resour. Res., 18( 2), 439– 441, doi:10.1029/WR018i002p00439.
 
+    Cooper, H.H.J., J.D. Bredehoeft, and I.S. Papadopulos.
+    1967. Response of a finite-diameter well to an instantaneous charge of
+    water. Water Resources Research 3, no. 1: 263-269. 
+
     """
-    def __init__(self, rw=None, cD=None, df=None, p=None, Ceff=None, Vs=None, inversion_option=None):
+    def __init__(self, rw=None, rc = None
+    cD=None, df=None, p=None, L = None,
+    Ceff=None, Vs=None, dV = None, dP = None, H0 = None, 
+    inversion_option=None):
         self.rw = rw
-        self.cD = cD
+        self.rc = rc
         self.p = p
         self.df = df
+        self.L = L
         self.Ceff = Ceff
         self.Vs = Vs
+        self.dV = dV
+        self.dP = dP
+        self.H0 = H0
         self.der = None
         self.rho = 1000 
         self.g = 9.81
@@ -3066,9 +3098,10 @@ class Neuzil(Slugtests):
         sp = np.sqrt(pd)
         return self.cd * kv(0, sp) / (self.cd * pd * kv(0, sp) +  sp * kv(1, sp))
 
+
     def __call__(self, t):
-        if self.cD is not None:
-            self.p[0] = self.Cd
+        if self.Ceff is not None:
+            self.p[0] = self.Ceff
         else:
             self.cd = self.p[0]
         td = self._dimensionless_time(t)
@@ -3127,7 +3160,7 @@ class Neuzil(Slugtests):
 
     def plot_typecurve(self, cD = 10 ** np.array([0, np.log10(5), np.log10(50), 5, 12, 40]), rD = 1):
         """
-        Type curves of the Neuzil (1982) model
+        Type curves of the Neuzil (1982) and Cooper et al. (1967) model
         """
         td = np.logspace(-3, 3)
         plt.figure(1)
@@ -3231,211 +3264,5 @@ class Neuzil(Slugtests):
         fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} '.format(self.rms), fontsize=14,transform=plt.gcf().transFigure)
 
 
-class Cooper(Neuzil):
-    """
-    Shut-in pulse or slug test with the Cooper (1967) solution
 
-    The model is the same for Neuzil (1982) and Cooper (1967), but the 
-    calculation for transmissvity and storativity is different.
-
-    :param rw: radius of the well
-    :param rc: radius of the casing
-    :param Ceff: effective Compressibility of test section
-    :param Vs: Volume of the test section
-    :param cD: dimensionless well bore storage coefficient
-    :param p: solution vector
-    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
-    :param rho: density of water 1000 kg/m^3
-    :param g: gravity 9.81 m/s^2
-    :param der: Drawdown derivative from the input data given as dataframe with der.t and der.s
-    :param tc: Calculated time
-    :param sc: Calculated draw down
-    :param derc: Calculated flow rate derivative data given as dataframe with derc.t and derc.s
-    :param mr: mean resiuduals from the fit function
-    :param sr: standard derivative from the fit function
-    :param rms: root-mean-square from the fit function
-    :param ttle: title of the plot
-    :param model_label: model label of the plot
-    :param xsize: size of the plot in x (default is 8 inch)
-    :param ysize: size of the plot in y (default is 6 inch)
-    :param Transmissivity: Transmissivity m^2/s
-    :param Storativity: Storativtiy -
-    :param Storativity2: Storativtiy -
-    :param RadInfluence: Radius of influence m
-    :param detailled_p: detailled solution struct from the fit function
-    :param fitmethod: see fit function for the various options
-    :param inversion_option: 'stehfest' or 'dehoog'
-
-    :Description:
-    Conputes the normalized drawdown (Delta h / Delta h0) as a function of
-    time with the Cooper et al. (1967) solution for a slug injection or withdrawal test in a
-    homogeneous confined aquifer. The well is fully penetrating.
-
-    The dimensionless well bore storage coefficient is:
-    Cd = rc^2/(2 rw^2 S)
-
-    The dimensionless time is related as followed:
-    t0 = rc^2 / ( 2T )
-
-    NB: Modified from Cooper et al. (1967) solution for a slug test.
-    Note that in the original publication of Cooper et al.
-    The dimensionless parameter was alpha, it is related to Cd by: alpha = 1 / (2 Cd)
-
-    :Reference:
-    Cooper, H.H.J., J.D. Bredehoeft, and I.S. Papadopulos.
-    1967. Response of a finite-diameter well to an instantaneous charge of
-    water. Water Resources Research 3, no. 1: 263-269. 
-
-    """
-
-    def __init__(self, rw=None, rc=None, cD=None, df=None, p=None, Ceff=None, Vs=None, inversion_option=None):
-        self.rw = rw
-        self.rc = rc
-        self.cD = cD
-        self.p = p
-        self.df = df
-        self.Ceff = Ceff
-        self.Vs = Vs
-        self.der = None
-        self.rho = 1000 
-        self.g = 9.81
-        self.tc = None
-        self.sc = None
-        self.derc = None
-        self.mr = None
-        self.sr = None
-        self.rms = None
-        self.ttle = None
-        self.model_label = None
-        self.xsize = 8
-        self.ysize = 6
-        self.Transmissivity = None
-        self.Storativity = None
-        self.RadInfluence = None
-        self.detailled_p = None
-        self.fitmethod = None
-        self.fitbnds = None
-        self.inversion_option=inversion_option
-        self.fitcoeff = None
-
-    
-    def plot_typecurve(self, cD = 10 ** np.array([0, np.log10(5), np.log10(50), 5, 12, 40]), rD = 1):
-        """
-        Type curves of the Neuzil (1982) model
-        """
-        td = np.logspace(-3, 3)
-        plt.figure(1)
-        ax = plt.gca()
-        for i in range(0, len(cD)):
-            self.cd = cD[i]
-            self._coeff()
-            sd = self._laplace_drawdown(td * cD[i], inversion_option='stehfest') 
-            d = {'t': td, 's': sd}
-            df = pda.DataFrame(data=d)
-            dummy = ht.preprocessing(df=df)
-            dummy.ldiff()
-            color = next(ax._get_lines.prop_cycler)['color']
-            ax.semilogx(td, sd, '-', color=color, label= 'C_D = {}'.format(cD[i]))
-            ax.semilogx(dummy.der.t, np.abs(dummy.der.s), ':', color=color)
-        plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
-        plt.ylabel('$s_D = 2*pi*T*s/Q$')
-        plt.xlim((1e-3, 1e3))
-        plt.ylim((0, 1e0))
-        plt.grid('True')
-        plt.legend()
-        plt.show()     
-        
-        plt.figure(2)
-        ax = plt.gca()
-        for i in range(0, len(cD)):
-            self.cd = cD[i]
-            self._coeff()
-            sd = self._laplace_drawdown(
-                td * cD[i], inversion_option='stehfest')
-            d = {'t': td, 's': sd}
-            df = pda.DataFrame(data=d)
-            dummy = ht.preprocessing(df=df)
-            dummy.ldiff()
-            color = next(ax._get_lines.prop_cycler)['color']
-            ax.loglog(td, sd, '-', color=color,
-                        label='C_D = {}'.format(cD[i]))
-            ax.loglog(dummy.der.t, np.abs(dummy.der.s), ':', color=color)
-        plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
-        plt.ylabel('$s_D = 2*pi*T*s/Q$')
-        plt.xlim((1e-3, 1e3))
-        plt.ylim((1e-3, 1e0))
-        plt.grid('True')
-        plt.legend()
-        plt.show()
-
-
-    def rpt(self, fitmethod='lm', ttle='Cooper (1967)', author='Author', filetype='pdf',
-                reptext='Report_cop', p=None):
-        """
-        Calculates the solution and reports graphically the results of the slug test
-
-        :param option_fit: 'lm' or 'trf' or 'dogbox'
-        :param ttle: Title of the figure
-        :param author: Author name
-        :param filetype: 'pdf', 'png' or 'svg'
-        :param reptext: savefig name
-        """
-        if fitmethod is not None:
-            self.fitmethod = fitmethod
-        else:
-            self.fitmethod = 'lm'  # set Default
-
-        if p is not None:
-            self.p = p
-            self.fitmethod = 'nofit'
-        else:
-            self.inversion_option = 'stehfest'
-
-        self._coeff()
-        self.fit()
-
-        self.Transmissivity = 0.5 * self.rc ** 2/ self.p[1]
-        self.Storativity = 0.5 / self.p[0]*(self.rc/self.rw) ** 2
-
-
-        self.model_label = 'Cooper (1967)'
-        test = ht.preprocessing(df=self.df)
-        self.der = test.ldiffs()
-
-        self.ttle = ttle
-        fig = log_plot_norm(self)
-
-        fig.text(0.125, 1, author, fontsize=14,
-                 transform=plt.gcf().transFigure)
-        fig.text(0.125, 0.95, ttle, fontsize=14,
-                 transform=plt.gcf().transFigure)
-
-        fig.text(1, 0.85, 'Test Data : ', fontsize=14,
-                 transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.8, 'Well radius : {:0.4g} m '.format(
-            self.rw), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.75, 'Casing radius : {:0.4g} m '.format(
-            self.rc), fontsize=14, transform=plt.gcf().transFigure)    
-
-        fig.text(1, 0.6, 'Hydraulic parameters :',
-                 fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(
-            self.Transmissivity), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.5, 'Storativity Sw : {:3.2e} '.format(
-            self.Storativity), fontsize=14, transform=plt.gcf().transFigure)
-
-        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14,
-                 transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.35, 'Wellbore storage cD : {:0.4g} '.format(
-            self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} '.format(
-            self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.25, 'mean residual : {:0.2g} '.format(
-            self.mr), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.2, '2 standard deviation : {:0.2g} '.format(
-            self.sr), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} '.format(
-            self.rms), fontsize=14, transform=plt.gcf().transFigure)
-
-        
-        
+class BarkerBlack(Slugtests):
