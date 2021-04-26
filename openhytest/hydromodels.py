@@ -269,8 +269,8 @@ class AnalyticalInterferenceModels():
 
         Parameters
         ----------
-        Fp : ???
-            ???
+        Fp : function handle
+            Function which will be used to be evaluated
         td : float
             dimensionless time
 
@@ -309,12 +309,26 @@ class AnalyticalInterferenceModels():
         Modification:
         The time vector (td) is split in segments of equal magnitude which are
         inverted individually. This gives a better overall accuracy.
+
+        Parameters
+        ----------
+        Fp : function handle
+            Function which will be used to be evaluated
+        td : float
+            dimensionless time
+        alpha : int
+            default is 0 
+        tol : float
+            accuracy tolerance, default is 1e-9
+        M : int
+            number of inversion points, default is 20 
+
         
         Returns
         -------
         self.inversion_s : float
             the calculated drawdown in time domain
-        f : float
+        s : float
             the calculated drawdown in time domain
 
         Ref.
@@ -336,7 +350,7 @@ class AnalyticalInterferenceModels():
         iminlogallt = np.int(iminlogall)
         imaxlogallt = np.int(imaxlogall)
 
-        f = []
+        s = []
 
         for ilogt in range(iminlogallt, imaxlogallt+1):
             t = td[((logallt>=ilogt) & (logallt<ilogt+1))]
@@ -383,11 +397,11 @@ class AnalyticalInterferenceModels():
                 A[2*M+1,:] = A[2*M,:] + R2Mz * A[2*M-1,:]
                 B[2*M+1,:] = B[2*M,:] + R2Mz * B[2*M-1,:]
                 fpiece = np.array(1/T * np.exp(gamma * t) * np.real(A[2*M+1,:] / B[2*M+1,:]))
-                f = np.append(f, np.hstack(fpiece))
+                s = np.append(s, np.hstack(fpiece))
 
-        self.inversion_s = f    
+        self.inversion_s = s    
         
-        return f
+        return s
 
     def __call__(self, t):
         print("Warning - undefined")
