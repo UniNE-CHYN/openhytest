@@ -3254,19 +3254,6 @@ class Hvorslev(Slugtests):
         plt.grid('True')
         plt.legend()
         plt.show()
-        
-    
-    def rpt(self, fitmethod='trf', ttle='Hvorslev', author='openhytest developer', filetype='pdf',
-            reptext='Report_hvorslev'):
-        """
-        Calculates the solution and reports graphically the results of the slug test
-
-        :param option_fit: 'lm' or 'trf' or 'dogbox'
-        :param ttle: Title of the figure
-        :param author: Author name
-        :param filetype: 'pdf', 'png' or 'svg'
-        :param reptext: savefig name
-        """   
 
 
 class Neuzil(Slugtests):
