@@ -25,12 +25,13 @@ Released under the MIT license:
 import numpy as np
 from scipy.special import expn as E1
 from scipy.special import gamma, gammaincc, factorial, kv
+from scipy.special import airy
 import matplotlib.pyplot as plt
 from scipy.optimize import least_squares, Bounds
 from scipy.interpolate import interp1d
 import mpmath as mp
-import openhytest as ht
 import pandas as pda
+import openhytest as ht
 
 
 # Utilities
@@ -3716,37 +3717,100 @@ class Cooper(Neuzil):
 
 
 class CDMHeat(AnalyticalInterferenceModels):
+    """
+    Heat tracer test implementation 
+    The solution accounts for ....
 
-    def dimesionless_laplace(self, pd):
+    :param rw: radius of the injection well
+    :param r: radius between injection and observation well 
+    :param rID: rw/r 
+    :param Q: flow rate m^3/s
+    :param H: aperture of fracture m
+    :param alpha: dispersivity m
+    :param Dm: thermal diffusivity of matrix m^2/s
+    :param cm: specfic heat matrix J/K/kg
+    :param rhom: density of rock mass kg/m^3
+    :param p: solution vector
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param der: Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated draw down
+    :param derc: Calculated flow rate derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize: size of the plot in y (default is 6 inch)
+    :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param inversion_option: 'stehfest' or 'dehoog'   
+    """
+
+    def __init__(self, rw=1, r=10, Q=None, H=None, cm=None, rhom=None, alpha=None, Dm=None, df=None, p=None, inversion_option=None):
+        self.rw = rw
+        self.r = r
+        self.rID = rw / r
+        self.Q = Q
+        self.H = H
+        self.alpha = alpha
+        self.cm = cm
+        self.rhom = rhom
+        self.Dm = Dm
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
+        self.inversion_M = None
+
+    def __call__(self, t):
+        s = self._laplace_drawdown(t)
+        return s
+
+    def dimensionless_laplace(self, pd):
         p = (1+self.sigma) / np.sqrt(pd*self.tr) * self.tb * pd
-        sigmaf = (2.*p)/(self.Pe^2*(1-self.rID^2))
-        y = self.rID * self.Pe + 1/(4*sigmaf)
-        yI = self.Pe + 1/(4*sigmaf)
-        ai, aip = airy(sigmaf**(1/3)*y)
-        aiI = airy(sigmaf**(1/3)*yI)
-        return (np.exp(y-yI)*ai) / (0.5 * aiI - sigmaf ** (1/3) * aip)
+        sigmaf = (2.*p)/(self.Pe**2*(1-self.rID**2))
+        yI = self.rID * self.Pe + 1/(4*sigmaf)
+        y = self.Pe + 1/(4*sigmaf)
+        ai, aip, bi, bip = airy(sigmaf**(1/3)*y)
+        aiI, aiP, biI, biP = airy(sigmaf**(1/3)*yI)
+        return ((np.exp(y-yI)/2)*ai) / (0.5 * aiI - sigmaf ** (1/3) * aiP)
 
     def plot_typecurve(self):
-        td = np.logspace(-1, 6)
+        td = np.logspace(-1, 7, 1000)
         self.tb = 200 #advective time
-        self.tr = 0.001
-        self.Pe = 1 #Peclet number
+        self.tr = 0.0063
+        Pe = [1, 10, 100] #Peclet number
         self.rID = 0.01
+        self.sigma = 1
         fig, ax = plt.subplots(1,1)
-        sd = self._laplace_drawdown(td, inversion_option='dehoog')
-        d = {'t': td, 's': sd}
-        df = pda.DataFrame(data=d)
-        dummy = ht.preprocessing(df=df)
-        dummy.ldiff()
-        color = next(ax._get_lines.prop_cycler)['color']
-        ax.plot(td, sd, '-', color=color)
-        ax.plot(dummy.der.t, dummy.der.s, ':', color=color)
+        self._coeff()
+        for i in range(0, len(Pe)):
+            self.Pe = Pe[i]
+            sd = abs(self._laplace_drawdown(td, inversion_option='stehfest'))
+            color = next(ax._get_lines.prop_cycler)['color']
+            ax.plot(td, sd, '-', color=color, label= 'Pe = {}'.format(Pe[i]))
+            print(sd)
         plt.xlabel('$t_D$')
         plt.ylabel('$C_D$')
-        plt.title('test CMD')
-        plt.legend()
-        plt.xlim((0, 1e-6))
-        plt.ylim((1e-1, 1e6))
+        plt.title('CMD Typecurves')
+        plt.xlim((0, 1e7))
+        plt.ylim((0, 4e-6))
         plt.grid('True')
         plt.legend()
         plt.show()
