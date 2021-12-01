@@ -1,7 +1,5 @@
 # openhytest
-Open source package for well test analysis.
-
-The aim is to create a general, open-source environment for well test interpretation in python, inspired by the functionalities available in hytool.
+Open source package for well test analysis, inspired by the functionalities available in hytool.
 
 The package is structured into three modules:
 - Pre-processing functions and utilities handling data preparation
