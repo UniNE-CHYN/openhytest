@@ -6,4 +6,4 @@ openhytest is currently structured into three modules:
 - A library of flow models and analytic solutions, following an oriented-object programming structure
 - Post-processing functions for results analysis, statistical summary and reporting.
 
-Solutions for tracer tests may be added in the future.
+Analytic solutions for tracer tests may be added in the future.
