@@ -1,5 +1,5 @@
-#    Copyright (C) 2020 by
-#    Nathan Dutler <nathan.dutler@unine.ch>
+#    Copyright (C) 2021 by
+#    Nathan Dutler <nathan.dutler@exquiro.ch>
 #    Philippe Renard <philippe.renard@unine.ch>
 #    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 #    All rights reserved.
@@ -14,8 +14,8 @@ preprocessing, resampling, filtering and visualization.
 License
 -------
 Released under the MIT license:
-   Copyright (C) 2020 openhytest Developers
-   Nathan Dutler <nathan.dutlern@unine.ch>
+   Copyright (C) 2021 openhytest Developers
+   Nathan Dutler <nathan.dutlern@exquiro.ch>
    Philippe Renard <philippe.renard@unine.ch>
    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 """
@@ -24,6 +24,13 @@ import numpy as np
 import scipy.interpolate as interp2d
 import matplotlib.pyplot as plt
 from scipy import signal
+
+
+import plotly.graph_objects as go
+import plotly.express as px
+#from plotly.offline import init_notebook_mode
+#init_notebook_mode(connected=True)
+
 
 # *************************************************************
 # ------------------Public functions---------------------------
@@ -108,13 +115,43 @@ class preprocessing():
 
         self.ldiff()
 
-        f, ax1 = plt.subplots()
-        ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
-        ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('Drawdown and log derivative')
-        ax1.grid('True')
-        ax1.legend(['s', 'd'])
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.df[self.hd[0]], 
+                y=self.df[self.hd[1]],
+                marker=dict(
+                    color='Red',
+                    size=8,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    ) 
+                ), 
+                name='Drawdown'))
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.der[self.hd[0]], 
+                y=self.der[self.hd[1]],
+                marker=dict(
+                    color='Blue',
+                    size=6,
+                    symbol=203,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    )
+                ), 
+                name='Derivative')) 
+        fig.update_layout(xaxis_title="Time [s]", yaxis_title="p and p'")
+        fig.update_xaxes(type="log")
+        fig.update_yaxes(type="log") 
+        fig.show()
+
 
     def ldiffs(self, df=None, npoints=None):
         """
@@ -174,13 +211,42 @@ class preprocessing():
 
         self.ldiffs()
 
-        f, ax1 = plt.subplots()
-        ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
-        ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('Drawdown and log derivative')
-        ax1.grid('True')
-        ax1.legend(['s', 'd'])
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.df[self.hd[0]], 
+                y=self.df[self.hd[1]],
+                marker=dict(
+                    color='Red',
+                    size=8,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    ) 
+                ), 
+                name='Drawdown'))
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.der[self.hd[0]], 
+                y=self.der[self.hd[1]],
+                marker=dict(
+                    color='Blue',
+                    size=6,
+                    symbol=203,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    )
+                ), 
+                name='Derivative')) 
+        fig.update_layout(xaxis_title="Time [s]", yaxis_title="p and p'")
+        fig.update_xaxes(type="log")
+        fig.update_yaxes(type="log") 
+        fig.show()
 
 
     def ldiffb(self, df=None, bourdetder=None):
@@ -240,13 +306,42 @@ class preprocessing():
 
         self.ldiffb()
 
-        f, ax1 = plt.subplots()
-        ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
-        ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('Drawdown and log derivative')
-        ax1.grid('True')
-        ax1.legend(['s', 'd'])
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.df[self.hd[0]], 
+                y=self.df[self.hd[1]],
+                marker=dict(
+                    color='Red',
+                    size=8,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    ) 
+                ), 
+                name='Drawdown'))
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.der[self.hd[0]], 
+                y=self.der[self.hd[1]],
+                marker=dict(
+                    color='Blue',
+                    size=6,
+                    symbol=203,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    )
+                ), 
+                name='Derivative')) 
+        fig.update_layout(xaxis_title="Time [s]", yaxis_title="p and p'")
+        fig.update_xaxes(type="log")
+        fig.update_yaxes(type="log") 
+        fig.show()
 
 
     def ldiffh(self, df=None):
@@ -313,13 +408,43 @@ class preprocessing():
 
         self.ldiffh()
 
-        f, ax1 = plt.subplots()
-        ax1.loglog(self.df[self.hd[0]], self.df[self.hd[1]], marker='o', linestyle='')
-        ax1.loglog(self.der[self.hd[0]], self.der[self.hd[1]], marker='x', linestyle='', color='r')
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('Drawdown and log derivative')
-        ax1.grid('True')
-        ax1.legend(['s', 'd'])
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.df[self.hd[0]], 
+                y=self.df[self.hd[1]],
+                marker=dict(
+                    color='Red',
+                    size=8,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    ) 
+                ), 
+                name='Drawdown'))
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.der[self.hd[0]], 
+                y=self.der[self.hd[1]],
+                marker=dict(
+                    color='Blue',
+                    size=6,
+                    symbol=203,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    )
+                ), 
+                name='Derivative')) 
+        fig.update_layout(xaxis_title="Time [s]", yaxis_title="p and p'")
+        fig.update_xaxes(type="log")
+        fig.update_yaxes(type="log") 
+        fig.show()
+
 
     def diagnostic(self, df=None, method=None):
         """
@@ -344,6 +469,8 @@ class preprocessing():
 
             'horner'  for the logarithmic derivative with Horne formula
 
+            'norm' for data presentation of slug or pulse tests with normalised pressure
+
         :return: diagnostic plot inclusive legend
         """
         if df is not None:
@@ -360,6 +487,8 @@ class preprocessing():
             self.ldiffb_plot()
         elif self.method == 'horner':
             self.ldiffh_plot()
+        elif self.method == 'norm':
+            self.norm_plot()
         else :
             print('ERROR: diagnostic(df,method)')
             print(' The method selected for log-derivative calculation is unknown')
@@ -413,7 +542,7 @@ class preprocessing():
 
         return self.df
     
-    def hynorm(self, df=None, maximum_value=None, initial_value=None): #CHECK if it works properly
+    def hynorm(self, df=None, maximum_value=None, initial_value=None): 
         """
         hynorm normalizes the drawdown/recovery curve to the interval between [0, 1]
         It is most often used for pulse test data sets.
@@ -453,6 +582,57 @@ class preprocessing():
  
         return self.norm
 
+
+    def norm_plot(self, df=None, maximum_value=None, initial_value=None):
+        """
+        norm_plot creates the plot with normalised pressure using hynorm for normalisation of pressure
+
+        :param df : expects two vectors with t and s
+
+        :returns : plot inclusive legend
+        """
+        if df is not None:
+            self.df = df
+
+        self.hynorm(maximum_value=maximum_value, initial_value=initial_value)
+        self.ldiffs()
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.df[self.hd[0]], 
+                y=self.df[self.hd[1]],
+                marker=dict(
+                    color='Red',
+                    size=8,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    ) 
+                ), 
+                name='Drawdown'))
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.der[self.hd[0]], 
+                y=np.abs(self.der[self.hd[1]].to_numpy()),
+                marker=dict(
+                    color='Blue',
+                    size=6,
+                    symbol=203,
+                    line=dict(
+                        color='Black',
+                        width=1
+                    )
+                ), 
+                name='Derivative')) 
+        fig.update_layout(xaxis_title="Time [s]", yaxis_title="Normalised pressure")
+        fig.update_xaxes(type="log")
+        fig.update_yaxes(range=[0, 1])
+        fig.show()
 
 
     def hyfilter(self, df=None, typefilter=None, p=None, win_types=None):

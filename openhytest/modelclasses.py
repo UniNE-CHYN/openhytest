@@ -1,5 +1,5 @@
-#    Copyright (C) 2020 by
-#    Nathan Dutler <nathan.dutler@unine.ch>
+#    Copyright (C) 2021 by
+#    Nathan Dutler <nathan.dutler@exquiro.ch>
 #    Philippe Renard <philippe.renard@unine.ch>
 #    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 #    All rights reserved.
@@ -15,7 +15,7 @@ The different analytical model classes are implemented to fit the observations g
 License
 ---------
 Released under the MIT license:
-   Copyright (C) 2019 openhytest Developers
+   Copyright (C) 2021 openhytest Developers
    Nathan Dutler <nathan.dutlern@unine.ch>
    Philippe Renard <philippe.renard@unine.ch>
    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
@@ -32,7 +32,6 @@ from scipy.interpolate import interp1d
 import mpmath as mp
 import pandas as pda
 import openhytest as ht
-
 
 # Utilities
 
@@ -224,7 +223,7 @@ class AnalyticalInterferenceModels():
         return sd
 
 
-    def _coeff(self, fitcoeff=12):
+    def _coeff(self, fitcoeff=16):
         """
         Calculates the coefficent for the stehfest method.
 
@@ -233,7 +232,7 @@ class AnalyticalInterferenceModels():
         :return self.inversion_M: number of coefficients for inversion
         :return V: gives the inversion coefficent for stehfest
         """
-        if fitcoeff != 12:
+        if fitcoeff != 16:
             M = np.int(self.fitcoeff)
         else:
             M = fitcoeff # Default
@@ -253,7 +252,7 @@ class AnalyticalInterferenceModels():
 
     def stehfest(self, Fp, td):
         """
-        Numerical Laplace inversion with the Stefhest method
+        Numerical Laplace inversion with the Stehfest method
 
         :return self.inversion_s: the calculated drawdown in time domain
         :return s: the calculated drawdown in time domain
@@ -2581,13 +2580,15 @@ class StorativityInterferenceModels(AnalyticalInterferenceModels):
         figt = plt.figure()
         ax1 = figt.add_subplot(211)
         ax2 = figt.add_subplot(212)
-        ax1.loglog(self.df.t, self.__call__(self.df.t), self.df.t, self.df.s, 'o')
+        ax1.loglog(self.df.t.to_numpy(), self.__call__(
+            self.df.t.to_numpy()), self.df.t.to_numpy(), self.df.s.to_numpy(), 'o')
         ax1.set_ylabel('s')
         ax1.grid()
         ax1.minorticks_on()
         ax1.grid(which='major', linestyle='--', linewidth='0.5', color='black')
         ax1.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
-        ax2.semilogx(self.df.t, self.__call__(self.df.t), self.df.t, self.df.s, 'o')
+        ax2.semilogx(self.df.t.to_numpy(), self.__call__(
+            self.df.t.to_numpy()), self.df.t.to_numpy(), self.df.s.to_numpy(), 'o')
         ax2.set_ylabel('s')
         ax2.set_xlabel('t')
         ax2.grid()
@@ -3304,7 +3305,7 @@ class Neuzil(Slugtests):
     formations, Water Resour. Res., 18( 2), 439– 441, doi:10.1029/WR018i002p00439.
 
     """
-    def __init__(self, rw=None, cD=None, df=None, p=None, Ceff=None, Vs=None, inversion_option=None):
+    def __init__(self, rw=None, cD=None, df=None, p=None, Ceff=None, Vs=None, inversion_option='stehfest'):
         self.rw = rw
         self.cD = cD
         self.p = p
@@ -3478,7 +3479,7 @@ class Neuzil(Slugtests):
 
         self.Transmissivity = self.T()
         self.Storativity = self.S()
-        self.RadInfluence = self.RI_Guyonnet()[0]
+        self.RadInfluence = self.RI_Guyonnet()
 
         self.model_label = 'Neuzil (1982)'
         test = ht.preprocessing(df=self.df)
@@ -3498,7 +3499,7 @@ class Neuzil(Slugtests):
         fig.text(1, 0.6, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,transform=plt.gcf().transFigure)
         fig.text(1.05, 0.5, 'Well bore storage Sw : {:3.2e} '.format(self.Storativity), fontsize = 14,transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.45, 'Radius of investigation: {:3.2e} m'.format(self.RadInfluence), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.45, 'Radius of investigation: {:3.2e} m'.format(self.RadInfluence[0]), fontsize=14, transform=plt.gcf().transFigure)
 
         fig.text(1, 0.4, 'Fitting parameters :',fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.35, 'Wellbore storage cD : {:0.4g} '.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
