@@ -1,13 +1,15 @@
 # openhytest
-## Introduction
+## General Info
 Package for well test analysis, inspired by the functionalities available in [hytool](https://github.com/UniNE-CHYN/hytool).
 
-openhytest is currently structured into three modules:
+## Features
 - Pre-processing functions and utilities handling data preparation
 - A library of flow models and analytic solutions, following an oriented-object programming structure
 - Post-processing functions for results analysis, statistical summary and reporting.
 
-## List of models currently implemented
+## Installation
+
+## Models currently implemented
 - Theis, Radial flow (1935)
 - Theis, Multirate test (1935)?
 - Warren and Root, Double porosity (1936)
