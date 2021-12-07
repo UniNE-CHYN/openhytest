@@ -1,5 +1,5 @@
 # openhytest
-Open source package for well test analysis, inspired by the functionalities available in hytool.
+Package for well test analysis, inspired by the functionalities available in hytool.
 
 openhytest is currently structured into three modules:
 - Pre-processing functions and utilities handling data preparation
