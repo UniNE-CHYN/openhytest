@@ -1,5 +1,5 @@
 # openhytest
-Package for well test analysis, inspired by the functionalities available in [hytool](https://github.com/UniNE-CHYN/hytool)
+Package for well test analysis, inspired by the functionalities available in [hytool](https://github.com/UniNE-CHYN/hytool).
 
 openhytest is currently structured into three modules:
 - Pre-processing functions and utilities handling data preparation
