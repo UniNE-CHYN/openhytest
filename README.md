@@ -6,4 +6,19 @@ openhytest is currently structured into three modules:
 - A library of flow models and analytic solutions, following an oriented-object programming structure
 - Post-processing functions for results analysis, statistical summary and reporting.
 
-Analytic solutions for tracer tests may be added in the future.
+List of models currently implemented:
+- Theis (1935)
+- Theis, Multirate test (1935)?
+- Warren and Root (1936)
+- Theis, No flow boundary (19??)
+- Theis, Constant head boundary (1941)
+- Hantush-Jacob (1955)
+- Jacob-Lohman (1952)
+- Hvorslev (1957)
+- Boulton, Delayed yield (1963)
+- Papadopoulos and Cooper (1967)
+- Cooper, Bredehoeft and Papadopoulos, Shut-in pulse or slug test (1967) 
+- Agarwal (1970)
+- Neuzil, Modified pulse test (1982)
+- Barker, Generalized radial flow (1988)
+- 
