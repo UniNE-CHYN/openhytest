@@ -227,7 +227,7 @@ class AnalyticalInterferenceModels():
         """
         Calculates the coefficent for the stehfest method.
 
-        :param fitcoeff: number of coefficients for inversion (Default is 12)
+        :param fitcoeff: number of coefficients for inversion (Default is 16)
         :return self.inversion_V: gives the inversion coefficent for stehfest
         :return self.inversion_M: number of coefficients for inversion
         :return V: gives the inversion coefficent for stehfest

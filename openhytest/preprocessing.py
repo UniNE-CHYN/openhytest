@@ -21,11 +21,8 @@ Released under the MIT license:
 """
 import pandas as pd
 import numpy as np
-import scipy.interpolate as interp2d
-import matplotlib.pyplot as plt
+import scipy.interpolate as ipo
 from scipy import signal
-
-
 import plotly.graph_objects as go
 import plotly.express as px
 #from plotly.offline import init_notebook_mode
@@ -650,7 +647,7 @@ class preprocessing():
         'butter3' for the Butterworth filter with filter order 2 or
         'butter5' for the Butterworth filter with filter order 4.
         The Butterworth filters high frequency components in the signal.
-        It is very sensitive of outliers.Therefore the Butterworth filter is
+        It is very sensitive of outliers. Therefore the Butterworth filter is
         more appropriate for noisy signals without outliers, the moving average is
         recommended to filter very irregular signals.
 
@@ -672,11 +669,10 @@ class preprocessing():
                 weighting window: boxcar, triang, blackman, hamming
                 (see pandas DF rolling command for more options and information)
 
-        :return df: pandas series is gives back with new df traces named 'name'+'_filt' with the 'name' given.
+        :return df: pandas series is gives back with the name self.filtered
 
         :examples:
-            >>>  self.hyfilter()
-            >>>  self.hyfilter(typefilter='moving', p=16)
+            >>>  self.hyfilter(typefilter='moving', p=13)
             >>>  self.hyfilter(typefilter='moving', p=8, win_types='triang')
             >>>  self.hyfilter(typefilter='butter3', p=10)
         """
@@ -699,22 +695,31 @@ class preprocessing():
                 self.p = 11
             elif self.p % 2 == 0:
                 print('ERROR: Make sure, that the size of the moving filter has an odd number.')
-            for i in range(1, len(self.hd)):
-                self.df[self.hd[i]+'_filt'] = self.df.iloc[:,i].rolling(window=self.p, center=True, win_type=self.win_types).mean()
+            xs = self.df[self.hd[0]]
+            ys = self.df.iloc[:,1].rolling(window=self.p, center=True, win_type=self.win_types).mean()
+            dummy = np.array(np.transpose([xs, ys]))
+            self.filtered = pd.DataFrame(dummy, columns=self.hd)
+            return self.filtered
         elif self.typefilter == 'butter3':
-            ts = self.df[self.hd[1]][0]-self.df[self.hd[0]][1]
+            xs = self.df[self.hd[0]]
+            ts = self.df[self.hd[0]][1]-self.df[self.hd[0]][0]
             fs = 2/ts
             fc = 1.5*fs/self.p
             b, a = signal.butter(3, fc, 'low')
-            for i in range(1, len(self.hd)):
-                self.df[self.hd[i]+'_filt'] = signal.filtfilt(b, a, self.df[self.df[i]])
+            ys = signal.filtfilt(b, a, self.df[self.hd[1]])
+            dummy = np.array(np.transpose([xs, ys]))
+            self.filtered = pd.DataFrame(dummy, columns=self.hd)
+            return self.filtered
         elif self.typefilter == 'butter5':
-            ts = self.df[self.hd[1]][0]-self.df[self.hd[0]][1]
+            xs = self.df[self.hd[0]]
+            ts = self.df[self.hd[0]][1]-self.df[self.hd[0]][0]
             fs = 2/ts
             fc = 1.5*fs/p
             b, a = signal.butter(5, fc, 'low')
-            for i in range(1, len(self.hd)):
-                self.df[self.hd[i]+'_filt'] = signal.filtfilt(b, a, self.df[self.df[i]])
+            ys = signal.filtfilt(b, a, self.df[self.hd[1]])
+            dummy = np.array(np.transpose([xs, ys]))
+            self.filtered = pd.DataFrame(dummy, columns=self.hd)
+            return self.filtered
         else:
             print('ERROR: The function hyfilter does not know the filter type.')
 
@@ -723,7 +728,7 @@ class preprocessing():
 
     
 
-    def hysampling(self, df=None, nval=None, idlog='log', option='sample'): #!!!CHECK needs to give back a pandas dataframe and needs to be checked if it works
+    def hysampling(self, df=None, nval=None, idlog='log', option='interp1Dlin'):
         """
         Sample a signal at regular intervals
 
@@ -739,8 +744,10 @@ class preprocessing():
 
             option: allows to define if the points must be interpolated
                 option = 'sample' = Default value
-                                  = only points from the data set are taken
-                option = 'interp' = creates points by interpolation
+                                  = only points from the data set are taken, can lead to smaller number of given nval points
+                option = 'interp1Dlin' = creates points by linear spline interpolation
+                option = 'interp1Dsquare' = creates points by quadratic interpolation
+                option = 'interp1Dcubic' = creates points by cubic interpolation
                 
         :return sampeld: gives the resampled time, t interpolated drawdown, s 
 
@@ -758,30 +765,32 @@ class preprocessing():
 
         xs = np.empty(nval)
         ys = np.empty(nval)
-
-        if nval > len(x):
-            print('')
-            print('SYNTAX ERROR: nval is larger than the number of data points')
-            print('')
+            
 
         # logarithmic sampling
-        if idlog == 'log':
+        if idlog == 'log': #WORKS
             xs = np.logspace(np.log10(x[0]), np.log10(x[-1]), nval)
 
         # linear sampling
-        elif idlog == 'linear':
+        elif idlog == 'linear': #WORKS
             xs = np.linspace(x[0], x[-1], nval)
 
         else :
             print('')
-            print('SYNTAX ERROR: hysampling: the 5th parameter (idlog) is incorrect.')
+            print('SYNTAX ERROR: hysampling: the idlog is incorrect.')
             print('')
 
-        if option == 'sample':
+        if option == 'sample': 
+            
+            if nval > len(x):
+                print('')
+                print('SYNTAX ERROR: nval is larger than the number of data points')
+                print('')
+
             for i in range(0, nval):
 
                 # find sampling location
-                dist = np.sqrt(np.power(x - xs[i], 3))
+                dist = np.sqrt(np.power(x - xs[i], 2)) # I think this should be 2 and not 3
                 mn = np.nanmin(dist)
 
                 # get index
@@ -800,16 +809,31 @@ class preprocessing():
             return self.sampeld
 
         # sample interpolated 'y' data points
-        elif option == 'interp':
-            f_interp = interp2d(x, y, 'linear', fill_value='extrapolate')
+        elif option == 'interp1Dlin':
+            f_interp = ipo.interp1d(x, y, kind='slinear', fill_value="extrapolate")
             ys = f_interp(xs)
-            ys = np.asarray(xs, dtype='float')
-            self.sampeld = [xs, ys] 
+            ys = np.asarray(ys, dtype='float')
+            dummy = np.array(np.transpose([xs, ys]))
+            self.sampeld = pd.DataFrame(dummy, columns=self.hd)
+            return self.sampeld
+        elif option == 'interp1Dsquare':
+            f_interp = ipo.interp1d(x, y, kind='quadratic', fill_value="extrapolate")
+            ys = f_interp(xs)
+            ys = np.asarray(ys, dtype='float')
+            dummy = np.array(np.transpose([xs, ys]))
+            self.sampeld = pd.DataFrame(dummy, columns=self.hd)
+            return self.sampeld
+        elif option == 'interp1Dcubic':
+            f_interp = ipo.interp1d(x, y, kind='cubic', fill_value="extrapolate")
+            ys = f_interp(xs)
+            ys = np.asarray(ys, dtype='float')
+            dummy = np.array(np.transpose([xs, ys]))
+            self.sampeld = pd.DataFrame(dummy, columns=self.hd)
             return self.sampeld
 
         else:
             print('')
-            print('SYNTAX ERROR: hysampling the 6th parameter (option) is incorrect.')
+            print('SYNTAX ERROR: hysampling the parameter option is incorrect.')
             print('')
             return None
         
