@@ -1,4 +1,4 @@
-#    Copyright (C) 2021 by
+#    Copyright (C) 2022 by
 #    Nathan Dutler <nathan.dutler@exquiro.ch>
 #    Philippe Renard <philippe.renard@unine.ch>
 #    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
@@ -16,7 +16,7 @@ License
 ---------
 Released under the MIT license:
    Copyright (C) 2021 openhytest Developers
-   Nathan Dutler <nathan.dutlern@unine.ch>
+   Nathan Dutler <nathan.dutlern@exqurio.ch>
    Philippe Renard <philippe.renard@unine.ch>
    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 
@@ -32,6 +32,9 @@ from scipy.interpolate import interp1d
 import mpmath as mp
 import pandas as pda
 import openhytest as ht
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
 
 # Utilities
 
@@ -367,7 +370,7 @@ class AnalyticalInterferenceModels():
         return 2.2458394 * self.T() * self.p[1] / self.r ** 2
 
 
-    def trial(self, p=None, inversion_option=None):  # loglog included: derivatives are missing at the moment.
+    def trial(self, p=None, inversion_option=None): 
         """
         Display data and calculated solution together
 
@@ -387,28 +390,135 @@ class AnalyticalInterferenceModels():
 
         if p is not None:
             p = self.p
+        
+        tcalc_plot = np.logspace(np.log10(self.df.t.iloc[0]), np.log10(self.df.t.iloc[-1]),100)
+        ycalc_plot = self.__call__(tcalc_plot)
+        
+        d = {'t': self.df.t, 's': self.df.s}
+        df = pda.DataFrame(data=d)
+        dummy = ht.preprocessing(df=df, npoints=50)
+        der = dummy.ldiffs()
 
-        figt = plt.figure()
-        ax1 = figt.add_subplot(211)
-        ax2 = figt.add_subplot(212)
-        ax1.loglog(self.df.t.to_numpy(), self.__call__(self.df.t.to_numpy()), self.df.t.to_numpy(), self.df.s.to_numpy(), 'o')
-        ax1.set_ylabel('s')
-        ax1.grid()
-        ax1.minorticks_on()
-        ax1.grid(which='major', linestyle='--', linewidth='0.5', color='black')
-        ax1.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
-        ax2.semilogx(self.df.t.to_numpy(), self.__call__(self.df.t.to_numpy()), self.df.t.to_numpy(), self.df.s.to_numpy(), 'o')
-        ax2.set_ylabel('s')
-        ax2.set_xlabel('t')
-        ax2.grid()
-        ax2.minorticks_on()
-        ax2.grid(which='major', linestyle='--', linewidth='0.5', color='black')
-        ax2.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
-        plt.show()
+        dd = {'t': tcalc_plot, 's': ycalc_plot}
+        df = pda.DataFrame(data=dd)
+        test = ht.preprocessing(df=df, npoints=50)
+        derm = test.ldiffs()
+        
+        fig = make_subplots(rows=2, cols=1)
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.df.t, 
+                y=self.df.s,
+                name="Drawdown",
+                marker=dict(
+                    color='Red',
+                    size=8,                
+                    line=dict(
+                        color='Black',
+                        width=1))
+                        ),
+            row=1, col=1)        
+        fig.add_trace(
+            go.Scatter(
+                mode='lines+markers ',
+                x=tcalc_plot, 
+                y=ycalc_plot,
+                name="Model",
+                line=dict(
+                    color='Blue',
+                    width=2)
+                    ),
+            row=1, col=1)
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                marker_symbol='cross',
+                x=der.t, 
+                y=der.s,
+                name="Derivative",
+                marker=dict(
+                    color='Green',
+                    size=6,                
+                    line=dict(
+                        color='Black',
+                        width=1))
+                        ),
+            row=1, col=1)        
+        fig.add_trace(
+            go.Scatter(
+                mode='lines ',
+                x=derm.t, 
+                y=derm.s,
+                name="Model derivative",
+                line=dict(
+                    color='Black',
+                    width=1)
+                    ),
+            row=1, col=1)
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.df.t,
+                y=self.df.s,
+                name="Drawdown",
+                marker=dict(
+                    color='Red',
+                    size=8,                
+                    line=dict(
+                        color='Black',
+                        width=1))
+                        ),
+            row=2, col=1)        
+        fig.add_trace(
+            go.Scatter(
+                mode='lines+markers',
+                x=tcalc_plot, 
+                y=ycalc_plot,
+                name="Model",
+                line=dict(
+                    color='Blue',
+                    width=2)
+                    ),
+            row=2, col=1)
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                marker_symbol='cross',
+                x=der.t, 
+                y=der.s,
+                name="Derivative",
+                marker=dict(
+                    color='Green',
+                    size=6,                
+                    line=dict(
+                        color='Black',
+                        width=1))
+                        ),
+            row=2, col=1) 
+        fig.add_trace(
+            go.Scatter(
+                mode='lines ',
+                x=derm.t, 
+                y=derm.s,
+                name="Model derivative",
+                line=dict(
+                    color='Black',
+                    width=1)
+                    ),
+            row=2, col=1)
+        fig.update_xaxes(type="log", row=1, col=1)
+        fig.update_yaxes(title_text="p", type="log", row=1, col=1)
+        fig.update_xaxes(title_text="t", type="log", row=2, col=1)
+        fig.update_yaxes(title_text="p", row=2, col=1)
+        fig.update_layout(height=600, width=800, showlegend=True)
+        fig.show()
         print('T = ', self.T(), 'm2/s')
         print('S = ', self.S(), '-')
         print('Ri = ', self.RadiusOfInfluence(), 'm')
-
+            
 
     def fit(self, fitmethod=None, fitcoeff=None):
         """
@@ -478,7 +588,7 @@ class AnalyticalInterferenceModels():
                               dtype=np.float64)
         self.sc = self.__call__(self.tc)
         test = ht.preprocessing(df=pda.DataFrame(data={"t": self.tc, "s": self.sc}))
-        self.derc = test.ldiffs()
+        self.derc = test.ldiffs(npoints=40)
         self.mr = np.mean(res_p.fun)
         self.sr = 2 * np.nanstd(res_p.fun)
         self.rms = np.sqrt(np.mean(res_p.fun ** 2))
@@ -569,15 +679,6 @@ class Theis(AnalyticalInterferenceModels):
         :function: _laplace_drawdown(td, inversion_option='stehfest')
         """
         return 1 / pd * kv(0, np.sqrt(pd))
-
-    def dimensionless_laplace2(self, pd): #!!!! can be removed, used to check with stehfest against mpmath laplaceinversion
-        """
-        Drawdown of the Theis Function in Laplace domain
-
-        :param pd: Laplace parameter
-        :function: _laplace_drawdown(td, inversion_option='stehfest')
-        """
-        return 1 / pd * mp.besselk(0, mp.sqrt(pd))
 
     def dimensionless_laplace_derivative(self, pd):
         """
@@ -700,10 +801,12 @@ class Theis(AnalyticalInterferenceModels):
         fig.text(1.05, 0.5, 'Radius of Investigation Ri : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
                  transform=plt.gcf().transFigure)
         fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.35, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.3, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+        fig.text(1.05, 0.35, 'slope a : {:0.2g} m'.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, 'intercept t0 : {:0.2g} m'.format(self.p[1]), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.2, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
                  transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.25, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+        fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
 
@@ -1174,33 +1277,26 @@ class Theis_multirate(AnalyticalInterferenceModels):
     :param detailled_p: detailled solution struct from the fit function
     :param fitmethod: see fit function for the various options
     :param inversion_option: 'stehfest' or 'dehoog'
+    :param self.pumpingrates: 
+    :param self.begintime: 
 
-    :Reference:
-
+    :Reference: Theis, C.V., 1935. The relation between the lowering of the
+    piezometric surface and the rate and duration of discharge of a well using
+    groundwater storage, Am. Geophys. Union Trans., vol. 16, pp. 519-524.
     """
 
-    def dimensionless(self, td):
-        """
-        Calculates the dimensionless drawdown of the Theis model for multiple rate tests (1935)
-
-        :param td:  dimensionless time
-        :return sd: dimensionless drawdown
-        """
-        s = np.zeros(np.shape(td))
-        for i in range(0, np.size(self.Q.t)):
-            self.p[0] = self.p[0] * self.diff_Q[i]
-            if i == 0:
-                s = s + 0.5 * E1(1, 0.25 / td)
-            else:
-                si = np.array([i for i, x in enumerate(self.df.t.ge(self.Q.t[i-1])) if x], dtype=int)
-                s[si] = s[si] + 0.5 * E1(1, 0.25 / (td[si]-self.Q.t[i-1]))
+    def multirate(self, t):
+        s = np.zeros(np.shape(t))
+        for i in range(0, np.size(self.begintime,0)):
+            si = np.argwhere(t > self.begintime[i])  
+            td = (t[si]-self.begintime[i]) / (0.5628 * self.p[1]) 
+            pa = self.p[0]*self.pumpingrates[i]
+            s[si] = s[si] + pa /np.log(10)*E1(1, 1/td)
         return s
 
 
     def __call__(self, t):
-        td = self._dimensionless_time(t)
-        sd = self.dimensionless(td)
-        s = self._dimensional_drawdown(sd)
+        s = self.multirate(t)
         return s
 
 
@@ -1228,7 +1324,8 @@ class Theis_multirate(AnalyticalInterferenceModels):
         self.fitbnds = None
         self.inversion_option=inversion_option
         self.fitcoeff = None
-
+        self.pumpingrates = None
+        self.begintime = None
 
     def guess_params(self):
         """
@@ -1248,17 +1345,32 @@ class Theis_multirate(AnalyticalInterferenceModels):
         if np.isscalar(self.Q):
             n = len(self.df) / 3
             self.p = get_logline(self, df=self.df[self.df.index > n])
-            self.p[0] = self.p[0] / (self.Q)
+            self.p[0] = self.p[0] / self.pumpingrates[0]
         elif self.Q.t is not None:
             test = ht.preprocessing()
             test.birsoy_time(df=self.df, Qmat=self.Q)
             self.p = get_logline(self, df=test.birsoy)
-
         else:
-            print('')
+            print('Check if pumping rate is a scalar or a pandas dataframe!')
+
+    def T(self):
+        """
+        Calculates Transmissivity
+
+        :return Transmissivity:  transmissivity m^2/s
+        """
+        return np.log(10)/np.pi/4/self.p[0]
+    
+    def RadiusOfInfluence(self):
+        """
+        Calculates the radius of influence
+
+        :return RadInfluence: radius of influence m
+        """
+        return 2 * np.sqrt(self.T() * self.df.t[len(self.df.t) - 1] / self.S())
 
 
-    def rpt(self, fitmethod=None, ttle='Theis (1935)', author='Author', filetype='pdf', reptext='Report_ths'):
+    def rpt(self, fitmethod=None, ttle='Theis MR (1935)', author='Author', filetype='pdf', reptext='Report_thsmr'):
         """
         Calculates the solution and reports graphically the results of the pumping test
 
@@ -1291,9 +1403,181 @@ class Theis_multirate(AnalyticalInterferenceModels):
         fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
 
         fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.8, 'Discharge rate : {:3.2e} m³/s'.format(self.Q), fontsize=14,
+        fig.text(1.05, 0.8, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
                  transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.75, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
+        fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.5, 'Radius of Investigation Ri : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.35, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.3, '2 standard deviation : {:0.2g} m'.format(self.sr), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.25, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
+                 transform=plt.gcf().transFigure)
+        plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
+
+class Theis_multirate_CHB(AnalyticalInterferenceModels):
+    """
+    Theis model for multiple rate tests (1935) with constant head boundary.
+
+    Calculate the drawdown at time t for multiple rate tests without accounting for quadratic head losses.
+
+    :Initialization:
+    :param Q: given in 2 vectors Q.t and Q.q or a scalar as pumping rate, m3/s
+    :param r: radius between wells, m
+    :param df: pandas dataframe with two vectors named df.t and df.s for test time respective drawdown
+    :param self:
+    :param p: solution vector
+    :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param sc: Calculated drawdown
+    :param derc: Calculated drawdown derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize:  size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :paramRadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param inversion_option: 'stehfest' or 'dehoog'
+    :param self.pumpingrates: 
+    :param self.begintime: 
+
+    :Reference: Theis, C.V., 1935. The relation between the lowering of the
+    piezometric surface and the rate and duration of discharge of a well using
+    groundwater storage, Am. Geophys. Union Trans., vol. 16, pp. 519-524.
+    """
+
+    def multirate(self, t):
+        s = np.zeros(np.shape(t))
+        for i in range(0, np.size(self.begintime,0)):
+            si = np.argwhere(t > self.begintime[i])  
+            td1 = (t[si]-self.begintime[i]) / (0.5628 * self.p[1]) 
+            td2 = (t[si]-self.begintime[i]) / (0.5628 * self.p[2]) 
+            pa = self.p[0]*self.pumpingrates[i]
+            s[si] = s[si] + pa /np.log(10)*(E1(1, 1/td1) - E1(1, 1/td2))
+        return s
+
+    def __call__(self, t):
+        s = self.multirate(t)
+        return s
+
+    def __init__(self, Q=None, r=None, df=None, p=None, inversion_option=None):
+        self.Q = Q
+        self.r = r
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
+        self.pumpingrates = None
+        self.begintime = None
+
+    def guess_params(self): #!!!
+        """
+        First guess for the parameters of the Theis model for multiple rate tests
+
+        :return p[0]: slope of Jacob straight line for late time
+        :return p[1]: intercept with the horizontal axis for s = 0
+        """
+        if np.isscalar(self.Q):
+            print('Pumping rate needs to be given by pandas dataframe with Q.t and Q.q vector')
+        else:
+            self.pumpingrates = np.hstack((self.Q.q[0], np.diff(self.Q.q)))
+            self.begintime = np.hstack([0, self.Q.t.iloc[:-1].to_numpy()])
+
+            iss = self.df.t[self.df.t < self.begintime[1]].index
+
+        if np.isscalar(self.Q):
+            thc = Theis_constanthead()
+            n = len(self.df) / 3
+            thc.guess_params(self, df=self.df[self.df.index > n])
+            if self.p[2] > self.df.t.iloc[-1]:
+                self.p[2] = 0.9 * self.df.t.iloc[-1]
+            self.p[0] = self.p[0] / (self.pumpingrates[0])
+        elif self.Q.t is not None:
+            test = ht.preprocessing()
+            test.birsoy_time(df=self.df, Qmat=self.Q)
+            self.p = get_logline(self, df=test.birsoy)
+        else:
+            print('Check if pumping rate is a scalar or a pandas dataframe!')
+
+    def T(self):
+        """
+        Calculates Transmissivity
+
+        :return Transmissivity:  transmissivity m^2/s
+        """
+        return np.log(10)/np.pi/4/self.p[0]
+    
+    def RadiusOfInfluence(self):
+        """
+        Calculates the radius of influence
+
+        :return RadInfluence: radius of influence m
+        """
+        return 2 * np.sqrt(self.T() * self.df.t[len(self.df.t) - 1] / self.S())
+
+
+    def rpt(self, fitmethod=None, ttle='Theis MR (1935)', author='Author', filetype='pdf', reptext='Report_thsmr'):
+        """
+        Calculates the solution and reports graphically the results of the pumping test
+
+        :param option_fit: 'lm', 'trf' or 'dogbox'
+        :param ttle: Title of the figure
+        :param author: Author name
+        :param filetype: 'pdf', 'png' or 'svg'
+        :param reptext: savefig name
+        """
+
+        if fitmethod is not None:
+            self.fitmethod = fitmethod
+        else:
+            self.fitmethod = 'trf' #set Default
+
+        self.fit()
+
+        self.Transmissivity = self.T()
+        self.Storativity = self.S()
+        self.RadInfluence = self.RadiusOfInfluence()
+        self.model_label = 'Theis multirate model'
+
+        test = ht.preprocessing(df=self.df)
+        self.der = test.ldiffs()
+
+        self.ttle = ttle
+        fig = log_plot(self)
+
+        fig.text(0.125, 1, author, fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(0.125, 0.95, ttle, fontsize=14, transform=plt.gcf().transFigure)
+
+        fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.8, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
                  transform=plt.gcf().transFigure)
         fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
@@ -2465,6 +2749,15 @@ class Boulton(AnalyticalInterferenceModels):
         plt.legend()
         plt.show()
 
+    def RadiusOfInfluence(self):
+        """
+        Calculates the radius of influence
+
+        :return RadInfluence: radius of influence m
+        """
+        self.omegad = 2.2458394 * self.T()* self.p[2] / self.r**2 - self.S()
+        return 2*np.sqrt(self.T()*self.df.t.iloc[-1] / self.omegad)
+
 
     def rpt(self, fitmethod='trf', ttle='Boulton', author='openhytest developer', filetype='pdf',
             reptext='Report_blt', p=None):
@@ -2495,7 +2788,7 @@ class Boulton(AnalyticalInterferenceModels):
         self.Transmissivity = self.T()
         self.Storativity = self.S()
         self.omegad = 2.2458394 * self.Transmissivity * self.p[2] / self.r**2 - self.Storativity
-        self.RadInfluence = 2*np.sqrt(self.Transmissivity*self.df.t.iloc[-1] / self.omegad)
+        self.RadInfluence = self.RadiusOfInfluence()
         self.model_label = 'Boulton model'
 
         test = ht.preprocessing(df=self.df)
@@ -2576,26 +2869,141 @@ class StorativityInterferenceModels(AnalyticalInterferenceModels):
         else:
             return self.rc ** 2 / 2 / self.rw ** 2 / self.S()
 
-    def trial(self):
-        figt = plt.figure()
-        ax1 = figt.add_subplot(211)
-        ax2 = figt.add_subplot(212)
-        ax1.loglog(self.df.t.to_numpy(), self.__call__(
-            self.df.t.to_numpy()), self.df.t.to_numpy(), self.df.s.to_numpy(), 'o')
-        ax1.set_ylabel('s')
-        ax1.grid()
-        ax1.minorticks_on()
-        ax1.grid(which='major', linestyle='--', linewidth='0.5', color='black')
-        ax1.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
-        ax2.semilogx(self.df.t.to_numpy(), self.__call__(
-            self.df.t.to_numpy()), self.df.t.to_numpy(), self.df.s.to_numpy(), 'o')
-        ax2.set_ylabel('s')
-        ax2.set_xlabel('t')
-        ax2.grid()
-        ax2.minorticks_on()
-        ax2.grid(which='major', linestyle='--', linewidth='0.5', color='black')
-        ax2.grid(which='minor', linestyle=':', linewidth='0.5', color='grey')
-        plt.show()
+    def trial(self, p=None, inversion_option=None): 
+        
+        if inversion_option is not None:
+            self.inversion_option = inversion_option
+        else:
+            if self.inversion_option is None:
+                self.inversion_option = 'dehoog'
+
+        if p is not None:
+            p = self.p
+        
+        tcalc_plot = np.logspace(np.log10(self.df.t.iloc[0]), np.log10(self.df.t.iloc[-1]),100)
+        ycalc_plot = self.__call__(tcalc_plot)
+        
+        d = {'t': self.df.t, 's': self.df.s}
+        df = pda.DataFrame(data=d)
+        dummy = ht.preprocessing(df=df, npoints=50)
+        der = dummy.ldiffs()
+
+        dd = {'t': tcalc_plot, 's': ycalc_plot}
+        df = pda.DataFrame(data=dd)
+        test = ht.preprocessing(df=df, npoints=50)
+        derm = test.ldiffs()
+        
+        fig = make_subplots(rows=2, cols=1)
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.df.t, 
+                y=self.df.s,
+                name="Drawdown",
+                marker=dict(
+                    color='Red',
+                    size=8,                
+                    line=dict(
+                        color='Black',
+                        width=1))
+                        ),
+            row=1, col=1)        
+        fig.add_trace(
+            go.Scatter(
+                mode='lines+markers ',
+                x=tcalc_plot, 
+                y=ycalc_plot,
+                name="Model",
+                line=dict(
+                    color='Blue',
+                    width=2)
+                    ),
+            row=1, col=1)
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                marker_symbol='cross',
+                x=der.t, 
+                y=der.s,
+                name="Derivative",
+                marker=dict(
+                    color='Green',
+                    size=6,                
+                    line=dict(
+                        color='Black',
+                        width=1))
+                        ),
+            row=1, col=1)        
+        fig.add_trace(
+            go.Scatter(
+                mode='lines ',
+                x=derm.t, 
+                y=derm.s,
+                name="Model derivative",
+                line=dict(
+                    color='Black',
+                    width=1)
+                    ),
+            row=1, col=1)
+
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                x=self.df.t,
+                y=self.df.s,
+                name="Drawdown",
+                marker=dict(
+                    color='Red',
+                    size=8,                
+                    line=dict(
+                        color='Black',
+                        width=1))
+                        ),
+            row=2, col=1)        
+        fig.add_trace(
+            go.Scatter(
+                mode='lines+markers',
+                x=tcalc_plot, 
+                y=ycalc_plot,
+                name="Model",
+                line=dict(
+                    color='Blue',
+                    width=2)
+                    ),
+            row=2, col=1)
+        fig.add_trace(
+            go.Scatter(
+                mode='markers',
+                marker_symbol='cross',
+                x=der.t, 
+                y=der.s,
+                name="Derivative",
+                marker=dict(
+                    color='Green',
+                    size=6,                
+                    line=dict(
+                        color='Black',
+                        width=1))
+                        ),
+            row=2, col=1) 
+        fig.add_trace(
+            go.Scatter(
+                mode='lines ',
+                x=derm.t, 
+                y=derm.s,
+                name="Model derivative",
+                line=dict(
+                    color='Black',
+                    width=1)
+                    ),
+            row=2, col=1)
+        fig.update_xaxes(type="log", row=1, col=1)
+        fig.update_yaxes(title_text="p", type="log", row=1, col=1)
+        fig.update_xaxes(title_text="t", type="log", row=2, col=1)
+        fig.update_yaxes(title_text="p", row=2, col=1)
+        fig.update_layout(height=600, width=800, showlegend=True)
+        fig.show()
         print('T = ', self.T(), 'm2/s')
         print('S = ', self.S(), '-')
         print('Cd = ', self.Cd(), '-')

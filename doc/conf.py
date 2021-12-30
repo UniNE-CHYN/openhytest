@@ -20,13 +20,13 @@ sys.path.append("..")
 # -- Project information -----------------------------------------------------
 
 project = 'OpenHyTest'
-copyright = '2019, OpenHyTest Developer'
+copyright = '2021, OpenHyTest Developer'
 author = 'Nathan Dutler, Philippe Renard, Bernard Brixel'
 
 # The short X.Y version
-version = '0.1'
+version = '0.5'
 # The full version, including alpha/beta/rc tags
-release = 'alpha 0.1'
+release = 'alpha 0.5'
 
 
 # -- General configuration ---------------------------------------------------

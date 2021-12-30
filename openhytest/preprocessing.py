@@ -1,4 +1,4 @@
-#    Copyright (C) 2021 by
+#    Copyright (C) 2022 by
 #    Nathan Dutler <nathan.dutler@exquiro.ch>
 #    Philippe Renard <philippe.renard@unine.ch>
 #    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
@@ -942,19 +942,20 @@ class preprocessing():
         return self.birsoy
     
     
-    def agarwal_time(self, df=None, Qmat=None, agarwal=None):
+    def agarwal(self, df=None, pinj=None, Qmat=None, agarwal=None):
         """
-        Computes equivalent Agarwal (1980) time for recovery tests.
+        Computes equivalent Agarwal (1980) time and recovery transformation for 
+        pressure recovery tests to apply and use drawdown models from pumping tests.
         Agarwal has shown in 1980 that recovery test can be interpreted with 
         the same solutions than pumping test if one interprets the residual
-        drawdown sr = s(t) - s(end of pumping) as a function of an equivalent
+        drawdown sr = s(end of pumping) - s(t) as a function of an equivalent
         time that is computed from the pumping rates history. The theory is 
         based on the superposition principle.
 
         :param df: needs a pandas dataframe with vector t and s
                 column t = vector containing the time since the beginning of the recovery
                 column s = the residual drawdown is defined as follows:
-                    sr(df.t) = s(Qmat.tp) - s(df.t)
+                    sr = s(end of pumping) - s(t)
                     It is equal to 0 when the the pumping stops and it increases progressively when the aquifer recovers its equilibrium.
         
         
@@ -971,6 +972,11 @@ class preprocessing():
         """        
         if df is not None:
             self.df = df
+        
+        if pinj is not None:
+            self.pinj = pinj
+        else:
+            self.pinj = self.df.s[0]
 
         self.header()
 
@@ -991,7 +997,7 @@ class preprocessing():
             print('Qmat needs to be a scalar or pandas dataframe')
          
         t, indices = np.unique(t, return_index=True)
-        s = self.df.s[indices]
+        s = self.df.s[0] - self.df.s[indices]
         dummy = np.array(np.transpose([t, s]))
         self.agarwal = pd.DataFrame(dummy, columns=self.hd) 
         return self.agarwal

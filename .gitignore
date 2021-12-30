@@ -1,5 +1,0 @@
-openhytest.egg-info/
-.nbgrader.log
-notebooks/.ipynb_checkpoints/
-.pytest_cache/*
-*/__pycache__/*
