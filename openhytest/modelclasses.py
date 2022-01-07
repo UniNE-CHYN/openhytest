@@ -1405,6 +1405,8 @@ class Theis_multirate(AnalyticalInterferenceModels):
         fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.8, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
                  transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Number of steps: {:0.4g} '.format(len(self.Q)), fontsize=14,
+                 transform=plt.gcf().transFigure)   
         fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
                  transform=plt.gcf().transFigure)
@@ -1464,7 +1466,7 @@ class Theis_multirate_CHB(AnalyticalInterferenceModels):
             td1 = (t[si]-self.begintime[i]) / (0.5628 * self.p[1]) 
             td2 = (t[si]-self.begintime[i]) / (0.5628 * self.p[2]) 
             pa = self.p[0]*self.pumpingrates[i]
-            s[si] = s[si] + pa /np.log(10)*(E1(1, 1/td1) - E1(1, 1/td2))
+            s[si] = s[si] + pa / np.log(10) * (E1(1, 1/td1) - E1(1, 1/td2))
         return s
 
     def __call__(self, t):
@@ -1498,7 +1500,7 @@ class Theis_multirate_CHB(AnalyticalInterferenceModels):
         self.pumpingrates = None
         self.begintime = None
 
-    def guess_params(self): #!!!
+    def guess_params(self): 
         """
         First guess for the parameters of the Theis model for multiple rate tests
 
@@ -1521,11 +1523,18 @@ class Theis_multirate_CHB(AnalyticalInterferenceModels):
                 self.p[2] = 0.9 * self.df.t.iloc[-1]
             self.p[0] = self.p[0] / (self.pumpingrates[0])
         elif self.Q.t is not None:
+            dfcopy = self.df
             test = ht.preprocessing()
             test.birsoy_time(df=self.df, Qmat=self.Q)
-            self.p = get_logline(self, df=test.birsoy)
+            thc = Theis_constanthead(df=test.birsoy)
+            thc.guess_params()
+            if thc.p[2] > dfcopy.t.iloc[-1]:
+                thc.p[2] = 0.9 * self.df.t.iloc[-1]  
+            thc.fit(fitmethod="lm")    
+            self.p = thc.p     
         else:
             print('Check if pumping rate is a scalar or a pandas dataframe!')
+
 
     def T(self):
         """
@@ -1541,7 +1550,7 @@ class Theis_multirate_CHB(AnalyticalInterferenceModels):
 
         :return RadInfluence: radius of influence m
         """
-        return 2 * np.sqrt(self.T() * self.df.t[len(self.df.t) - 1] / self.S())
+        return np.sqrt(2.2458394 * self.T() * self.p[2] / self.S())
 
 
     def rpt(self, fitmethod=None, ttle='Theis MR (1935)', author='Author', filetype='pdf', reptext='Report_thsmr'):
@@ -1565,7 +1574,7 @@ class Theis_multirate_CHB(AnalyticalInterferenceModels):
         self.Transmissivity = self.T()
         self.Storativity = self.S()
         self.RadInfluence = self.RadiusOfInfluence()
-        self.model_label = 'Theis multirate model'
+        self.model_label = 'Theis multirate model CHB'
 
         test = ht.preprocessing(df=self.df)
         self.der = test.ldiffs()
@@ -1579,12 +1588,14 @@ class Theis_multirate_CHB(AnalyticalInterferenceModels):
         fig.text(1, 0.85, 'Test Data : ', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.8, 'Radial distance : {:0.4g} m '.format(self.r), fontsize=14,
                  transform=plt.gcf().transFigure)
+        fig.text(1.05, 0.75, 'Number of steps: {:0.4g} '.format(len(self.Q)), fontsize=14,
+                 transform=plt.gcf().transFigure)        
         fig.text(1, 0.65, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.6, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,
                  transform=plt.gcf().transFigure)
         fig.text(1.05, 0.55, 'Storativity S : {:3.2e} '.format(self.Storativity), fontsize=14,
                  transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.5, 'Radius of Investigation Ri : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
+        fig.text(1.05, 0.5, 'Distance to image well Ri : {:0.4g} m'.format(self.RadInfluence), fontsize=14,
                  transform=plt.gcf().transFigure)
         fig.text(1, 0.4, 'Fitting parameters :', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.35, 'mean residual : {:0.2g} m'.format(self.mr), fontsize=14, transform=plt.gcf().transFigure)
