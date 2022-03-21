@@ -9,7 +9,7 @@ Package for well test analysis, inspired by the functionalities available in [hy
 
 ## Installation
 
-## Models currently implemented
+## Flow models available
 - Theis, Radial flow (1935)
 - Theis, Multirate test (1935)?
 - Warren and Root, Double porosity (1936)
