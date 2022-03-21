@@ -3,7 +3,7 @@
 Package for well test analysis, inspired by the functionalities available in [hytool](https://github.com/UniNE-CHYN/hytool).
 
 ## Features
-- Pre-processing functions and utilities handling data preparation
+- Helper functions handling data preparation and pre-processing
 - A library of analytical solutions, implemented following an oriented-object programming structure
 - Post-processing utilities for results analysis and statistical summary.
 
