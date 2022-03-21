@@ -4,7 +4,7 @@ Package for well test analysis, inspired by the functionalities available in [hy
 
 ## Features
 - Helper functions handling data preparation and pre-processing
-- A library of analytical solutions following an oriented-object programming structure
+- A library of analytical solutions
 - Post-processing utilities for results analysis and statistical summary.
 
 ## Installation
