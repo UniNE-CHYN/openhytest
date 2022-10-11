@@ -881,7 +881,7 @@ class preprocessing():
         x = self.df[self.hd[0]][1:]
          
         # compute flow dimension
-        y = np.multiply(3, (1 - np.divide(([np.log10(x) - np.log10(self.df[self.hd[1]][i - 1]) for i, x in enumerate(self.df[self.hd[1]]) if i > 0]), [
+        y = np.multiply(2, (1 - np.divide(([np.log10(x) - np.log10(self.df[self.hd[1]][i - 1]) for i, x in enumerate(self.df[self.hd[1]]) if i > 0]), [
             np.log10(x) - np.log10(self.df[self.hd[0]][i - 1]) for i, x in enumerate(self.df[self.hd[0]]) if i > 0])))
         dummy = np.array(np.transpose([x, y]))
         self.dim = pd.DataFrame(dummy, columns=self.hd)
