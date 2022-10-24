@@ -296,6 +296,10 @@ class AnalyticalInterferenceModels():
         """
         if self.fitcoeff is not None:
             M = self.fitcoeff
+            
+        #cbeck for NaN and negative values, skip them 
+        #td = td[~np.isnan(td)]
+        #td = td[td<0]
 
         logallt = np.log10(td)
         iminlogall = np.int(np.floor(np.nanmin(logallt)))
@@ -517,7 +521,7 @@ class AnalyticalInterferenceModels():
         fig.show()
         print('T = ', self.T(), 'm2/s')
         print('S = ', self.S(), '-')
-        print('Ri = ', self.RadiusOfInfluence(), 'm')
+        #print('Ri = ', self.RadiusOfInfluence(), 'm')
             
 
     def fit(self, fitmethod=None, fitcoeff=None):
@@ -2023,8 +2027,8 @@ class JacobLohman(AnalyticalInterferenceModels):
         ax1.set_xlabel('Time in seconds')
         ax1.set_ylabel('Flow rate m^3/s')
         ax1.set_title(self.ttle)
-        ax1.loglog(self.df.t, self.df.s, c='r', marker='+', linestyle='', label='q')
-        ax1.loglog(self.tc, self.sc, c='g', label=self.model_label)
+        ax1.plot(self.df.t, self.df.s, c='r', marker='+', linestyle='', label='q')
+        ax1.plot(self.tc, self.sc, c='g', label=self.model_label)
         ax1.grid(True)
         ax1.legend()
 
@@ -2456,6 +2460,9 @@ class GRF(AnalyticalInterferenceModels):
         sd = self._laplace_drawdown(td)
         s = self._dimensional_drawdown(sd)
         return s
+    
+    def RadiusOfInfluence(self):
+        return 0
 
     def __init__(self, Q=None, r=1, rw=1, df=None, p=None, inversion_option=None):
         self.Q = Q
@@ -2538,7 +2545,7 @@ class GRF(AnalyticalInterferenceModels):
             plt.grid('True')
         plt.show()
 
-    def rpt(self, fitmethod='trf', ttle='GRF', author='openhytest developer', filetype='pdf',
+    def rpt(self, fitmethod='lm', ttle='GRF', author='openhytest developer', filetype='pdf',
             reptext='Report_grf'):
         """
         Calculates the solution and reports graphically the results of the pumping test
@@ -3918,7 +3925,7 @@ class Neuzil(Slugtests):
         fig.text(1, 0.6, 'Hydraulic parameters :', fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.55, 'Transmissivity T : {:3.2e} m²/s'.format(self.Transmissivity), fontsize=14,transform=plt.gcf().transFigure)
         fig.text(1.05, 0.5, 'Well bore storage Sw : {:3.2e} '.format(self.Storativity), fontsize = 14,transform=plt.gcf().transFigure)
-        fig.text(1.05, 0.45, 'Radius of investigation: {:3.2e} m'.format(self.RadInfluence[0]), fontsize=14, transform=plt.gcf().transFigure)
+        #fig.text(1.05, 0.45, 'Radius of investigation: {:3.2e} m'.format(self.RadInfluence), fontsize=14, transform=plt.gcf().transFigure)
 
         fig.text(1, 0.4, 'Fitting parameters :',fontsize=14, transform=plt.gcf().transFigure)
         fig.text(1.05, 0.35, 'Wellbore storage cD : {:0.4g} '.format(self.p[0]), fontsize=14, transform=plt.gcf().transFigure)
