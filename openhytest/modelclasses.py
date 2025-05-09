@@ -236,7 +236,7 @@ class AnalyticalInterferenceModels():
         :return V: gives the inversion coefficent for stehfest
         """
         if fitcoeff != 16:
-            M = np.int(self.fitcoeff)
+            M = int(self.fitcoeff)
         else:
             M = fitcoeff # Default
 
@@ -245,8 +245,8 @@ class AnalyticalInterferenceModels():
         V = np.zeros(M)
         for i in range(1,M+1):
             vi = 0
-            for k in range(np.int((i+1)/2),np.int(np.min([i,M/2]))+1):
-                vi = vi + (k**(M/2)*factorial(2*k))/(factorial(np.int(M/2-k))*factorial(k)*factorial(k-1)*factorial(i-k)*factorial(2*k-i))
+            for k in range(int((i+1)/2),int(np.min([i,M/2]))+1):
+                vi = vi + (k**(M/2)*factorial(2*k))/(factorial(int(M/2-k))*factorial(k)*factorial(k-1)*factorial(i-k)*factorial(2*k-i))
             V[i-1] = (-1) ** ((M/2)+i)*vi
         self.inversion_V = V
         self.inversion_M = M
@@ -302,10 +302,10 @@ class AnalyticalInterferenceModels():
         #td = td[td<0]
 
         logallt = np.log10(td)
-        iminlogall = np.int(np.floor(np.nanmin(logallt)))
-        imaxlogall = np.int(np.ceil(np.nanmax(logallt)))
-        iminlogallt = np.int(iminlogall)
-        imaxlogallt = np.int(imaxlogall)
+        iminlogall = int(np.floor(np.nanmin(logallt)))
+        imaxlogall = int(np.ceil(np.nanmax(logallt)))
+        iminlogallt = int(iminlogall)
+        imaxlogallt = int(imaxlogall)
         f = []
         for ilogt in range(iminlogallt, imaxlogallt+1):
             t = td[((logallt>=ilogt) & (logallt<ilogt+1))]
@@ -2056,6 +2056,192 @@ class JacobLohman(AnalyticalInterferenceModels):
         fig.text(1.05, 0.15, 'Root-mean-square : {:0.2g} m'.format(self.rms), fontsize=14,
                  transform=plt.gcf().transFigure)
         plt.savefig(reptext + '.' + filetype, bbox_inches='tight')
+        
+        
+class EdenHazel(AnalyticalInterferenceModels):
+    """
+    Step-drawdown test according to Eden-Hazel (1973)
+    This solution consists in a series of straight lines having all the same slope (a) and different intercepts for each step corresponding to a different pumping rate.
+    As opposed to the Jacob straight line, the intercepts corresponds to the value of the drawdown obtained when the straight line toward is extended and crosses the vertical axis at Hn=0, which is the reduced time accounting for the variable pumping.
+
+    :Initialzation:
+    :param Qmat: pandas dataframe with to vectors named t and q, time and flow rate
+    :param df: pandas dataframe with two vectors named t and p, time and drawdown
+    :param self:
+    :param p: solution vector
+    :param der:  Drawdown derivative from the input data given as dataframe with der.t and der.s
+    :param tc: Calculated time
+    :param qc: Calculated flow rate
+    :param derc: Calculated flow rate derivative data given as dataframe with derc.t and derc.s
+    :param mr: mean resiuduals from the fit function
+    :param sr: standard derivative from the fit function
+    :param rms: root-mean-square from the fit function
+    :param ttle: title of the plot
+    :param model_label: model label of the plot
+    :param xsize: size of the plot in x (default is 8 inch)
+    :param ysize:  size of the plot in y (default is 6 inch)
+    :param Transmissivity: Transmissivity m^2/s
+    :param Storativity: Storativtiy -
+    :paramRadInfluence: Radius of influence m
+    :param detailled_p: detailled solution struct from the fit function
+    :param fitmethod: see fit function for the various options
+    :param fitbnds:
+    :param inversion_option: 'stehfest' or 'dehoog'
+
+    :Example:
+
+    """
+    def __init__(self, Qmat=None, df=None, p=None, inversion_option=None):
+        self.pe = None
+        self.lq = None
+        self.lht = None
+        self.Qmat = Qmat
+        self.p = p
+        self.df = df
+        self.der = None
+        self.tc = None
+        self.sc = None
+        self.derc = None
+        self.mr = None
+        self.sr = None
+        self.rms = None
+        self.ttle = None
+        self.model_label = None
+        self.xsize = 8
+        self.ysize = 6
+        self.Transmissivity = None
+        self.Storativity = None
+        self.RadInfluence = None
+        self.detailled_p = None
+        self.fitmethod = None
+        self.fitbnds = None
+        self.inversion_option=inversion_option
+        self.fitcoeff = None
+        
+    def pre(self, Qmat=None, df=None):
+        """
+        Initialize the Eden Hazel method
+        
+        :param Qmat: pandas dataframe with t (time since the begining of the test at which the period ends) and q (flow rate)
+        :param df: pandas dataframe with two vectors named t and p, time and drawdown
+
+
+        Returns
+        -------
+        :param : 
+
+        """
+        if Qmat is not None:
+            self.Qmat = Qmat
+        if df is not None:
+            self.df = df
+        if self.Qmat is None:
+            print("Error, Qmat is not initialized")
+        if self.Qmat.t.shape[0] < 2:
+            print("The Qmat contains only 1 line ! A step drawdown test must have several pumping steps")
+        
+        pe = np.ones(self.df.t.shape[0])
+        l_Qmat=self.Qmat.q.shape[0]
+        for num in reversed(range(l_Qmat-1)):
+            j = np.argwhere(self.df.t<=self.Qmat.t[num])
+            pe[j] = num
+        lq = self.Qmat.q[pe]
+        self.pe = pe
+        self.lq = lq
+            
+        #calculate pumping rate increments for each period
+        
+        dq = np.diff(self.Qmat.q)
+        dq = np.append(self.Qmat.q[0], dq)  
+        
+        # starting time of the pumping periods
+
+        st = np.append(0, self.Qmat.t)        
+        st = st[ : -1]
+        
+        # Calculation of Hn : the vector h
+        # matrix size: ( nb time step ) X ( nb pumping periods )
+        # every column correspond to the respective pumping period
+        # The values in the column are the logarithm of the time since 
+        # the pumping period in question started
+
+        a = (self.Qmat.t*np.ones(np.size(st)))-(np.ones(np.size(self.Qmat.t))*st)
+        a[a<=0] = np.NaN
+        a = np.log10(a)
+        a[np.isnan(a)] = 0
+        lht = a * dq   
+        
+        self.lht = lht
+        
+        return pe
+    
+    def __call__(self, t): # anpassen
+        td = self._dimensionless_time(t)
+        sd = self._laplace_drawdown(td)
+        s = self._dimensional_drawdown(sd)
+        return s
+    
+ 
+    def guess(self):
+        # First guess for the parameters of Eden and Hazel solution
+         
+        # df.t   = measured time
+        # df.s   = measured drawdown
+        # self.p = first guess for the parameters
+        
+        if(  self.lht.size == 0 ) :
+            raise Exception("ERROR: You must run function pre before using the guess function.")
+
+        #Number of steps (pumping periods)
+        ns=self.pe[-1] 
+        #Finding the points of the last period
+        l = [i for (i, val) in enumerate(self.pe) if self.pe == ns]
+        
+        X = self.lht[l[4:]]
+        Y = self.df.s[l[4:]]
+        
+        #Linear least-squares fit
+        Gt = np.array([X, np.ones(X.shape)])
+        r = np.linalg.inv(Gt.dot(Gt.T)).dot(Gt).dot(Y)
+        p = r[0]
+        
+        #Values at the origin for all the steps
+        for ii in range(ns): 
+            l = [i for (i, val) in enumerate(self.pe) if self.pe == ii]
+            A = self.df.s[l[-1]] - p*self.lht[l[-1]]
+            p =np.append(p, A)
+        self.p = p
+        
+        return self.p
+    
+    def dimensionless(self):
+        #Computes the drawdown for a step drawdown test with the Eden and Hazel
+        #(1973) method. This solution consists in a series of straight lines
+        #having all the same slope and different intercepts for each steps
+        #corresponding to a different pumping rate.
+
+        #As opposed to the Jacob straight line, the intercepts corresponds to
+        #the value of the drawdown obtained when the straight line toward is
+        #extended and crosses the vertical axis at Hn=0.
+
+        #self.lht is a reduced time that accounts for all the variations of pumping rates.
+        #WARNING: self.lht is calculated by the pre function and needs to be called before.
+
+        #self.lht = Hn = reduced time defined by Eden and Hazel 
+        #self.pe = id. number of the pumping period
+        #self.lq = flow rate at this time    
+ 
+        p = self.p[0]
+        self.p[0] = None
+ 
+        s = np.multiply(p, self.lht) + p[self.pe]
+        
+        return s
+
+    
+    def rpt():
+        return None
+
 
 class WarrenRoot(AnalyticalInterferenceModels):
     """

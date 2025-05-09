@@ -1,4 +1,3 @@
-#    Copyright (C) 2022 by
 #    Nathan Dutler <nathan.dutler@exquiro.ch>
 #    Philippe Renard <philippe.renard@unine.ch>
 #    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
