@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Functionality &#8212; OpenHyTest alpha 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=34905f61" />
+    <script src="_static/documentation_options.js?v=ab11c418"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="Welcome to OpenHyTest’s documentation!" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to OpenHyTest’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">OpenHyTest alpha 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Functionality</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="functionality">
+<h1>Functionality<a class="headerlink" href="#functionality" title="Link to this heading">¶</a></h1>
+<p>OpenHyTest is a Python toolbox for interpreting hydraulic tests. It combines
+data preparation tools, analytical well-test models, model fitting, diagnostic
+plots, and report generation in a single package.</p>
+<section id="data-preparation">
+<h2>Data preparation<a class="headerlink" href="#data-preparation" title="Link to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">preprocessing</span></code> tools help prepare time-drawdown or time-pressure data
+before model fitting. The main capabilities are:</p>
+<ul class="simple">
+<li><p>identifying the time and observation columns in a data frame;</p></li>
+<li><p>calculating logarithmic derivatives using direct, spline, Bourdet, or
+Horne-style approaches;</p></li>
+<li><p>plotting diagnostic drawdown and derivative curves;</p></li>
+<li><p>selecting, filtering, and cleaning hydraulic test data;</p></li>
+<li><p>calculating equivalent time for variable-rate tests using the Birsoy and
+Summers method;</p></li>
+<li><p>transforming recovery data to an equivalent pumping-test representation.</p></li>
+</ul>
+</section>
+<section id="analytical-models">
+<h2>Analytical models<a class="headerlink" href="#analytical-models" title="Link to this heading">¶</a></h2>
+<p>The model library includes classical pumping-test, interference-test,
+variable-rate, double-porosity, generalized radial flow, wellbore-storage,
+skin-effect, and slug-test solutions. Available model families include:</p>
+<ul class="simple">
+<li><p>Theis radial flow;</p></li>
+<li><p>Theis models with no-flow and constant-head boundaries;</p></li>
+<li><p>Theis multirate models, including a constant-head boundary variant;</p></li>
+<li><p>Hantush-Jacob leaky aquifer model;</p></li>
+<li><p>Jacob-Lohman constant-head test model;</p></li>
+<li><p>Eden-Hazel step-test model;</p></li>
+<li><p>Warren and Root double-porosity model;</p></li>
+<li><p>Barker generalized radial flow model;</p></li>
+<li><p>Boulton delayed-yield model;</p></li>
+<li><p>Papadopulos-Cooper large-diameter well model;</p></li>
+<li><p>Agarwal wellbore-storage and skin model;</p></li>
+<li><p>Hvorslev, Neuzil, and Cooper slug-test models;</p></li>
+<li><p>CDM heat transport model.</p></li>
+</ul>
+</section>
+<section id="fitting-and-diagnostics">
+<h2>Fitting and diagnostics<a class="headerlink" href="#fitting-and-diagnostics" title="Link to this heading">¶</a></h2>
+<p>Most analytical models provide a common workflow:</p>
+<ul class="simple">
+<li><p>estimate initial parameters with <code class="docutils literal notranslate"><span class="pre">guess_params()</span></code>;</p></li>
+<li><p>inspect the model with <code class="docutils literal notranslate"><span class="pre">trial()</span></code>;</p></li>
+<li><p>fit parameters with <code class="docutils literal notranslate"><span class="pre">fit()</span></code> using SciPy least-squares methods;</p></li>
+<li><p>calculate hydraulic parameters such as transmissivity and storativity;</p></li>
+<li><p>compare measured drawdown and derivative data with the fitted model;</p></li>
+<li><p>generate PDF, PNG, or SVG reports with <code class="docutils literal notranslate"><span class="pre">rpt()</span></code>.</p></li>
+</ul>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">notebooks/</span></code> folder contains demonstration notebooks for the main model
+families. These notebooks are the best starting point for learning the practical
+workflow, including preprocessing, parameter estimation, model fitting, and
+report generation.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Functionality</a><ul>
+<li><a class="reference internal" href="#data-preparation">Data preparation</a></li>
+<li><a class="reference internal" href="#analytical-models">Analytical models</a></li>
+<li><a class="reference internal" href="#fitting-and-diagnostics">Fitting and diagnostics</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="index.html"
+                          title="previous chapter">Welcome to OpenHyTest’s documentation!</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="installation.html"
+                          title="next chapter">Installation</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/functionality.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to OpenHyTest’s documentation!"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">OpenHyTest alpha 0.5 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Functionality</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2021, Nathan Dutler.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

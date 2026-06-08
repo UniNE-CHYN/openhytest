@@ -1,7 +1,5 @@
 #    Copyright (C) 2022 by
 #    Nathan Dutler <nathan.dutler@exquiro.ch>
-#    Philippe Renard <philippe.renard@unine.ch>
-#    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 #    All rights reserved.
 #    MIT license.
 
@@ -15,10 +13,8 @@ The different analytical model classes are implemented to fit the observations g
 License
 ---------
 Released under the MIT license:
-   Copyright (C) 2021 openhytest Developers
+   Copyright (C) 2021 Nathan Dutler
    Nathan Dutler <nathan.dutlern@exqurio.ch>
-   Philippe Renard <philippe.renard@unine.ch>
-   Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 
 """
 
@@ -37,6 +33,16 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 # Utilities
+
+def _next_axis_color(ax):
+    """
+    Return the next Matplotlib line color across older and newer versions.
+    """
+    if hasattr(ax._get_lines, "get_next_color"):
+        return ax._get_lines.get_next_color()
+
+    colors = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
+    return colors[len(ax.lines) % len(colors)]
 
 def thiem(q, s1, s2, r1, r2):
     """
@@ -182,6 +188,8 @@ class AnalyticalInterferenceModels():
         """
         if inversion_option is not None:
             self.inversion_option = inversion_option
+        elif self.inversion_option is None:
+            self.inversion_option = 'dehoog'
 
         if self.inversion_option == 'stehfest':
             sd = self.stehfest(self.dimensionless_laplace, td)
@@ -200,6 +208,8 @@ class AnalyticalInterferenceModels():
         """
         if inversion_option is not None:
             self.inversion_option = inversion_option
+        elif self.inversion_option is None:
+            self.inversion_option = 'dehoog'
 
         if self.inversion_option == 'stehfest':
             sd = self.stehfest(self.dimensionless_laplace_types, td)
@@ -218,6 +228,8 @@ class AnalyticalInterferenceModels():
         """
         if inversion_option is not None:
             self.inversion_option = inversion_option
+        elif self.inversion_option is None:
+            self.inversion_option = 'dehoog'
 
         if self.inversion_option == 'stehfest':
             sd = self.stehfest(self.dimensionless_laplace_derivative, td)
@@ -250,6 +262,7 @@ class AnalyticalInterferenceModels():
             V[i-1] = (-1) ** ((M/2)+i)*vi
         self.inversion_V = V
         self.inversion_M = M
+        self.fitcoeff = M
         return V
 
 
@@ -564,8 +577,21 @@ class AnalyticalInterferenceModels():
 
         # costfunction
         def fun(p, t, s):
+            if not np.all(np.isfinite(p)):
+                return np.full_like(s.to_numpy(dtype=float), 1.0e30, dtype=float)
+            if hasattr(self, "_valid_fit_parameters") and not self._valid_fit_parameters(p):
+                return np.full_like(s.to_numpy(dtype=float), 1.0e30, dtype=float)
+
             self.p = p
-            return s.to_numpy() - self.__call__(t.to_numpy())
+            try:
+                residuals = s.to_numpy() - self.__call__(t.to_numpy())
+            except (FloatingPointError, ValueError, OverflowError, ZeroDivisionError):
+                return np.full_like(s.to_numpy(dtype=float), 1.0e30, dtype=float)
+
+            if not np.all(np.isfinite(residuals)):
+                return np.full_like(s.to_numpy(dtype=float), 1.0e30, dtype=float)
+
+            return residuals
 
         if self.fitmethod == 'lm':
             # Levenberg-Marquardt algorithm (Default).
@@ -575,17 +601,21 @@ class AnalyticalInterferenceModels():
         elif self.fitmethod == 'trf':
             # Trust Region Reflective algorithm, particularly suitable for large sparse
             # problems with bounds. Generally robust method.
-            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method=self.fitmethod, verbose=1)
+            kwargs = {"bounds": self.fitbnds} if self.fitbnds is not None else {}
+            res_p = least_squares(fun, p, jac='3-point', args=(t, s), method=self.fitmethod, verbose=1, **kwargs)
             # dogleg algorithm with rectangular trust regions, typical use case is small problems
             # with bounds. Not recommended for problems with rank-deficient Jacobian
         elif self.fitmethod == 'dogbox':
-            res_p = least_squares(fun, p, args=(t, s), method=self.fitmethod, verbose=1)
+            kwargs = {"bounds": self.fitbnds} if self.fitbnds is not None else {}
+            res_p = least_squares(fun, p, args=(t, s), method=self.fitmethod, verbose=1, **kwargs)
 
         elif self.fitmethod == 'nofit':
             # Calculates the statistic for a given vector p
             res_p = least_squares(fun, p, args=(t, s), method='trf', max_nfev=1)
         else:
             raise Exception('Choose your fitmethod: lm, trf and dogbox')
+
+        self.p = np.float64(res_p.x)
 
         # define regular points to plot the calculated drawdown
         self.tc = np.logspace(np.log10(t[0]), np.log10(t[len(t) - 1]), num=len(t), endpoint=True, base=10.0,
@@ -596,7 +626,6 @@ class AnalyticalInterferenceModels():
         self.mr = np.mean(res_p.fun)
         self.sr = 2 * np.nanstd(res_p.fun)
         self.rms = np.sqrt(np.mean(res_p.fun ** 2))
-        self.p = np.float64(res_p.x)
         self.detailled_p = res_p
         return res_p.x
 
@@ -962,7 +991,7 @@ class Theis_noflow(AnalyticalInterferenceModels):
             self.Rd = Rd[i]
             sd = self.dimensionless(td)
             dd = self.dimensionless_logderivative(td)
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             plt.loglog(td, sd, '-', color=color, label=Rd[i])
             plt.loglog(td, dd, '-.', color=color)
         plt.xlabel('$t_D / r_D^2$')
@@ -1098,9 +1127,12 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         self.RadInfluence = None
         self.detailled_p = None
         self.fitmethod = None
-        self.fitbnds = None
+        self.fitbnds = Bounds([1e-12, 1e-12, 1e-12], [np.inf, np.inf, np.inf])
         self.inversion_option=inversion_option
         self.fitcoeff = None
+
+    def _valid_fit_parameters(self, p):
+        return p[0] > 0 and p[1] > 0 and p[2] > p[1]
 
     def dimensionless(self, td):
         """
@@ -1161,7 +1193,8 @@ class Theis_constanthead(AnalyticalInterferenceModels):
         n = len(self.df) / 4
         p_late = get_logline(self, self.df[self.df.index > n])
         p_early = get_logline(self, self.df[self.df.index < 2 * n])
-        self.p = np.array([p_early[0], p_early[1], 2 * p_late[1] * p_early[1] ** 2 / p_late[0] ** 2])
+        t_image = 2 * p_late[1] * p_early[1] ** 2 / p_late[0] ** 2
+        self.p = np.array([abs(p_early[0]), p_early[1], max(t_image, p_early[1] * 1.1)])
         return self.p
 
     def RadiusOfInfluence(self):
@@ -1182,7 +1215,7 @@ class Theis_constanthead(AnalyticalInterferenceModels):
             self.Rd = Rd[i]
             sd = self.dimensionless(td)
             dd = self.dimensionless_logderivative(td)
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             plt.loglog(td, sd, '-', color=color, label=Rd[i])
             plt.loglog(td, dd, '-.', color=color)
         plt.xlabel('$t_D / r_D^2$')
@@ -1325,11 +1358,14 @@ class Theis_multirate(AnalyticalInterferenceModels):
         self.RadInfluence = None
         self.detailled_p = None
         self.fitmethod = None
-        self.fitbnds = None
+        self.fitbnds = Bounds([1e-12, 1e-12], [np.inf, np.inf])
         self.inversion_option=inversion_option
         self.fitcoeff = None
         self.pumpingrates = None
         self.begintime = None
+
+    def _valid_fit_parameters(self, p):
+        return p[0] > 0 and p[1] > 0
 
     def guess_params(self):
         """
@@ -1498,11 +1534,14 @@ class Theis_multirate_CHB(AnalyticalInterferenceModels):
         self.RadInfluence = None
         self.detailled_p = None
         self.fitmethod = None
-        self.fitbnds = None
+        self.fitbnds = Bounds([1e-12, 1e-12, 1e-12], [np.inf, np.inf, np.inf])
         self.inversion_option=inversion_option
         self.fitcoeff = None
         self.pumpingrates = None
         self.begintime = None
+
+    def _valid_fit_parameters(self, p):
+        return p[0] > 0 and p[1] > 0 and p[2] > p[1]
 
     def guess_params(self): 
         """
@@ -1534,7 +1573,7 @@ class Theis_multirate_CHB(AnalyticalInterferenceModels):
             thc.guess_params()
             if thc.p[2] > dfcopy.t.iloc[-1]:
                 thc.p[2] = 0.9 * self.df.t.iloc[-1]  
-            thc.fit(fitmethod="lm")    
+            thc.fit(fitmethod="trf")    
             self.p = thc.p     
         else:
             print('Check if pumping rate is a scalar or a pandas dataframe!')
@@ -1741,7 +1780,7 @@ class HantushJacob(AnalyticalInterferenceModels):
             df = pda.DataFrame(data=d)
             test = ht.preprocessing(df=df, npoints=50)
             der = test.ldiffs()
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             plt.loglog(td, sd, '-', color=color, label=rb[i])
             plt.loglog(der.td, der.sd, '-.', color=color)
         theis = ht.Theis()
@@ -1881,7 +1920,6 @@ class JacobLohman(AnalyticalInterferenceModels):
         self.inversion_option=inversion_option
         self.fitcoeff = None
 
-
     def dimensionless_laplace(self, pd):
         """
         Dimensionless flow rate of the Jacob-Lohamn model in Laplace domain
@@ -1954,7 +1992,7 @@ class JacobLohman(AnalyticalInterferenceModels):
         df = pda.DataFrame(data=d)
         test = ht.preprocessing(df=df, npoints=50)
         der = test.ldiffs()
-        color = next(ax._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax)
         plt.loglog(td, qd, '-', color=color, label='q_D')
         plt.loglog(der.td, der.sd, '-.', color=color, label='der. 1/q_D')
         plt.xlabel('$t_D$')
@@ -1970,17 +2008,17 @@ class JacobLohman(AnalyticalInterferenceModels):
         q2 = 2 / E1(1, 0.25 / td)
         q3 = 0.5 + 1 / np.sqrt(np.pi * td) - 0.25 * np.sqrt(td / np.pi) + td / 8
         q4 = 2 / (np.log(4 * td) - 2 * g) - 2 * g / (np.log(4 * td) - 2 * g) ** 2
-        color = next(ax._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax)
         plt.loglog(td, qd, '-', color=color, label='Jacob-Lohman')
-        color = next(ax._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax)
         plt.loglog(td, q1, '-.', color=color, label='Jacob early asymptote')
-        color = next(ax._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax)
         plt.loglog(td, q2, '-.', color=color, label='Jacob late asymptote')
-        color = next(ax._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax)
         plt.loglog(td, q3, '--', color=color, label='Carslaw early asymptote')
-        color = next(ax._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax)
         plt.loglog(td, q4, '--', color=color, label='Carslaw late asymptote')
-        color = next(ax._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax)
         plt.loglog(td, self.perrochet(td), '+', color=color, label='Perrochet approx.')
         plt.xlabel('$t_D$')
         plt.ylabel('$q_D$')
@@ -2309,10 +2347,12 @@ class WarrenRoot(AnalyticalInterferenceModels):
         self.RadInfluence = None
         self.detailled_p = None
         self.fitmethod = None
-        self.fitbnds = None
+        self.fitbnds = Bounds([0, 1e-12, 1e-12, 1e-12], [np.inf, np.inf, np.inf, np.inf])
         self.inversion_option=inversion_option
         self.fitcoeff = None
 
+    def _valid_fit_parameters(self, p):
+        return p[2] > p[1]
 
     def dimensionless_laplace(self, pd):
         """
@@ -2465,7 +2505,7 @@ class WarrenRoot(AnalyticalInterferenceModels):
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
             dummy.ldiff()
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             ax.loglog(td, sd, '-', color=color, label= '$\sigma$ = {}'.format(sigma[i]))
             ax.loglog(dummy.der.t, dummy.der.s, ':', color=color)
         plt.xlabel('$t_D / r_D^2$')
@@ -2488,7 +2528,7 @@ class WarrenRoot(AnalyticalInterferenceModels):
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
             dummy.ldiff()
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             ax.loglog(td, sd, '-', color=color, label= '$\lambda$ = {}'.format(landa[i]))
             ax.loglog(dummy.der.t, dummy.der.s, ':', color=color)
         plt.xlabel('$t_D / r_D^2$')
@@ -2517,8 +2557,6 @@ class WarrenRoot(AnalyticalInterferenceModels):
             self.fitmethod = fitmethod
         else:
             self.fitmethod = 'trf' #set Default
-
-        Bounds([0, 0, 0, 0], [np.inf, np.inf, np.inf, np.inf])
 
         self.fit()
         self.p = np.float64(self.p)
@@ -2650,7 +2688,7 @@ class GRF(AnalyticalInterferenceModels):
     def RadiusOfInfluence(self):
         return 0
 
-    def __init__(self, Q=None, r=1, rw=1, df=None, p=None, inversion_option=None):
+    def __init__(self, Q=None, r=1, rw=1, df=None, p=None, inversion_option='dehoog'):
         self.Q = Q
         self.r = r
         self.rw = rw
@@ -2673,8 +2711,8 @@ class GRF(AnalyticalInterferenceModels):
         self.RadInfluence = None
         self.detailled_p = None
         self.fitmethod = None
-        self.fitbnds = None
-        self.inversion_option=inversion_option
+        self.fitbnds = Bounds([0, 1e-12, 0.1], [np.inf, np.inf, 4.0])
+        self.inversion_option = inversion_option
         self.fitcoeff = None
 
     def guess_params(self):
@@ -2703,7 +2741,7 @@ class GRF(AnalyticalInterferenceModels):
         ax = plt.gca()
         for n in np.linspace(1, 3, 9):
             self.p = np.array([0,0,n])
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             sd = self._laplace_drawdown(td, inversion_option='dehoog')
             ax.loglog(td, sd, '-', color=color, label=n)
         plt.xlabel('$t_D$')
@@ -2731,7 +2769,7 @@ class GRF(AnalyticalInterferenceModels):
             plt.grid('True')
         plt.show()
 
-    def rpt(self, fitmethod='lm', ttle='GRF', author='openhytest developer', filetype='pdf',
+    def rpt(self, fitmethod=None, ttle='GRF', author='openhytest developer', filetype='pdf',
             reptext='Report_grf'):
         """
         Calculates the solution and reports graphically the results of the pumping test
@@ -2848,7 +2886,7 @@ class Boulton(AnalyticalInterferenceModels):
         self.RadInfluence = None
         self.detailled_p = None
         self.fitmethod = None
-        self.fitbnds = None
+        self.fitbnds = Bounds([0, 1e-12, 1e-12, 1e-12], [np.inf, np.inf, np.inf, np.inf])
         self.inversion_option = inversion_option
         self.fitcoeff = None
 
@@ -2913,7 +2951,7 @@ class Boulton(AnalyticalInterferenceModels):
         for i in range(1, 5):
             self.sigma = np.array([0.01, 10**(-i)])
             sd = self._laplace_drawdown(td, inversion_option='dehoog')
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             plt.loglog(td, sd, '-', color=color, label=self.sigma[1])
         ths = Theis()
         st1 = ths.dimensionless(td)
@@ -2939,7 +2977,7 @@ class Boulton(AnalyticalInterferenceModels):
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
             dummy.ldiff()
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             plt.loglog(td, sd, '-', color=color, label=self.sigma[0])
             plt.loglog(dummy.der.t, dummy.der.s, '-.', color=color)
             st2 = 0.5 * E1(1, (1 + self.sigma[0])/(4*td*self.sigma[0]))
@@ -3332,7 +3370,7 @@ class PapadopulosCooper(StorativityInterferenceModels):
             self.cD = cD[i]
             sd = self._laplace_drawdown(td * cD[i], inversion_option='dehoog')
             dd = self._laplace_drawdown_derivative(td * cD[i], inversion_option='dehoog')
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             plt.loglog(td, sd, '-', color=color, label=cD[i])
             plt.loglog(td, dd, '-.', color=color)
         plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
@@ -3349,7 +3387,7 @@ class PapadopulosCooper(StorativityInterferenceModels):
             self.cD = cD[i]
             sd = self._laplace_drawdown(td, inversion_option='dehoog')
             dd = self._laplace_drawdown_derivative(td, )
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             plt.loglog(td, sd, '-', color=color, label=cD[i])
             plt.loglog(td, dd, '-.', color=color)
         plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
@@ -3550,7 +3588,7 @@ class Agarwal(StorativityInterferenceModels):
             for sg in range(0, 15, 5):
                 self.p = [10**i, rD, sg]
                 sd = self._laplace_drawdown(td, inversion_option='dehoog')
-                color = next(ax1._get_lines.prop_cycler)['color']
+                color = _next_axis_color(ax1)
                 ax1.loglog(td, sd, '-', color=color)
         ax1.set_xlabel('$t_D$')
         ax1.set_ylabel('$s_D$')
@@ -3565,7 +3603,7 @@ class Agarwal(StorativityInterferenceModels):
         pca = PapadopulosCooper(cD = cD, p = [cD, rD])
         sd1 = pca._laplace_drawdown(td*cD, inversion_option='dehoog')
         dd1 = pca._laplace_drawdown_derivative(td*cD, inversion_option='dehoog')
-        color = next(ax2._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax2)
         ax2.loglog(td, sd1, '-', color=color, label='Papadopulos and Cooper model cD = 10000')
         ax2.loglog(td, dd1, '-.', color=color)
         td2 = td * cD2
@@ -3575,7 +3613,7 @@ class Agarwal(StorativityInterferenceModels):
         df = pda.DataFrame(data=d)
         dummy = ht.preprocessing(df=df)
         dummy.ldiff()
-        color = next(ax2._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax2)
         ax2.loglog(td, sd2, '-', color=color, label='Agarwal model cD = 1000')
         ax2.loglog(dummy.der.t/cD2, dummy.der.s, '-.', color=color)
         self.p = [cD3, rD, (np.log(cD)-np.log(cD3))/2]
@@ -3585,7 +3623,7 @@ class Agarwal(StorativityInterferenceModels):
         df2 = pda.DataFrame(data=d2)
         dummy2 = ht.preprocessing(df=df2)
         dummy2.ldiff()
-        color = next(ax2._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax2)
         ax2.loglog(td, sd3, '-', color=color, label='Agarwal model cD = 5')
         ax2.loglog(dummy2.der.t/cD3, dummy2.der.s, '-.', color=color)
         ax2.set_xlabel('$t_D / C_D$')
@@ -3600,7 +3638,7 @@ class Agarwal(StorativityInterferenceModels):
         pca = PapadopulosCooper(cD = cD, p = [cD, rD])
         sd1 = pca._laplace_drawdown(td*cD, inversion_option='dehoog')
         dd1 = pca._laplace_drawdown_derivative(td*cD, inversion_option='dehoog')
-        color = next(ax3._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax3)
         ax3.loglog(td, sd1, '-', color=color, label='Papadopulos and Cooper model cD = 10000')
         ax3.loglog(td, dd1, '-.', color=color)
         td2 = td * cD2
@@ -3610,7 +3648,7 @@ class Agarwal(StorativityInterferenceModels):
         df = pda.DataFrame(data=d)
         dummy = ht.preprocessing(df=df)
         dummy.ldiff()
-        color = next(ax3._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax3)
         ax3.loglog(td, sd2, '-', color=color, label='Agarwal model cD = 1000')
         ax3.loglog(dummy.der.t/cD2, dummy.der.s, '-.', color=color)
         self.p = [cD3, rD, (np.log(cD)-np.log(cD3))/2]
@@ -3620,7 +3658,7 @@ class Agarwal(StorativityInterferenceModels):
         df2 = pda.DataFrame(data=d2)
         dummy2 = ht.preprocessing(df=df2)
         dummy2.ldiff()
-        color = next(ax3._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax3)
         ax3.loglog(td, sd3, '-', color=color, label='Agarwal model cD = 5')
         ax3.loglog(dummy2.der.t/cD3, dummy2.der.s, '-.', color=color)
         ax3.set_xlabel('$t_D / C_D$')
@@ -3635,7 +3673,7 @@ class Agarwal(StorativityInterferenceModels):
         pca = PapadopulosCooper(cD = cD, p = [cD, rD])
         sd1 = pca._laplace_drawdown(td*cD, inversion_option='dehoog')
         dd1 = pca._laplace_drawdown_derivative(td*cD, inversion_option='dehoog')
-        color = next(ax4._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax4)
         ax4.loglog(td, sd1, '-', color=color, label='Papadopulos and Cooper model cD = 10000')
         ax4.loglog(td, dd1, '-.', color=color)
         td2 = td * cD2
@@ -3645,7 +3683,7 @@ class Agarwal(StorativityInterferenceModels):
         df = pda.DataFrame(data=d)
         dummy = ht.preprocessing(df=df)
         dummy.ldiff()
-        color = next(ax4._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax4)
         ax4.loglog(td, sd2, '-', color=color, label='Agarwal model cD = 1000')
         ax4.loglog(dummy.der.t/cD2, dummy.der.s, '-.', color=color)
         self.p = [cD3, rD, (np.log(cD)-np.log(cD3))/2]
@@ -3655,7 +3693,7 @@ class Agarwal(StorativityInterferenceModels):
         df2 = pda.DataFrame(data=d2)
         dummy2 = ht.preprocessing(df=df2)
         dummy2.ldiff()
-        color = next(ax4._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax4)
         ax4.loglog(td, sd3, '-', color=color, label='Agarwal model cD = 5')
         ax4.loglog(dummy2.der.t/cD3, dummy2.der.s, '-.', color=color)
         ax4.set_xlabel('$t_D / C_D$')
@@ -3859,7 +3897,7 @@ class Hvorslev(Slugtests):
         plt.figure(1)
         ax = plt.gca()
         sd = self.dimensionless(td)
-        color = next(ax._get_lines.prop_cycler)['color']
+        color = _next_axis_color(ax)
         plt.semilogy(td, sd, '-', color=color, label='s')
         plt.xlabel('$t_D$')
         plt.ylabel('$s_D$')
@@ -4030,7 +4068,7 @@ class Neuzil(Slugtests):
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
             dummy.ldiff()
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             ax.semilogx(td, sd, '-', color=color, label= 'C_D = {}'.format(cD[i]))
             ax.semilogx(dummy.der.t, np.abs(dummy.der.s), ':', color=color)
         plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
@@ -4052,7 +4090,7 @@ class Neuzil(Slugtests):
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
             dummy.ldiff()
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             ax.loglog(td, sd, '-', color=color,
                         label='C_D = {}'.format(cD[i]))
             ax.loglog(dummy.der.t, np.abs(dummy.der.s), ':', color=color)
@@ -4225,7 +4263,7 @@ class Cooper(Neuzil):
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
             dummy.ldiff()
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             ax.semilogx(td, sd, '-', color=color, label= 'C_D = {}'.format(cD[i]))
             ax.semilogx(dummy.der.t, np.abs(dummy.der.s), ':', color=color)
         plt.xlabel('$t_D / C_D = 2Tt/r_C**2$')
@@ -4247,7 +4285,7 @@ class Cooper(Neuzil):
             df = pda.DataFrame(data=d)
             dummy = ht.preprocessing(df=df)
             dummy.ldiff()
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             ax.loglog(td, sd, '-', color=color,
                         label='C_D = {}'.format(cD[i]))
             ax.loglog(dummy.der.t, np.abs(dummy.der.s), ':', color=color)
@@ -4416,7 +4454,7 @@ class CDMHeat(AnalyticalInterferenceModels):
         for i in range(0, len(Pe)):
             self.Pe = Pe[i]
             sd = abs(self._laplace_drawdown(td, inversion_option='stehfest'))
-            color = next(ax._get_lines.prop_cycler)['color']
+            color = _next_axis_color(ax)
             ax.plot(td, sd, '-', color=color, label= 'Pe = {}'.format(Pe[i]))
             print(sd)
         plt.xlabel('$t_D$')

@@ -1,6 +1,4 @@
 #    Nathan Dutler <nathan.dutler@exquiro.ch>
-#    Philippe Renard <philippe.renard@unine.ch>
-#    Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 #    All rights reserved.
 #    MIT license.
 
@@ -13,10 +11,8 @@ preprocessing, resampling, filtering and visualization.
 License
 -------
 Released under the MIT license:
-   Copyright (C) 2021 openhytest Developers
+   Copyright (C) 2021 Nathan Dutler
    Nathan Dutler <nathan.dutlern@exquiro.ch>
-   Philippe Renard <philippe.renard@unine.ch>
-   Bernard Brixel <bernard.brixel@erdw.ethz.ch>
 """
 import pandas as pd
 import numpy as np

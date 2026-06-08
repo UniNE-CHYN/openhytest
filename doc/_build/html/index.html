@@ -1,23 +1,21 @@
-
 <!DOCTYPE html>
 
-<html>
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to OpenHyTest’s documentation! &#8212; OpenHyTest alpha 0.1 documentation</title>
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Welcome to OpenHyTest’s documentation! &#8212; OpenHyTest alpha 0.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=34905f61" />
+    <script src="_static/documentation_options.js?v=ab11c418"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installation" href="installation.html" /> 
+    <link rel="next" title="Functionality" href="functionality.html" /> 
   </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -27,9 +25,9 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="installation.html" title="Installation"
+          <a href="functionality.html" title="Functionality"
              accesskey="N">next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">OpenHyTest alpha 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="#">OpenHyTest alpha 0.5 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Welcome to OpenHyTest’s documentation!</a></li> 
       </ul>
     </div>  
@@ -39,55 +37,94 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <p>OpenHyTest is a welltest analysis toolbox based on python 3. It includes library’s …</p>
+  <p>OpenHyTest is a Python toolbox for hydraulic test interpretation. It provides
+preprocessing utilities, analytical well-test models, nonlinear fitting,
+diagnostic plots, and report generation for pumping, interference, multirate,
+double-porosity, generalized radial flow, and slug-test analyses.</p>
 <p>The package is a work in progress.</p>
-<div class="section" id="welcome-to-openhytest-s-documentation">
-<h1>Welcome to OpenHyTest’s documentation!<a class="headerlink" href="#welcome-to-openhytest-s-documentation" title="Permalink to this headline">¶</a></h1>
+<section id="welcome-to-openhytest-s-documentation">
+<h1>Welcome to OpenHyTest’s documentation!<a class="headerlink" href="#welcome-to-openhytest-s-documentation" title="Link to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="functionality.html">Functionality</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="functionality.html#data-preparation">Data preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functionality.html#analytical-models">Analytical models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functionality.html#fitting-and-diagnostics">Fitting and diagnostics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functionality.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#conda-environment">Conda environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#notebook-support">Notebook support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#quick-import-check">Quick import check</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API documentation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="api.html#preprocessing-tool">Preprocessing tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.preprocessing.preprocessing"><code class="docutils literal notranslate"><span class="pre">preprocessing</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="api.html#analytical-model-classes">Analytical model classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Agarwal"><code class="docutils literal notranslate"><span class="pre">Agarwal</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Boulton"><code class="docutils literal notranslate"><span class="pre">Boulton</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.CDMHeat"><code class="docutils literal notranslate"><span class="pre">CDMHeat</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Cooper"><code class="docutils literal notranslate"><span class="pre">Cooper</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.EdenHazel"><code class="docutils literal notranslate"><span class="pre">EdenHazel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.GRF"><code class="docutils literal notranslate"><span class="pre">GRF</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.HantushJacob"><code class="docutils literal notranslate"><span class="pre">HantushJacob</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Hvorslev"><code class="docutils literal notranslate"><span class="pre">Hvorslev</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.JacobLohman"><code class="docutils literal notranslate"><span class="pre">JacobLohman</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Neuzil"><code class="docutils literal notranslate"><span class="pre">Neuzil</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.PapadopulosCooper"><code class="docutils literal notranslate"><span class="pre">PapadopulosCooper</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Theis"><code class="docutils literal notranslate"><span class="pre">Theis</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Theis_constanthead"><code class="docutils literal notranslate"><span class="pre">Theis_constanthead</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Theis_multirate"><code class="docutils literal notranslate"><span class="pre">Theis_multirate</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Theis_multirate_CHB"><code class="docutils literal notranslate"><span class="pre">Theis_multirate_CHB</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.Theis_noflow"><code class="docutils literal notranslate"><span class="pre">Theis_noflow</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.WarrenRoot"><code class="docutils literal notranslate"><span class="pre">WarrenRoot</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.goodman_discharge"><code class="docutils literal notranslate"><span class="pre">goodman_discharge()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#openhytest.modelclasses.thiem"><code class="docutils literal notranslate"><span class="pre">thiem()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </div>
-</div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h1>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
-</div>
-<div class="section" id="authors">
-<h1>Authors<a class="headerlink" href="#authors" title="Permalink to this headline">¶</a></h1>
-<p>The OpenHyTest is developped by Nathan Dutler, Philippe Renard and Bernard Brixel.</p>
-</div>
-<div class="section" id="references">
-<h1>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h1>
-</div>
+</section>
+<section id="authors">
+<h1>Authors<a class="headerlink" href="#authors" title="Link to this heading">¶</a></h1>
+<p>OpenHyTest is developed by Nathan Dutler.</p>
+</section>
+<section id="references">
+<h1>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h1>
+</section>
 
 
             <div class="clearer"></div>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table of Contents</a></h3>
-  <ul>
+  <div>
+    <h3><a href="#">Table of Contents</a></h3>
+    <ul>
 <li><a class="reference internal" href="#">Welcome to OpenHyTest’s documentation!</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 <li><a class="reference internal" href="#authors">Authors</a></li>
 <li><a class="reference internal" href="#references">References</a></li>
 </ul>
 
-  <h4>Next topic</h4>
-  <p class="topless"><a href="installation.html"
-                        title="next chapter">Installation</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="functionality.html"
+                          title="next chapter">Functionality</a></p>
+  </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -95,21 +132,21 @@
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
-<script>$('#searchbox').show(0);</script>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
+    <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -119,15 +156,15 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="installation.html" title="Installation"
+          <a href="functionality.html" title="Functionality"
              >next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">OpenHyTest alpha 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="#">OpenHyTest alpha 0.5 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Welcome to OpenHyTest’s documentation!</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2019, OpenHyTest Developer.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.1.
+    &#169; Copyright 2021, Nathan Dutler.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
     </div>
   </body>
 </html>

@@ -1,0 +1,7 @@
+matplotlib
+mpmath
+nbformat
+numpy
+pandas
+plotly
+scipy
